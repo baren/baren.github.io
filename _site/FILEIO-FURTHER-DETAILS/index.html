@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh-CN" lang="zh-CN">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="author" content="巴人" />
+    <title>linux文件io进一步描述</title>
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link href="/feed/" rel="alternate" title="巴人" type="application/atom+xml" />
+    <link rel="stylesheet" href="/media/css/style.css" />
+    <link rel="stylesheet" href="/media/css/highlight.css" />
+    <script type="text/javascript" src="/media/js/jquery-1.7.1.min.js"></script>
+  </head>
+  <body>
+    <div id="container">
+      <div id="main" role="main">
+        <header>
+        <h1>linux文件io进一步描述</h1>
+        </header>
+        <nav>
+        <span><a title="网站首页" class="" href="/">首页</a></span>
+        <span><a title="文章分类" class="" href="/categories/">分类</a></span>
+        <span><a title="标签索引" class="" href="/tags/">标签</a></span>
+        <!--<span><a title="友情链接" class="" href="/links/">链接</a></span>-->
+        <span><a title="留言交流" class="" href="/guestbook/">留言</a></span>
+        <span><a title="关于站长" class="" href="/about/">关于</a></span>
+        <span><a title="种子订阅" class="" href="/feed/" target="_blank">订阅</a></span>
+        </nav>
+        <article class="content">
+        <section class="meta">
+<span class="time">
+  <time datetime="2013-12-30">2013-12-30</time>
+</span>
+
+
+ | 
+<span class="tags">
+  标签
+  
+  <a href="/tags/#linux" title="linux">linux</a>&nbsp;
+  
+</span>
+
+</section>
+<section class="post">
+<h2>原子性和条件竞争</h2>
+
+<p>所有系统调用都是原子执行的。原子执行避免了条件竞争。所谓条件竞争，指的是两个进程，在共享资源上操作，产生的结果依赖于两个进程的执行顺序。</p>
+
+<h3>排他性创建文件</h3>
+
+<p>在调用open系统调用函数时，如果文件存在，则如果指定O_EXCL和O_CREAT会导致open失败。这就为进程提供了一种确保是他创建了文件的方式。
+如果没有这个选项，则一般是先检查文件存在不存在，如果不存在，就创建一个文件。由于是check-if-absent方式，产生条件竞争。</p>
+
+<h3>追加文件内容</h3>
+
+<p>如果多个进程往一个文件中追加数据（比如一个全局日志文件），通常的做法是lseek到文件末尾，然后write，比如：</p>
+
+<div class="highlight"><pre><code class="c">    <span class="k">if</span> <span class="p">(</span><span class="n">lseek</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">SEEK_END</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;lseek&quot;</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">write</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">len</span><span class="p">)</span> <span class="o">!=</span> <span class="n">len</span><span class="p">)</span> 
+        <span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Partial/failed write&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+
+<p>这也产生了条件竞争。</p>
+
+<p>解决这个问题的方法，就是使用open函数的O_APPEND设置。</p>
+
+<h2>fcntl()文件控制操作</h2>
+
+<p>函数定义：</p>
+
+<div class="highlight"><pre><code class="c">    <span class="err">#</span><span class="n">include</span> <span class="o">&lt;</span><span class="n">fcntl</span><span class="p">.</span><span class="n">h</span><span class="o">&gt;</span>
+    <span class="kt">int</span> <span class="n">fcntl</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cmd</span><span class="p">,</span> <span class="p">...);</span>
+</code></pre></div>
+
+
+<h3>获得打开文件的状态标记（flag）</h3>
+
+<p>open函数的定义是：</p>
+
+<div class="highlight"><pre><code class="c"><span class="kt">int</span> <span class="nf">open</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">path</span><span class="p">,</span> <span class="kt">int</span> <span class="n">oflag</span><span class="p">,</span> <span class="p">...</span> <span class="p">);</span>
+</code></pre></div>
+
+
+<p>使用fcntl系统调用，可以获取文件或者修改文件的状态标记（标记的值是在open时由参数设置的）。</p>
+
+<p>比如下面代码：</p>
+
+<div class="highlight"><pre><code class="c"><span class="kt">int</span> <span class="n">flags</span><span class="p">,</span> <span class="n">accessMode</span><span class="p">;</span>
+<span class="n">flags</span> <span class="o">=</span> <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_GETFL</span><span class="p">);</span> <span class="cm">/* Third argument is not required */</span> 
+<span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+
+<p>获得flags后，可以检查是否具有某种标记：</p>
+
+<div class="highlight"><pre><code class="c"><span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">O_SYNC</span><span class="p">)</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;writes are synchronized</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+
+<p>但是，对于O_RDONLY (0), O_WRONLY (1), and O_RDWR (2)，使用上面这种方式判断就不行（O_RDONLY的值是0，怎么&amp;，都是0；写功能，两个值wronly和rdwr都具有写功能，读功能，rdonly和rdwr都具有读功能）。</p>
+
+<p>为了判断，可以使用O_ACCMODE(3),比如下面代码：</p>
+
+<div class="highlight"><pre><code class="c"><span class="n">accessMode</span> <span class="o">=</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">O_ACCMODE</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">accessMode</span> <span class="o">==</span> <span class="n">O_WRONLY</span> <span class="o">||</span> <span class="n">accessMode</span> <span class="o">==</span> <span class="n">O_RDWR</span><span class="p">)</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;file is writable</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+
+<p>还可以使用F_SETFL来修改已打开文件的标记。可修改的标记为：O_APPEND, O_NONBLOCK, O_NOATIME, O_ASYNC, and O_DIRECT，试图修改其它会被忽略。</p>
+
+<p>设置标记的办法是先获取标记，再设置，比如：</p>
+
+<div class="highlight"><pre><code class="c"><span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+<span class="n">flags</span> <span class="o">=</span> <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_GETFL</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span>
+<span class="n">flags</span> <span class="o">|=</span> <span class="n">O_APPEND</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_SETFL</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+
+<h2>文件描述符和打开文件的关系</h2>
+
+</section>
+<section align="right">
+<br/>
+<span>
+	<a  href="/THE-UNIVERSAL-IO-MODEL/" class="pageNav"  >上一篇</a>
+	&nbsp;&nbsp;&nbsp;
+	<a   class="pageNavInvalid"  >下一篇</a>
+</span>
+</section>
+
+
+        </article>
+      </div>
+
+    <footer>
+        <p><small>
+            <a href="http://github.com/baren/NET/new/gh-pages/_posts" target="_blank" title="撰写文章">Po</a>wer<a href="http://github.com/baren/NET/edit/gh-pages/_posts/2013-12-30-FILEIO-FURTHER-DETAILS.markdown" target="_blank" title="编辑页面">ed</a> by <a href="http://jekyllrb.com" target="_blank">Jekyll</a> @ <a href="http://github.com/baren/NET" target="_blank" title="项目主页">GitHub</a>
+             | <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/cn/" target="_blank" title="许可协议">©</a> 2004 - 2014 <a href="/about/">巴人</a>
+
+
+         </small></p>
+    </footer>
+
+    </div>
+  </body>
+</html>
