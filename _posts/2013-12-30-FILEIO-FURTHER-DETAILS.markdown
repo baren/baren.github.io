@@ -11,6 +11,7 @@ tags:
 ---
 
 [5-2]: /assets/Figure5-2.png "Relationship between file descriptors, open file descriptions, and i-nodes"
+[5-3]: /assets/Figure5-3.png "Relationship between readv iov and iovcnt parameter"
 
 ##原子性和条件竞争
 
@@ -170,5 +171,148 @@ if (fcntl(fd, F_SETFL, flags) == -1)
 *  两个不同的文件描述符引用同一个文件，则他们共享同一个文件偏移量。
 *  同样规则也适用于使用fcntl()函数获取或者修改文件状态标记（上面表格中的file status flags,比如O_APPEND, O_NONBLOCK, O_ASYNC）
 *  文件描述符标记（close-on-exec）则是私有的，修改它不会影响到其他的。
+
+
+## dup文件描述符
+
+使用shell的I/O重定向语法 *2>&1* 时，会通知shell，我们想要标准错误输出，输出到与标准输出到同一个地方。shell是从左到右计算I/O导向的。因此，下面的shell：
+
+```
+$ ./myscript > results.log 2>&1
+
+```
+
+会将标准输出输出到与标准输出同一个位置，也即results.log。
+
+为了实现这个效果，使用dup和dup2两个函数。
+
+> 如果不使用这两个函数，简单的打开results.log两次，一次使用文件描述符1，一次使用文件描述符2.这是不够的。因为从上面图可以看出，打开两次文件，这两个文件描述符并不共享同一个文件的offset，因此两个会相互覆盖。另一个原因是打开文件不一定是磁盘文件，比如$ ./myscript  2>&1 | less
+
+
+下面是dup的声明：
+
+```
+#include <unistd.h>
+
+int dup(int oldfd);
+
+```
+
+dup函数接收一个已经打开的文件描述符oldfd，返回一个指向同一个文件的新的文件描述符。如果失败，则返回-1.返回的新的文件描述符保证使用最小的未使用的文件描述符。
+
+为了实现上面shell的命令，可以这样：
+
+```
+/*前提是文件描述符0已经被使用*/
+close(2);
+int newfd = dup(1)
+
+```
+
+为了方便实现这个功能，还有个dup2函数：
+
+
+```
+#include <unistd.h>
+
+int dup2(int oldfd, int newfd);
+
+```
+
+dup2函数使用给定的newfd来复制已经打开的旧的文件描述符oldfd。返回的是新的文件描述符。
+
+还可以使用fcntl函数来完成dup命令，保证使用的新文件描述符大于等于指定的文件描述符：
+
+```
+newfd = fcntl(oldfd, F_DUPFD, startfd);
+```
+
+这在保证在特定范围内dup文件描述符是有用的。
+
+
+##  pread()和pwrite()在指定offset进行I/O操作
+
+使用pread和pwrite，可以在指定的offset完成读和写操作，而不会影响文件的原始offset的值。
+
+```
+#include <unistd.h>
+/*返回读得字节数，如果到EOF，为0；如果错误，返回-1*/
+ssize_t pread(int fd, void *buf, size_t count, off_t offset);
+
+/*返回写入的字节数，-1表示错误*/
+ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
+
+```
+
+> 使用pread和pwrite函数，传入的文件描述符必须是可seek的。
+
+> 注意：
+> 使用pread和pwrite在多线程环境下，可以避免条件竞争。如果使用lseek、write这种方式写文件，会产生条件竞争。使用pwrite，则多个线程会避免条件竞争。
+
+
+
+## Scatter-Gather I/O: readv() 和 writev()
+
+readv和writev函数定义：
+
+```
+#include <sys/uio.h>
+
+ssize_t readv(int fd, const struct iovec *iov, int iovcnt);
+
+ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
+
+```
+
+与read只读取数据到一个buffer不同，readv可以一次性把读取的数据分散（scatter）到多个buffer中。iov是一个数组，数组的每个元素是一个结构，结构类型是struct iovec。buffer的个数有iovcnt指定。
+
+struct iovec的定义是：
+
+```
+struct iovec {
+	void *iov_base; /* 缓存的起始地址 */
+	size_t iov_len; /* Number of bytes to transfer to/from buffer */
+};
+
+```
+
+下图描述了iov参数和iovcnt参数的关系：
+![alt text][5-3]
+
+### 分散输入（scatter input）
+
+readv系统调用完成了*scatter input*，读取由fd指定的文件的持续的字节序列，然后顺序的把这些数据写入到由iov参数指定的buffer中。所有的这些buffer，从iov[0]开始，会被完全的写满之后，才会继续写入下一个buffer。
+
+
+注意：
+一个readv的重要的属性是，这些都是完全自动的。从调用者角度，内核会把一连续的字节序列写入到buffer中。意味着，如果从一个文件中读取数据时，能够确保读入的数据是连续的，即使在这其间，有其它线程试图修改同一个文件的offset，也不会影响。
+
+readv返回读取的数据的字节数。调用者需要自己检查一下。
+
+### 聚集输出（gather output）
+
+writev系统调用完成了*gather output*。参数意义与readv类似。
+
+与write一样，writev也可能只写入部分，因此需要检查是否请求的数据全部被写入了。
+
+### writev和readv的原因
+
+主要原因还是
+
+	1. 易用性
+	2. 性能
+
+使用场景，比如：
+	* 如果需要调用一系列的write函数来输出buffer数据时
+
+## 截断一个文件truncate()和ftruncate()
+
+
+
+
+
+
+
+
 
 
