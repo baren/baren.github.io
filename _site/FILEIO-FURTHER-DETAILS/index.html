@@ -8,6 +8,7 @@
     <link href="/feed/" rel="alternate" title="巴人" type="application/atom+xml" />
     <link rel="stylesheet" href="/media/css/style.css" />
     <link rel="stylesheet" href="/media/css/highlight.css" />
+    <link rel="stylesheet" href="/media/css/bootstrap.css" />
     <script type="text/javascript" src="/media/js/jquery-1.7.1.min.js"></script>
   </head>
   <body>
@@ -126,6 +127,172 @@
 
 
 <h2>文件描述符和打开文件的关系</h2>
+
+<p>内核维护的三个数据结构：</p>
+
+<ul>
+<li>一个进程一个文件描述符表(<a href="http://en.wikipedia.org/wiki/Array_data_structure">Array data type</a>)</li>
+<li>系统级别的打开的文件描述符的表</li>
+<li>文件系统的i-node表</li>
+</ul>
+
+
+<p>对于每一个进程，内核都维护了这个进程打开的文件描述符表。每一个表项包含的信息是：</p>
+
+<ul>
+<li>控制操作文件描述符的标记集。其实就是一个标记close-on-exec</li>
+<li>一个指向打开的文件描述符（存储在open file table中的记录，也就是系统级别的打开的文件描述符的表项）的引用。</li>
+</ul>
+
+
+<p>内核维护了一个系统级别的所有的打开文件描述符（通常叫做<em>open file table</em>，其表项一般被称做open file handles）的表。
+一个打开文件描述符存储了关于打开文件的所有信息，包括：</p>
+
+<ul>
+<li>当前文件的偏移（read()和write()会更新这个值，或者通过lseek()指定）</li>
+<li>当打开文件指定的状态标记（比如open()函数的flags参数）</li>
+<li>文件访问模式（read-only，write-only或者read-write）</li>
+<li>一个指向这个文件的i-node对象的引用</li>
+</ul>
+
+
+<blockquote><p> #include &lt;sys/stat.h></p>
+
+<p> #include &lt;fcntl.h></p>
+
+<p> int open(const char <em>pathname, int flags, ... /</em> mode_t mode */);</p>
+
+<table>
+<thead>
+<tr>
+<th>Access mode </th>
+<th style="text-align:center;"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O_RDONLY    </td>
+<td style="text-align:center;"> Open the file for reading only</td>
+</tr>
+<tr>
+<td>O_WRONLY    </td>
+<td style="text-align:center;"> Open the file for writing only</td>
+</tr>
+<tr>
+<td>O_RDWR      </td>
+<td style="text-align:center;"> Open the file for both reading and writing</td>
+</tr>
+</tbody>
+</table>
+
+
+<table>
+<thead>
+<tr>
+<th>File creation flags </th>
+<th style="text-align:center;"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O_CLOEXEC    </td>
+<td style="text-align:center;"> Set the close-on-exec flag (since Linux 2.6.23)</td>
+</tr>
+<tr>
+<td>O_CREAT      </td>
+<td style="text-align:center;"> Create file if it doesn’t already exist </td>
+</tr>
+<tr>
+<td>O_DIRECT     </td>
+<td style="text-align:center;"> File I/O bypasses buffer cache</td>
+</tr>
+<tr>
+<td>O_DIRECTORY  </td>
+<td style="text-align:center;"> Fail if pathname is not a directory </td>
+</tr>
+<tr>
+<td>O_EXCL       </td>
+<td style="text-align:center;"> With O_CREAT: create file exclusively </td>
+</tr>
+<tr>
+<td>O_LARGEFILE  </td>
+<td style="text-align:center;"> Used on 32-bit systems to open large files </td>
+</tr>
+<tr>
+<td>O_NOATIME    </td>
+<td style="text-align:center;"> Don’t update file last access time on read() (since Linux 2.6.8) </td>
+</tr>
+<tr>
+<td>O_NOCTTY     </td>
+<td style="text-align:center;"> Don’t let pathname become the controlling terminal </td>
+</tr>
+<tr>
+<td>O_NOFOLLOW   </td>
+<td style="text-align:center;"> Don’t dereference symbolic links </td>
+</tr>
+<tr>
+<td>O_TRUNC      </td>
+<td style="text-align:center;"> Truncate existing file to zero length </td>
+</tr>
+</tbody>
+</table>
+
+
+<table>
+<thead>
+<tr>
+<th> file status flags </th>
+<th style="text-align:center;"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O_APPEND    </td>
+<td style="text-align:center;"> Writes are always appended to end of file</td>
+</tr>
+<tr>
+<td>O_ASYNC    </td>
+<td style="text-align:center;"> Generate a signal when I/O is possible</td>
+</tr>
+<tr>
+<td>O_DSYNC     </td>
+<td style="text-align:center;"> Provide synchronized I/O data integrity (since Linux 2.6.33)</td>
+</tr>
+<tr>
+<td>O_NONBLOCK      </td>
+<td style="text-align:center;"> Open in nonblocking mode</td>
+</tr>
+<tr>
+<td>O_SYNC      </td>
+<td style="text-align:center;"> Make file writes synchronous</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+
+<p>每一个文件的i-node包含的信息有：</p>
+
+<ul>
+<li>文件类型（正常文件、socket或者FIFO）和文件权限</li>
+<li>一个指向加在这个文件上的锁列表的指针</li>
+<li>各种文件属性，包括文件大小，和不同操作相关的时间。</li>
+</ul>
+
+
+<blockquote><p>i-node在磁盘上的描述和在内存中的描述不一样。如果在磁盘上，则记录了一个文件的持久化属性。比如类型、大小和权限等。
+i-node在内存的描述，记录了打开的文件描述符指向这个i-node节点的数目、这个i-node所在的磁盘的主要（major）和次要（minor）的ID，还记录的一些短暂的属性，比如加在文件上的锁等。</p></blockquote>
+
+<p>如图：
+<img src="/assets/Figure5-2.png" title="Relationship between file descriptors, open file descriptions, and i-nodes" alt="alt text" /></p>
+
+<p>根据上面描述，得出下面几个隐含的意思来：</p>
+
+<ul>
+<li>两个不同的文件描述符引用同一个文件，则他们共享同一个文件偏移量。</li>
+<li>同样规则也适用于使用fcntl()函数获取或者修改文件状态标记（上面表格中的file status flags,比如O_APPEND, O_NONBLOCK, O_ASYNC）</li>
+<li>文件描述符标记（close-on-exec）则是私有的，修改它不会影响到其他的。</li>
+</ul>
+
 
 </section>
 <section align="right">
