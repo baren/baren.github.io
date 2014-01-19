@@ -306,13 +306,71 @@ writev系统调用完成了*gather output*。参数意义与readv类似。
 	* 如果需要调用一系列的write函数来输出buffer数据时
 
 ## 截断一个文件truncate()和ftruncate()
+截断一个文件，两个函数定义如下：
+
+```
+#include <unistd.h>
+int truncate(const char *pathname, off_t length); 
+
+int ftruncate(int fd, off_t length);
+```
+
+这两个函数不会对文件的offset有影响。
+
+## 非阻塞I/O
+
+当打开一个文件，指定O_NONBLOCK标记时，主要有两种目的：
+
+* 如果文件不能立即被打开，open()函数会返回错误，而不是一直阻塞着。
+* 如果open()打开成功，随后的I/O操作仍然是非阻塞的。
+
+非阻塞模式可以用于设备、FIFO（命名管道，用于Linux进程通信）、socket。由于管道和socket的文件描述符
+不能够通过open()获得，因此我们必须使用 fcntl() F_SETFL操作来使这个标记可用。
 
 
+注意：
+> O_NONBLOCK对于普通文件是忽略的。因此linux的内核的buffer确保了普通文件的I/O是非阻塞的。
 
+## I/O大文件
 
+linux使用off_t数据类型来存储文件的offset，off_t使用有符号的长整型来描述（之所以有符号，是方便用-1表示失败）。
+因此在32位机器上，一个文件的最大限制是2^31-1 byte。
 
+为了在32位机器上实现大文件操作，厂商提供了Large File Summit (LFS)概念。linux自从2.4开始支持LFS。为了支持大文件，文件系统也需要支持。大部分linux文件系统都支持（微软的VFAT and NFSv2都不支持）
 
+为了在linux操作大文件，有两种方法：
 
+* 采用支持大文件的替换的API，也就是ransitional LFS API。
+* 在编译我们代码时，定义宏_FILE_OFFSET_BITS的值为64.这种方式是推荐的方式。
 
+### 使用LSF API
+
+采用过渡的LFS API时，在编译时，需要测试_LARGEFILE64_SOURCE的宏（命令行或者源文件）。这组API可以处理64位的文件大小和offset。这组api的函数名字后面都有64.比如：
+
+```
+fopen64(), open64(), lseek64(), truncate64(), stat64(), mmap64(), and setrlimit64()
+```
+
+### 使用_FILE_OFFSET_BITS
+
+推荐的方式是定义_FILE_OFFSET_BITS宏的值为64.
+这会自动的替换32位函数和数据类型到64位的函数和数据类型。这意味这，我们可以重新编译以前写好的文件来支持大文件。
+
+只遗留了一个问题，就是打印off_t 的值的时候，需要使用lld%来正确的显示off_t的值。
+
+```
+#define _FILE_OFFSET_BITS 64
+
+off_t offset; /* Will be 64 bits, the size of 'long long' */ 
+
+/* Other code assigning a value to 'offset' */
+printf("offset=%lld\n", (long long) offset);
+```
+
+## /dev/fd 目录
+
+对于每一个进程，内核提供了一个虚拟目录/dev/fd ，这个目录包含的文件形式是*/dev/fd/n*。n对应的进程中的打开的文件描述符。因此使用/dev/fd/n或者fd都可以指向一个文件。
+
+但是在程序内很少使用这种方式，一般只在shell中使用。
 
 
