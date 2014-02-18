@@ -8,6 +8,7 @@ tags:
 - linux
 - 笔记
 ---
+[14-1]: /assets/Figure14-1.png "layout of disk partitions and a file system"
 
 
 # 设备特殊文件
@@ -34,6 +35,46 @@ tags:
 * swap区域
 
 # 文件系统
+
+linux支持广泛的文件系统，包括
+* 传统的ext2文件系统
+* 原生的unix文件系统，包括 Minix, System V和 BSD文件系统
+* 微软的FAT, FAT32, 和 NTFS
+* apple的HFS
+* 网络文件系统，包括sun的NFS等
+* 一系列日志文件系统，包括xt3, ext4, Reiserfs, JFS, XFS, 和 Btrfs
+
+
+以ext2文件系统为例，介绍文件系统，ext2文件系统源代码很小，大约5000行c程序（http://e2fsprogs.sourceforge.net/ext2.html.）
+
+## 文件系统结构
+
+磁盘分成多个逻辑分区，每一个分区可拥有一个文件系统，比如：
+![alt text][14-1]
+
+* boot块，总是文件系统的第一个块，文件系统不会使用这个块，boot块是用来重启操作系统的。虽然每个分区的文件系统都有一个boot块，但只有一个会被使用。
+* superblock，紧随boot块后的一个单一块，包含如下信息
+>* i-nod表的大小
+>* 此文件系统的逻辑块大小
+>* 文件系统的大小
+
+* inode表。文件系统的每一个文件或者目录都在inode表中对应一个唯一的表项。这个表项记录了文件的各种信息。
+* 数据块，磁盘的最主要的文件数据存储区域。
+
+## i-node
+
+对于所有的文件系统内的文件，文件系统的i-node表都有一个唯一的i-node表项与之对应。i-node使用i-node在表中的顺序号来引用（数组实现？）。
+*i-node number*是ls -li命令的第一个字段.
+
+i-node包含的信息有：
+
+* 
+
+
+
+
+
+
 
 
 
