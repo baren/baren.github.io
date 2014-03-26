@@ -192,6 +192,195 @@ int fclose(FILE *fp);
 
 # 读和写流
 
+一旦打开了流，就可在三中不同类型的非格式化I/O中选择，进行读写。包括：
+
+* 每次只读一个字符的I/O，一次读写一个字符。若流是缓冲的，标准I/O会处理所有缓冲。
+* 每次一行I/O，可以使用fgets和fputs，每行以换行符终止。
+* direct I/O，直接I/O。fread和fwrite函数支持这种类型的I/O。每次I/O操作读或写某种数量的对象，而每个对象具有指定的长度。用于从二进制文件中每次读或写一个结构。
+
+## 一次一个字符
+
+下面三个函数可以用于一次读一个字符：
+
+```
+
+#include <stdio.h>
+
+# 三个函数的返回值，若成功，返回下一个字符；达文件末尾或失败，则返回EOF
+int getc(FILE *fp);
+int fgetc(FILE *fp);
+
+int getchar(void);
+
+# 写入流
+int putc(int c, FILE *fp);
+int fputc(int c, FILE * fp);
+int putchar(int c);
+
+```
+
+getchar 等价于getc(stdin)，而getc和fgetc的区别是前者可以实现为宏；而后者不可。这意味着：
+
+* getc的参数不应当是具有副作用的表达式
+* fgetc是函数，可得到其地址，允许fgetc地址作为参数传递给其它函数
+* fgetc函数执行时间长于getc函数（宏的优势）
+
+不管是出错，还是到达文件末尾，三个函数都返回EOF，为了区分是出错还是到达文件末尾，需要使用ferror或feof函数。
+
+```
+#include <stdio.h>
+
+int ferror(FILE *fp);
+
+int feof(FILE *fp);
+
+void clearerr(FILE *fp);
+
+```
+
+
+大多数实现，为每个流在FILE对象中维持了两个标志：
+
+* 出错标志
+* 文件结束标志
+
+从流中读取数据后，可以调用ungetc奖字符再压回流中。
+
+```
+#include <stdio.h>
+
+# 成功，返回c，出错返回EOF
+int ungetc(int c, FILE *fp);
+
+```
+关于压回，注意：
+
+* 压回流中的字符可以再读出，但与压入顺序相反。
+* 不能压回EOF。
+* 到达文件末尾，还可压回字符。下次读取将返回该字符，再次读取则返回EOF。这么做的一个原因是，一次成功的ungetc调用会清除该流的文件结束标志。
+
+## 每次一行
+
+下面函数是每次一行函数：
+
+```
+#include <stdio.h>
+
+# 读一行函数，成功，则返回bug，错误或到达末尾，则返回NULL
+char * fgets(char * buf, int n, FILE *fp);
+
+char * gets(char *buf);
+
+# 写一行函数，成功，返回非负值，出错返回EOF
+
+int fputs(char * str, FILE *fp);
+
+int puts(char *str);
+
+```
+
+两个gets函数，指定了缓冲区，把读的行送入其中。gets从标准输入读，fgets从指定流读。
+
+* fgets必须指定缓冲区的长度。此函数一直读到下一个换行符为止，但不超过n-1（放null字符），读入的数据被送入缓冲区。
+* 该缓冲区一null结尾。
+* 若该行的字符数超过n-1，则fgets只返回一个不完整的行，但是，缓冲区总是以null字符结尾。
+
+> 注意：
+> gets函数不推荐，由于没有指定缓冲区大小，容易造成缓冲区溢出。
+
+写入一行函数，将一个以null符终止的字符串写入到指定流。尾端null不会被写入。
+
+## 二进制I/O
+
+对于直接I/O，也就是二进制I/O，提供两个函数：
+
+```
+
+size_t fread(void *ptr, size_t size, size_t nobj, FILE *fp);
+
+size_t fwrite(void * ptr, size_t size, size_t nobj, FILE *fp);
+
+```
+
+这两个函数的常用用法：
+
+1. 读或写一个二进制数组。比如将一个浮点数组的第2~5个元素写到一个文件上：
+
+```
+float data[10];
+
+if (fwrite(&data[2], sizeof(float), 4, fp) != 4)
+	printf("error");
+```
+
+2. 读写一个结构
+
+```
+struct {
+	
+	short count;
+	long total;
+	char name[NAMESIZE];
+
+} item;
+
+if (fwrite(&item, sizeof(item), 1, fp) != 1)
+	printf("error");
+
+```
+
+> 注意：
+> 对于二进制读写的问题是：只能用于同一个系统上已写的数据，原因是：
+> 1. 在同一个结构中，同一个成员的偏移量可能因为编译器和系统而异。
+> 2. 用来存储多字节整数和浮点值的二进制格式，在不同机器体系结构不同。
+
+# 定位流
+
+三种方法定位标准I/O流
+
+* ftell和fseek，假设位置偏移量，可以使用长整型。
+* ftello和fseeko，文件偏移量，使用off_t代替长整型。
+* fgetpos和fsetpos，ISO C引入，使用抽象数据类型fpos_t来记录文件的位置。
+
+```
+#include <stdio.h>
+
+long ftell(FILE *fp); # 成功，返回当前文件位置指示，出错返回-1
+
+int fseek(FILE *fp, long offset, int whence);
+
+void rewind(FILE *fp);
+
+```
+
+定位涉及到文本文件和二进制文件，由于存放格式不一样，里面许多注意点。
+
+## 对于二进制文件
+
+二进制文件，文件位置指示器是从文件起始位置开始度量，并以字节为计量单位。
+
+ftell用于二进制文件时，其返回值就是这种字节位置。
+
+为了使用fseek定位一个二进制文件，必须指定一个字节的*offset*。以及解释这种偏移量的方式。
+
+whence的值与内核函数lseek函数相同：
+
+* SEEK_SET表示从文件的起始位置开始
+* SEEK_CUR表示从当前文件位置开始
+* SEEK_END表示从文件尾端开始。
+
+## 文本文件
+
+对于文本文件，他们的文件位置可能不以简单的字节偏移量来度量。主要是在非unix系统中，以不同格式存放文本文件。
+
+为了定位文本文件，*whence*一定要是SEEK_SET，而*offset*的值只有两种：0（绕回到文件的起始位置）。或是对该文件调用ftell返回的值。
+
+使用fewind可以将流设置到文件的起始位置。
+
+
+# 格式化I/O
+
+
 
 
 
