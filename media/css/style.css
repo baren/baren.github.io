@@ -132,34 +132,4 @@ color: white;
 background: #83BF73;
 }
 
-table {
-  width: 100%;
-  margin-bottom: 20px;
-
-  border: 1px solid #dddddd;
-  
-}
-
-table th,
-table td {
-  padding: 8px;
-  line-height: 20px;
-  text-align: left;
-  vertical-align: top;
-  
-  border: 1px solid #dddddd;
-}
-
-table th {
-  font-weight: bold;
-}
-
-table thead th {
-  vertical-align: bottom;
-}
-
-table tbody tr:hover > td,
-table tbody tr:hover > th {
-  background-color: #f5f5f5;
-}
 

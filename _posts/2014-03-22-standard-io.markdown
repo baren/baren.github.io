@@ -477,7 +477,7 @@ nfields = fscanf(input, "%4d %4d %4d", &a, &b, &c)
 
 ## printf函数
 
-
+todo
 
 
 
