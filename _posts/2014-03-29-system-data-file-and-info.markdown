@@ -1,6 +1,6 @@
 ---
 comments: true
-date: 2014-03-03 23:06:00
+date: 2014-03-29 08:06:00
 layout: post
 title: apue(系统数据文件和信息)
 summary: 'apue chapter6'

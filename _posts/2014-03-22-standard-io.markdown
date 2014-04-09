@@ -1,6 +1,6 @@
 ---
 comments: true
-date: 2014-03-03 23:06:00
+date: 2014-03-22 20:06:00
 layout: post
 title: apue(标准I/O库)
 summary: 'apue chapter5'
