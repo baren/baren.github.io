@@ -235,6 +235,134 @@ sbrk可增大和减少进程的存储空间，但malloc和free一般都不减少
 
 # 环境变量
 
+环境变量字符串的形式为```name=value```，unix不会查看此字符串，完全由程序解释。
+
+ISO C定义了一个函数getenv，根据name获取其value。
+
+```
+#include <stdlib.h>
+
+char *getenv(const char *name);
+```
+
+除了获取环境变量，还可以设置环境变量：
+
+```
+
+#include <stdlib.h>
+
+int putenv(char *str);
+
+int setenv(const char *name, const char *value, int rewrite);
+
+int unsetenv(const char *name);
+```
+
+putenv，参数为name=value字符串，若name存在，则先删除
+
+setenv，参数name的值设为value，如果name存在，则根据rewrite参数决定是重写还是不删除。
+
+unsetenv，删除name的定义
+
+> 注意：
+> 1. putenv的实现，linux直接将字符串地址作为参数放入环境表中，如果参数是存放在栈中，则会发生错误。
+> 2. 由于环境变量存放在程序空间的最上面，大小是有边界的，因此，如果设置的环境变量超出了存储空间大小，则需要由malloc在堆上分配空间来存储。
+
+# setjmp和longjmp函数
+
+c语言中，goto语句不能跨函数，如果要跨函数，则需要setjmp和longjmp函数：
+
+```
+#include <setjmp.h>
+
+int setjmp(jmp_buf env);
+void longjmp(jmp_buf env, int val);
+```
+
+调用这两个函数，遇到的问题是：
+
+1. 调用longjmp后，自动变量和寄存器变量的状态如何？这些值能回滚到调用setjmp的状态码？
+
+答：不确定，跟实现有关系。大多数实现并不回滚这些自动变量和寄存器变量的值，而所有标准则说他们的值是不确定的。如果有一个自动变量，而又不想使其回滚，则可以定义具有volatile属性。声明为全局或静态变量的值在执行longjmp时保持不变。
+
+2. 自动变量的问题：若在函数内部声明指针，并返回了这个指针，则会出问题。
+
+# 进程资源
+
+## 进程资源使用
+
+getrusage()系统调用返回调用进程或者其所有子进程运行所使用的各种系统资源。
+
+```
+#include <sys/resource.h>
+
+int getrusage(int who, struct rusage *res_usage);
+```
+
+参数who指定了进程中谁的资源使用信息将会被获取。有下面几个值：
+
+* RUSAGE_SELF 返回调用进程的资源
+* RUSAGE_CHILDREN 返回调用进程的所有子进程的资源。子进程是停止的和wait的。
+* RUSAGE_THREAD 返回调用线程的资源（Linux 2.6.26）
+
+res_usage参数是一个指针，指向结构为rusage的对象。
+
+## 进程资源限制
+
+每个进程都消耗系统资源，OS对每个进程都有一些资源限制。在shell中，可以使用ulimit命令设置进程的资源限制。所有通过shell启动的进程都会继承ulimit设置的限制。
+
+```getrlimit()``` 和 ```setrlimit()``` 两个函数可以获取和设置进程的资源限制。
+
+```
+#include <sys/resource.h>
+int getrlimit(int resource, struct rlimit *rlim);
+int setrlimit(int resource, const struct rlimit *rlim);
+// Both return 0 on success, or –1 on error
+
+```
+
+*resource*参数代表了需要获取或设置的资源标记符。rlimit是一个结构体，用来描述资源限制的值。
+
+```
+struct rlimit {
+rlim_t rlim_cur; /* Soft limit (actual process limit) */ 
+rlim_t rlim_max; /* Hard limit (ceiling for rlim_cur) */
+};
+```
+
+关于结构体```struct rlimit```解释如下：
+
+既有软限制（rlim_cur），又有硬限制（rlim_max）。软限制表示进程可以消耗的最大资源设置。一个进程可以调整软限制，调整范围是[0-硬限制]。进程可以调整其硬限制。没有权限的进程，只能降硬限制调小（但不小于软限制），对于大多数进程，硬限制只是说明进程的可消耗的资源的最大值。
+
+有权限的进程（CAP_SYS_RESOURCE）可以调整硬限制大小，既可往大得方向调整，也可以往小的方向调整。
+
+如果rlim_cur和rlim_max的值是RLIM_INFINITY，表示没有限制。
+
+
+虽然设置进程的资源限制是针对单个进程的。但进程可消耗的资源除了与这个设置有关系外，还需要依赖同一个用户id的进程所消耗的资源之和。
+
+比如RLIMIT_NPROC资源，表示可创建的进程数限制，就是一个很好的例子。但是如果根据进程的子进程数来检查这个限制，将会失效，因为子进程也会创建新的进程。实际上，这个资源限制是针对所有的用户id都相同的进程设置的。但是，即使是具有同样的用户id，如果其他进程并没有针对这个资源进行限制，或者有限制，但是限制数跟其他不一样，则这个限制资源检查则是根据这个进程的相应设置来进行相应检查的。
+
+下表是参数*resource*的取值表：
+
+
+ resource        | Limit on          	
+ ------------- | :-------------: 
+ RLIMIT_AS		| 进程的虚拟内存大小（byte）
+ RLIMIT_CORE	| Core 文件大小（byte）
+ RLIMIT_CPU		| 进程的cpu时间(seconds)
+ RLIMIT_DATA	| 进程的数据段大小（byte）
+ RLIMIT_FSIZE	| 文件大小（byte）
+ RLIMIT_MEMLOCK	| 锁定的内存大小（byte）
+ RLIMIT_MSGQUEUE | 为实际用户id分配的POSIX的消息队列的大小(since Linux 2.6.8)
+ RLIMIT_NICE	| nice的值(since Linux 2.6.12)
+ RLIMIT_NOFILE	| 最大的文件描述符个数
+ RLIMIT_NPROC 	| 一个实际用户id可创建的进程数
+ RLIMIT_RSS		| Resident set size (bytes; not implemented)
+ 
+
+
+
 
 
 
