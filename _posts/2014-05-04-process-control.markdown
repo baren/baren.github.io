@@ -291,8 +291,89 @@ ps -A -o stat, ppid, pid, cmd | grep -e '^[zZ]'
 
 ```
 
+# exec函数
+
+在fork后，如果调用exec函数，则该进程执行的程序完全替换成新程序，并且从新程序的main函数开始执行。exec并不创建新进程，因此调用exec前后并不改变进程ID。exec只是用全新的程序替换了当前进程的正文数据堆和栈等段。
 
 
+unix系统提供了6个exec函数，unix对进程的控制：
+
+* fork
+* exit
+* wait
+* exec
+
+这几个函数使得unix进程控制原语更加完善。
+
+
+```
+#include <unistd.h>
+
+// 下面四个函数，执行程序是路径
+int execl(const char *pathname, const char *arg0, ... /* (char *)0 */)  // 参数是列表，以空指针结束
+
+int execv(const char *pathname, char *const argv[]) // 参数列表是一个数组
+
+int execle(const char *pathname, const char *arg0, ... /* (char *)0, char *const envp[] */) // 可以传递一个环境表，这个环境表是个指针数组，每个元素是指向字符的指针
+
+int execve(const char *pathname, char *const argv[], char *const envp[]) // 传递环境表
+
+
+// 执行程序是文件名，如果文件名以“/”开头，则认为是路径，否则从PATH变量中搜寻执行文件
+int execlp(const char *filename, const char *arg0, ... /* (char *)0 */)
+
+int execvp(const char *filename, char *const argv[])
+
+
+```
+
+这六个函数的几种区别是：
+
+1. 前四个函数已路径名作为参数，而后两个使用文件名作为参数，如果是文件名作为参数，则：
+	* 如果filename是包含“/”，则认为是路径
+	* 否则就按PATH环境变量，在它所指定的各目录中搜寻可执行文件（如果找到的可执行文件不是链接器生成的机器可执行文件，则认为是shell脚本，就会调用/bin/sh，并以filename作为shell的输入）
+
+> 说明：
+> 环境表：每个程序都会接收一张环境表，这个环境表是一个字符指针数组，全局变量environ指向这个数组。
+>		环境表包含的环境变量，比如PATH=:/bin:/usr/bin:、USER=sar、等
+>
+> 环境变量（环境表中的每个数组元素），可以通过getenv获取环境变量。通过putenv、setenv等设置环境变量，一般使用这两个
+> 函数访问设置环境变量，而不推荐直接访问environ全局变量。
+>
+> POSIX.1 XSI等预定义了很多环境变量，其中PATH环境变量表示“搜索可执行文件的路径前缀列表”
+
+
+2. 第二个区别是参数表的传递不同。l表示list，v表示vector。execl、execle、execlp的每个命令行参数都说明为一个单独的参数，最后以空指针结尾。而execv、execve、execvp的命令行参数是以数组提供。
+
+3. 最后一个区别，传递的环境表有关。已e结尾的两个函数execle和execve，可以传递一个指向环境字符串指针数组的指针，其它几个函数则使用调用进程中的environ变量为新程序复制现有的环境。
+
+
+注意几点：
+
+1. 对打开的文件的处理
+
+这与执行时关闭close-on-exec设置有关
+
+进程中每个打开描述符都有一个执行时关闭标志。若设置此标志，则在执行exec时关闭该描述符，否则该描述符仍然打开。除非特地用fcntl设置了该标志，否则系统默认的操作是在执行exec后仍保持这种描述符的打开。
+
+> fcntl函数可以：
+> * 复制一个现有描述符
+> * 设置/获得文件描述符标记（文件描述符标志，当前只定义了一个，就是FD_CLOEXEC）
+> * 获得/设置文件状态标志
+> * 等。
+
+posix.1明确要求在执行exec时关闭打开的目录流，这通常是opendir来实现的。它调用fcntl函数为对应于打开目录流的描述符设置执行时关闭标志。
+
+> 疑问：
+> 设置close-on-exec的场景是什么？？
+
+2. 有效用户问题
+
+exec后，实际用户id和实际组id不变，而有效id是否改变，则取决于程序文件的设置用户id和设置组id是否设置。
+
+很多unix实现中，只有execve是系统调用，其它函数是库函数。
+
+# 更改用户ID和组ID
 
 
 
