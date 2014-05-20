@@ -375,6 +375,208 @@ exec后，实际用户id和实际组id不变，而有效id是否改变，则取�
 
 # 更改用户ID和组ID
 
+unix系统中，特权是基于用户和组ID的。
+
+可以调用setuid函数设置实际用户id和有效用户id。setgid函数设置实际组id和有效组id。
+
+```
+#include <unistd.h>
+
+int setuid(uid_t uid);
+
+int setgid(gid_t gid);
+
+```
+
+对于修改ID有以下规则：
+
+* 若进程具有超级用户特权，则setuid函数将实际用户ID、有效用户ID以及保存的设置用户ID设置为参数uid
+* 若进程没有超级用户特权，但是参数uid等于实际用户ID**或者**保存的设置用户ID，则setuid只将有效用户ID设置为uid，不改变实际用户ID**和**保存的设置用户ID
+* 若上面两个条件都不满足，则将errno设置为EPERM，并返回-1.
+
+关于内核维护的三个用户ID，注意：
+
+1. 只有超级用户进程可以更改实际用户ID。通常实际用户ID是在用户登录时，有login程序设置的，而且拥有不会改变他。
+2. 仅当对程序文件设置了设置用户ID位时，exec函数才会设置有效用户ID。如果设置用户位没有设置，则exec函数不会改变有效用户ID，而将其维持为原先的值。任何时候都可以调用setuid，将有效用户ID设置为实际用户ID。
+3. 保存的设置用户id是由exec复制有效用户ID而得来的。如果设置了文件的设置用户ID位（执行位显示为s），则exec根据文件的用户ID设置了进程的有效用户ID以后，就将这个副本保存起来。
+
+
+ID    | exec(设置用户ID位关闭) | exec（设置用户ID位开启）| setuid（超级用户） | setuid（非特权用户）          	
+ ------------- | :-------------: | :-------------: | :-------------: | :-------------: 
+ 实际用户ID 	| 不变	| 不变	| 设置为uid	|不变
+ 有效用户id 	| 不变	| 设置为程序文件的用户ID	| 设置为uid	|设置为uid
+ 保存的设置用户ID| 从有效用户ID复制	| 从有效用户ID复制|设置为uid | 不变
+
+## su 和sudo和setuid的关系
+
+su命令可以切换用户，而sudo可以以超级用户权限运行命令。查看这两个文件状态：
+
+```
+$ ll /usr/bin/su
+-rwsr-xr-x  1 root  wheel  21472  3 13  2013 /usr/bin/su
+$ ll /usr/bin/sudo
+-r-s--x--x  1 root  wheel  164496  3 13  2013 /usr/bin/sudo
+
+```
+
+su和sudo的用户执行位都是s，表示setuid为开启。当用户运行这个程序时，
+
+会设置程序的有效用户ID为文件所有者，就会以这个文件的所有者（这里是root）权限运行。
+
+因此，sudo命令可以以root权限执行命令。
+
+当su命令执行时，设置进程的有效用户ID为root。
+
+# 解释器文件
+
+解释器文件，是文本文件，起始行的形式是：
+
+```
+#! pathname [optional-argument]
+
+```
+
+感叹号和pathname之间的空格是可选的。最常见的解释器是：
+
+```
+#! /bin/sh
+```
+
+* pathname通常是绝对路径，对它不进行特殊处理（既不视屏PATH进行路径搜索），对这种文件识别，是由内核作为exec系统调用处理的一部分完成的。
+* 内核调用exec函数实际上执行的并不是解释器文件，而是解释器文件中第一行pathname指定的文件
+* 注意区别解释器文件（文本文件，以#!开头）和解释器之间区别（解释器文件第一行pathname指定）
+
+## 解释器例子
+
+```
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/wait.h>
+
+int main(int argc, char *argv[])
+{
+	pid_t pid;
+	if((pid = fork()) == -1)
+	{
+		printf("fork error\n");
+		exit(-1);
+	}
+	if(pid == 0)
+	{
+		printf("child process\n");
+		if(execl("/Users/user/work/cproj/testinterp", "testinterp", "myarg1", "My arg2", (char *) 0) < 0)
+		{
+			printf("error execl\n");
+			exit(-1);
+		}
+		exit(0);
+	}
+	if(waitpid(pid, NULL, 0) < 0)
+	{
+		printf("error waitpid");
+		exit(-1);
+	}
+	exit(0);
+
+}
+
+
+```
+
+解释器文件testinterp很简单，只有一行：
+
+```
+
+#! /Users/user/work/cproj/echoarg foo
+```
+
+而echoarg程序仅仅是打印参数：
+
+```
+#include <stdlib.h>
+#include <stdio.h>
+
+int main(int argc, char *argv[])
+{
+	int i;
+	for (i = 0; i < argc; i++)
+	{
+		printf("ARGV[%d]:%s\n", i, *(argv+i));
+	}
+	exit(0);
+}
+
+```
+
+结果如下：
+
+```
+ser@usertekiMacBook-Pro cproj$ ./execinterp
+child process
+ARGV[0]:/Users/user/work/cproj/echoarg
+ARGV[1]:foo
+ARGV[2]:/Users/user/work/cproj/testinterp
+ARGV[3]:myarg1
+ARGV[4]:My arg2
+
+```
+
+对程序结果的解释：
+
+* 当exec调用解释器（/Users/user/work/cproj/echoarg）时，argv[0]是该解释器的pathname（）。
+* argv[1]是解释器文件中的可选参数（foo）
+* 其余参数是pathname（/Users/user/work/cproj/testinterp）
+* 以及第二、三个参数（myarg1和My arg2）
+* 注意，第一个参数（testinterp），是没有用的
+
+## 解释器文件可选参数例子
+
+解释器pathname后可跟随可选参数，比如awk支持-f选项：
+
+```
+
+awk -f myfile
+```
+
+它告诉awk从文件myfile中读awk程序。
+
+如果在解释器文件中使用-f选项，则解释器文件可以这么写：
+
+```
+
+#! /bin/awk -f
+
+后面跟着awk程序
+```
+
+比如解释器文件/usr/local/bin/awkexample的内容是：
+
+```
+#!/bin/awk -f 
+BEGIN {
+	for (i = 0; i < ARGC; i++)
+		printf "ARGV[%d] = %s\n", i, ARGV[i]
+	exit 
+}
+
+```
+调用：
+
+```
+$ awkexample file1 FILENAME2 f3 ARGV[0] = awk
+ARGV[1] = file1
+ARGV[2] = FILENAME2
+ARGV[3] = f3
+```
+
+如果执行这个文件时，实际上，是这么调用的：
+
+```
+/bin/awk -f /usr/local/bin/awkexample file1 FILENAME2 f3
+```
+
+1. 解释器文件的路径名/usr/local/bin/awkexample给传给解释器，因为不知道解释器是不是会从搜索路径中搜索该文件，因此传全路径文件名
+2. awk读取解释器文件，第一行是#，注释，因此忽略第一行，执行后续程序
 
 
 
