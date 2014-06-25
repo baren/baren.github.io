@@ -160,8 +160,152 @@ wait waitpid read write ioctl readv writev
 
 在标准C函数库中，不可重入函数比较普遍。
 
-比如malloc和fe
+比如malloc和free
 ，在主程序中调用malloc过程中，产生了信号，并在信号处理程序中调用了malloc，有可能会破坏malloc维护的链表，导致不可预料的结果发生。
+
+# 可靠信号的术语和语义
+
+* 递送（delivery）信号：当引发信号的事件*发生*时，为进程产生一个信号（或向进程产生一个信号）
+* 未决（pending）的信号：在信号产生和递送之间的时间间隔内，称信号是未决的
+
+进程可以设置阻塞信号。
+
+若信号被进程设置为阻塞，并且对该信号的动作是系统**默认动作**或**捕捉该信号**，则为该进程将此信号保持为未决状态（产生信号和递送信号之间的状态）。
+
+解除未决状态：
+	* 对信号解除了阻塞
+	* 或者将此信号的动作改为忽略。
+
+注意：
+* 如果信号处理函数不是默认或者捕捉（比如忽略），则信号不会保持为未决状态，
+看下面例子：
+
+```
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/signal.h>
+#include <stdio.h>
+void sig_int(int sig);
+int main(int argc, char **argv)
+{
+	sigset_t osig;
+	sigset_t newsig, o_set;
+
+	sigemptyset(&newsig);
+	sigaddset(&newsig, SIGINT);
+	// if (signal(SIGINT, SIG_DFL) == SIG_ERR) // 忽略处理
+	if (signal(SIGINT, SIG_DFL) == SIG_ERR) // 默认处理
+	{
+		printf("signal sigint err!\n");
+		exit(-1);
+	}
+	if (sigprocmask(SIG_SETMASK, &newsig, &osig) == -1)
+	{
+		printf("sigprocmask err!\n");
+		exit(-1);
+	}
+	//pause();
+	sleep(4);
+
+	if (signal(SIGINT, sig_int) == SIG_ERR)
+	{
+		printf("signal sigint 1 err!\n");
+		exit(-1);
+	}
+	if (sigprocmask(SIG_SETMASK, &osig, NULL) == -1)
+	{
+		printf("sigprocmask 1 err!\n");
+		exit(-1);
+	}
+	printf(" pause ...\n");
+	sigprocmask(0, NULL, &o_set);
+	if (sigismember(&o_set, SIGINT))
+	{
+		printf("is mask\n");
+	}
+	return 0;
+}
+void sig_int(int sig)
+{
+	printf("int sig hand\n");
+}
+```
+执行结果是：
+```
+如果是默认处理，在sleep过程中，产生中断信号，结果是：
+$ ./test_pend
+^Cint sig hand
+ pause ...
+
+ 如果改成忽略，在sleep过程中，产生中断信号，结果是：
+ ./test_pend
+^C pause ...
+```
+
+注意：
+* 在进程解除对某个信号的阻塞之前，信号发生了多次，大多数系统都只递送这种信号一次。
+
+# kill和raise函数
+
+kill函数将信号发送给进程或进程组
+raise函数允许进程向自身发送信号
+
+```
+#include <signal.h>
+
+int kill(pid_t pid, int signo);
+int raise(int signo);
+```
+下面是等价的：
+
+raise(signo) == kill(getpid(), signo)
+
+kill函数的pid参数，有四种不同情况：
+* pid >0——发送给pid
+* pid == 0 ——将信号发送给与发送进程属于同一进程组的所有进程（这些进程的进程组ID等于发送进程的进程组ID）（有权限限制）
+* pid < 0 ——发送给进程组ID为|pid|的进程（有权限限制）
+* pid == -1 —— 将信号发送给发送进程有权限向它们发送信号的系统上的所有进程。
+
+上面提到了，给其它进程发信号需要权限，具体是指：
+
+* 超级用户可以将信号发送给任一进程
+* 非超级用户，规则是发送者的实际或者有效用户ID必须等于接收者的实际或者有效用户ID，若设置了“设置用户权限位”，则检查保存的设置用户ID
+
+注意： 若signo为0，定义为空信号，kill扔执行正常的错误检查，但不发送信号。这常被用来：
+* 确定一个特定的进程是否仍旧存在，若进程不存在，则返回-1，并将errno设置为ESRCH
+
+# alarm和pause函数
+
+alarm函数可以设置一个计时器，在将来某个指定的时间，该计时器会超时
+* 当计时器超时时，产生SIGALRM信号。
+* 若不忽略或者不捕捉此信号，则默认动作是终止调用该alarm函数的进程
+
+```
+#include <unistd.h>
+unsigned int alarm(unsigned int seconds);
+```
+
+对于alarm，注意：
+* 每个进程只能有个闹钟时钟
+* 调用alarm时，以前为该进程设置过闹钟时钟，且没有超时，则将该预留值作为本次alarm调用的值返回，用新值地带旧的
+* 之前调用过alarm，并没有超时，本次调用seconds为0，则取消之前设置的
+
+pause函数使调用进程挂起直到捕捉到一个信号
+
+```
+#include <unistd.h>
+int pause(void)
+```
+
+条件：
+* 只有执行了一个信号处理程序并从其返回时，pause才返回，此时pause返回-1，并设置errno为EINTR
+
+## 使用alarm实现sleep函数，并暴露问题
+
+使用信号时，需要精细而周到的考虑，下面代码列出几个问题：
+
+* 问题1：竞争条件
 
 
 
