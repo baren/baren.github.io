@@ -307,14 +307,266 @@ int pause(void)
 
 * 问题1：竞争条件
 
+看下面的sleep1的实现：
+
+```
+unsigned int sleep1(unsigned int nsecs)
+{
+	if(signal(SIGABRT, sig_alarm) == SIG_ERR)
+	{
+		printf("can't signal alarm!\n");
+		return nsecs;
+	}
+	alarm(nsecs);
+	pause();
+	return (alarm(0)); // 返回未完成的时间
+}
+
+void sig_alarm(int signo)
+{
+	;
+}
+```
+这段代码的实现问题是：
+1. 修改了alarm信号的处理函数（如果之前注册过）
+2. 如果之前调用过alarm，这个sleep1的实现，在第一次调用alarm会抹掉之前设置
+3. 有竞争条件，如果系统繁忙，在alarm后pause之前时间到期，则pause会一直等待。
+
+* 问题2：涉及到其它信号交互时，会产生新的问题，这里的代码产生的问题是回提前终止其它信号的处理程序
+
+使用setjmp和longjmp函数来优化上面的sleep1的实现，主要解决第三个问题，也就是竞争条件的问题。
 
 
+第三个问题，主要是在alarm和pause之间，出现竞争条件。使用setjmp和longjmp，可以绕过这个问题：
+
+```
+
+#include <stdlib.h>
+#include <signal.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/signal.h>
+#include <setjmp.h>
+
+void sig_alarm(int signo);
+static jmp_buf env_alrm;
+int sleep2(int);
+int main(int argc, char **argv)
+{
+	sleep2(2);
+	exit(0);
+}
+
+int sleep2(int sec)
+{
+
+	if(signal(SIGALRM, sig_alarm) == SIG_ERR)
+	{
+		printf("sigalarm err!\n");
+		return sec;
+	}
+	if(setjmp(env_alrm) == 0)
+	{
+		alarm(sec);
+		pause();
+	}
+	return (alarm(0));
+}
+
+void sig_alarm(int signo)
+{
+	longjmp(env_alrm, 1);
+}
 
 
+```
+
+这个实现，有个很难察觉到的问题，涉及到其它信号处理程序：如果alarm处理函数中断了正在执行的其它信号处理程序，则调用longjmp导致其它信号处理程序提早终止了（longjmp跳到sleep2的setjmp地方，而不是继续原来的步骤）。
+
+## 除了实现sleep，还可以实现对于可能阻塞的操作设置时间上限
+
+下面例子，简单使用alarm和pause，模拟实现了一个可以超时的read函数：
+
+```
+#include <stdlib.h>
+#include <stdio.h>
+#include <setjmp.h>
+#include <signal.h>
+#include <sys/signal.h>
+#include <unistd.h>
+
+int read_timeout(int fd, void *buf, size_t size, int timeout);
+
+static jmp_buf env_alarm;
+void sig_alarm(int signo);
+int main(int argc, char **argv)
+{
+	char line[100];
+	int n;
+	n = read_timeout(STDIN_FILENO, line, 100, 3);
+	if(n < 0)
+	{
+		printf("read timeout\n");
+	} else {
+		printf("read len %d.\n", n);
+	}
+	exit(0);
+}
+int read_timeout(int fd, void *buf, size_t size, int timeout)
+{
+	int n = 0;
+	if(signal(SIGALRM, sig_alarm) == SIG_ERR)
+	{
+		printf("sig alarm err\n");
+		return -1;
+	}
+	if(setjmp(env_alarm) == 0)
+	{
+		alarm(timeout);
+		if((n=read(fd, buf, size)) < 0)
+		{
+			printf("read err!\n");
+			return n;
+		}
+		alarm(0);
+		return n;
+	}
+	return -1;
+}
+
+void sig_alarm(int signo)
+{
+		longjmp(env_alarm, 1);
+}
+
+```
+
+执行结果：
+```
+user@usertekiMacBook-Pro unix_test$ ./read_timeout
+read timeout
+user@usertekiMacBook-Pro unix_test$
+user@usertekiMacBook-Pro unix_test$ ./read_timeout
+dd
+read len 3.
+```
+
+注意：同样，上面这个简单程序，涉及到其它信号时，也会出现提前中断其它信号处理函数的问题。
+
+# 信号集
+
+可以使用sigset_t 数据结构代表信号集，并定义了下列五个处理信号集的函数
 
 
+```
+#include <signal.h>
+
+int sigempty(sigset_t *set);
+int sigfillset(sigset_t *set);
+int sigaddset(sigset_t *set, int signo);
+int sigdelset(sigset_t *set, int signo);
+	// 四个函数返回值：成功，返回0，失败返回-1
+int sigismember(const sigset_t *set, int signo);
+	// 若真，返回1，假，返回0，出错，返回-1
+
+```
+
+# sigpromask函数
+
+调用sigprocmask函数，可以检测或修改其信号屏蔽字或者一个步骤同时执行测试和修改两个动作。
+
+```
+#include <signal.h>
+
+int sigprocmask(int how, const sigset_t *restrict set, sigset_t *restrict oset);  // 成功，返回0，失败返回-1
+
+```
+* oset非空，则进程当前信号屏蔽字通过oset返回
+* set非空，则根据第一个参数how指示如何修改当前信号屏蔽字
+* set为空，不改变
+
+how的值：
+
+* SIG_BLOCK: 新屏蔽字是当前信号屏蔽字+set的并集
+* SIG_UNBLOCK: 新屏蔽字是当前信号屏蔽字+set的交集
+* SIT_SETMASK: 被set指向的值替代
 
 
+# sigpending函数
+
+sigpending函数返回信号集，其中的各个信号对于调用进程是阻塞的，因此不能diliver，因此是未决的。简单说就是返回未决的信号集。
+
+```
+#include <signal.h>
+
+int sigpending(sigset_t *set);
+```
+
+注意：信号处理函数设置为捕捉函数和默认动作，信号是阻塞的。这是发生的信号都是未决的。被block的信号都会等待，知道解除阻塞信号。
+
+例子：
+
+```
+#include <stdlib.h>
+#include <signal.h>
+#include <sys/signal.h>
+#include <unistd.h>
+#include <stdio.h>
+
+void sig_quit(int);
+
+int main(int argc, char **argv)
+{
+	sigset_t oldset, newset, quitset;
+	sigemptyset(&quitset);
+	sigaddset(&quitset, SIGINT);
+
+	// ************这段程序，注释掉，则采用默认值，不注释掉，则采用设置的捕捉函数，可以观察到，信号是如何pending，并在解除后如果递送的。
+	if (signal(SIGINT, sig_quit) == SIG_ERR)
+	{
+		printf("sig err\n");
+		exit(-1);
+	} 
+	// ************
+
+	if (sigprocmask(SIG_BLOCK, &quitset, &oldset) == -1)
+	{
+		printf("mask sig err!\n");
+		exit(0);
+	}
+	// sleep 5 seconds
+	sleep(5);
+	if (sigpending(&newset) == -1)
+	{
+		printf("pending err \n");
+		exit(0);
+	}
+	if (sigismember(&newset, SIGINT))
+		printf("sigquit is block\n");
+
+	if (sigprocmask(SIG_SETMASK, &oldset, NULL) == -1)
+	{
+		printf("mask ret sig err!\n");
+		exit(0);
+	}
+	printf("sig int unblock\n");
+	sleep(5);
+	return 0;
+}
+
+void sig_quit(int signo)
+{
+	printf("sigquit catch\n");
+
+	if (signal(SIGINT, sig_quit) == SIG_ERR)
+	{
+		printf("sig err\n");
+		exit(-1);
+	}
+}
+```
+
+# sigaction函数
 
 
 
