@@ -9,7 +9,7 @@ tags:
 - 笔记
 ---
 
-[system]: /assets/Figure10-1 "time-function"
+[system]: /assets/Figure10-1.png "time-function"
 
 # 信号概念
 
@@ -443,6 +443,7 @@ void sig_alarm(int signo)
 ```
 
 执行结果：
+
 ```
 user@usertekiMacBook-Pro unix_test$ ./read_timeout
 read timeout
