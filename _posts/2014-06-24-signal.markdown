@@ -568,7 +568,114 @@ void sig_quit(int signo)
 
 # sigaction函数
 
+sigaction函数的功能是*检查*或*修改*与指定信号相关联的处理动作（或同时执行）。
 
+```
+#include <signal.h>
+
+int sigaction(int signo, const struct sigaction *restrict act, struct sigaction *restrict oact);
+// 成功，返回0，出错返回-1
+
+```
+
+对于参数：
+
+* signo是信号
+* act非空，则修改信号动作
+* oact非空，则由oact返回上一个动作
+
+结构体struct sigaction的定义：
+
+```
+
+struct sigaction {
+	void (*sa_handler)(int); // 信号处理函数的地址，或者SIG_IGN或SIG_DFL
+	sigset_t sa_mask; // 额外需要阻塞的信号集
+	int sa_flags;  // 信号选项，可以设置这个选项来控制处理函数行为
+
+	/*替换的处理程序，当指定sa_flags为SA_SIGINFO时，采用这个处理函数，提供了额外的一些信息*/
+	void (*sa_sigaction)(int, siginfo_t *, void *);
+}
+
+```
+
+若更改信号处理函数，则：
+* sa_handler指定处理函数的地址
+* sa_mask则是信号集，在调用该信号处理函数之前，会先把这个信号集指定的信号加到进程的信号屏蔽字中。信号处理函数返回时，再复原。在信号处理程序被调用时，操作系统建立的新信号屏蔽字也包括正在被递送的信号，这会保证在当前信号处理时，这个信号再次发生，会一直阻塞，直到处理函数完成。
+* sa_flags字段指定对信号处理的各个选项:
+> * SA_RESTART:由此信号中断的系统调用自动重新启动
+> * SA_INTERRUPT: 由此信号中断的系统调用不会自动重启
+> * SA_SIGINFO: 有此选项对信号，会调用sa_sigaction函数，此函数会给额外提供了附加信息：1）指向siginfo结构的指针；2）指向进程上下文标识符的指针
+
+注意：
+> 除了那些为了兼容而继续保留原始的signal函数的语义的系统外，大部分系统都是用sigaction来实现signal函数的。
+
+# sigsetjmp和siglongjmp函数
+
+在捕捉到一个信号时，会进入信号捕捉函数，此时会发生：
+
+* 进入信号处理函数时，当前信号会被自动加到进程的信号屏蔽字中。这阻止了后来产生的这种信号中断该信号处理程序
+* 当正常从信号处理函数中返回时，会自动恢复当前信号为非屏蔽
+
+但是，当在信号处理函数内，调用了longjmp函数，那么是否恢复这个被屏蔽的当前信号？
+
+FreeBSD 5.2.1 和Mac OS X10.3中，setjmp和longjmp保持和恢复信号屏蔽字
+
+Linux2.4.22和Solaris9 并不执行这种操作。FreeBSD 5.2.1 和Mac OS X10.3提供函数_setjmp和_longjmp，他们不保存和恢复信号屏蔽字
+
+为了允许两种形式的行为存在， POSIX.1并没有说明setjmp和longjmp对屏蔽字的作用，而是定义了两个新函数sigsetjmp和siglongjmp。在信号处理程序中进行非局部跳转是，使用这两个。
+
+
+```
+#include <setjmp.h> // 与setjmp和longjmp一个头
+
+int sigsetjmp(sigjmp_buf env, int savemask); // 直接调用，返回0，若从siglongjmp调用返回，则返回非0值
+
+void siglongjmp(sigjmp_buf env, int val);
+
+
+```
+
+若savemask非零，则env保存进程的当前屏蔽字。并在siglongjmp调用时，恢复由env保存进程的当前屏蔽字。
+
+
+涉及到信号时，使用sigsetjmp和siglongjmp的典型使用模板是：
+
+```
+static sigjmp_buf;
+static volatile sig_atomic_t canjump;
+
+
+....
+
+// 在主函数中
+if (sigsetjmp(jmpbuf, 1)) {
+	....
+}
+
+canjump = 1; // 调用sigsetjmp后才设置canjump为非零
+
+
+
+// 然后，在信号处理程序中，这样：
+void sig_handler(int) {}
+
+if (canjmp == 0) // 只有非零时，才调用siglongjmp
+	return
+
+....
+
+siglongjmp(jmpbuf, 1);
+
+
+} 
+```
+
+> 原因：
+> 之所以使用canjump，主要是保护机制，防止当jmpbuf还没有被sigsetjmp初始化时，就调用了信号处理程序。
+> 在非信号环境下没有问题，但在信号环境下，信号是随时发生的，因此需要保护
+
+# sigsuspend函数
 
 
 
