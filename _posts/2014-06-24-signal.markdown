@@ -9,6 +9,7 @@ tags:
 - 笔记
 ---
 
+[system]: /assets/Figure10-1 "time-function"
 
 # 信号概念
 
@@ -676,6 +677,135 @@ siglongjmp(jmpbuf, 1);
 > 在非信号环境下没有问题，但在信号环境下，信号是随时发生的，因此需要保护
 
 # sigsuspend函数
+
+屏蔽进程的信号，使用这种技术，可以保护不希望由信号中断的代码临界区。然后在临界区之后等待以前的信号发生。
+
+但是下面的实现方式有问题：
+
+```
+sigprocmask(SIG_BLOCK, &newmask, &oldmask);
+
+// .....临界区代码
+
+1) sigprocmask(SIG_BLOCK, &oldmask, NULL);
+2) pause(); // 等待之前阻塞的信号发生
+
+```
+
+上面代码，1）和2）代码出有问题，会有竞争条件，在sigprocmask和pause之间有可能信号会发生，这会导致pause无法返回，永远阻塞。
+
+解决这个竞争条件的办法就是让这两个操作合并成一个原子操作。这就是sigsuspend函数的由来。
+
+```
+
+#include <signal.h>
+
+int sigsuspend(const sigset_t * sigmask);
+
+```
+
+用sigsuspend实现临界区代码，可以这样：
+
+```
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/signal.h>
+
+void sig_int(int signo);
+
+int main(int argc, char **argv)
+{
+
+	sigset_t newsigset, oldsigset, waitsigset;
+	sigemptyset(&newsigset);
+	sigaddset(&waitsigset, SIGUSR1);
+	struct sigaction act;
+	act.sa_handler = sig_int;
+
+	if(sigaction(SIGINT, &act, NULL) < 0)
+	{
+		printf("siganction err.\n");
+		exit(-1);
+	}
+	if(sigprocmask(SIG_BLOCK, &newsigset, &oldsigset) < 0)
+	{
+		printf("sigprocmask err\n");
+		exit(-1);
+	}
+	// code procted
+	printf("this is procted code!\n");
+
+	if(sigsuspend(&waitsigset) != -1)
+	{
+		printf("sigsuspend err\n");
+		exit(-1);
+	}
+	printf("after sigsuspend\n");
+	if(sigprocmask(SIG_SETMASK, &oldsigset, NULL) < 0)
+	{
+		printf("revert old sig mask err\n");
+		exit(-1);
+	}
+
+	return 0;
+}
+
+void sig_int(int signo)
+{
+	printf("catch signo %d\n", signo);
+}
+```
+
+注意sigsuspend函数实现的巧妙之处：
+
+* 为了实现解除屏蔽（sigprocmask）和等待（pause），sigsuspend把进程的屏蔽信号设置为参数信号，并在返回后设置为调用sigsuspend之前的屏蔽信号值。
+
+sigsuspend函数还有两种经典应用：
+
+1. 等待一个信号处理程序设置一个全局变量
+2. 父子进程实现同步
+
+注意：在实现父子进程通讯，可以使用kill给对象发信号，并使用sigsuspend等待某种条件
+
+# abort函数
+
+abort函数使异常程序终止。
+
+```
+#include <stdlib.h>
+
+void abort(void);
+
+```
+
+这个函数将SIGABRT信号发送给调用进程。
+
+ISO C规定 abort的实现须向主机环境递送一个成功的通知，一般是通过raise(SITABRT)或kill(gitpid(), SIGABRT)实现，这个规定，允许程序做清理工作。
+
+一般系统的abort实现，都会冲洗输出流以及是否要删除临时文件。
+
+可以看一下abort的函数实现示例，通过这个示例，学会：
+
+* sigaction函数的使用
+* kill函数的使用：kill函数可以给其它进程发送信号。若发给本进程，并且此信号是不被阻塞的，那么kill返回之前，该信号（或某个未决、未阻塞的信号）就被传送给了该进程。这样，kill返回了，就知道该进程一定捕捉到该信号。
+
+# system函数
+
+ISO C定义了system函数，这个函数可以执行系统命令，这个函数的实现也牵扯到信号问题。若不处理，会有问题。
+
+这里通过system的实现，注意信号程序开发的各种问题。
+
+看下面调用过程：
+![alt text][system]
+
+若没有处理信号，问题有：
+
+* 若进程（a.out）捕获SIGCHID信号，当system创建的子进程结束，系统会向父进程（a.out）发送SIGCHID信号，父进程会捕捉。*但这阻止了system函数获取它自己创建子进程的状态*
+* 若system系统没有屏蔽中断和退出信号，则如果想给shell调用程序发送中断信号时，系统会同时向负责进程发送信号（因为都属于前台进程组）
+
+
 
 
 
