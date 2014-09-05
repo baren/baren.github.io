@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Baren Blog</title>
+  <title>linux最大文件描述符设置 - Baren Blog</title>
   <meta name="author" content="Your Name">
 
   
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://baren.github.io/">
+  <link rel="canonical" href="http://baren.github.io/blog/2013/12/17/linux-open-max-fd-num/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -62,15 +62,12 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2013/12/17/linux-open-max-fd-num/">Linux最大文件描述符设置</a></h1>
+      <h1 class="entry-title">Linux最大文件描述符设置</h1>
     
     
       <p class="meta">
@@ -93,7 +90,7 @@
   </header>
 
 
-  <div class="entry-content"><p>在linux中，所有都是文件，也就是说一个连接也是一个文件。每打开一个文件，内核会分配一个文件描述符，因此一个进程可打开的最大文件描述符决定了可支持的最大连接数。这是一个重要的参数。</p>
+<div class="entry-content"><p>在linux中，所有都是文件，也就是说一个连接也是一个文件。每打开一个文件，内核会分配一个文件描述符，因此一个进程可打开的最大文件描述符决定了可支持的最大连接数。这是一个重要的参数。</p>
 
 <p>linux有两个限制：</p>
 
@@ -171,18 +168,57 @@
 
 <p>这样，只影响当前登录用户，下次重新登录后失效</p>
 </div>
+
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Your Name</span></span>
+
+      
+
+
+
+
+
+
+
+
   
 
 
-    </article>
+<time datetime="2013-12-17T14:36:20+08:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
   
-  <div class="pagination">
+    <a class='category' href='/blog/categories/linux/'>linux</a>
+  
+</span>
+
+
+    </p>
     
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2013/12/17/linux-open-max-fd-num/" data-via="" data-counturl="http://baren.github.io/blog/2013/12/17/linux-open-max-fd-num/" >Tweet</a>
+  
+  
+  
 </div>
+
+    
+    <p class="meta">
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
 <aside class="sidebar">
   
     <section>
@@ -202,6 +238,7 @@
 
   
 </aside>
+
 
     </div>
   </div>

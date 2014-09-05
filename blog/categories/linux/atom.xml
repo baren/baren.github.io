@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Baren Blog]]></title>
-  <link href="http://baren.github.io/atom.xml" rel="self"/>
+  <title><![CDATA[Category: linux | Baren Blog]]></title>
+  <link href="http://baren.github.io/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
   <updated>2014-09-05T13:52:14+08:00</updated>
   <id>http://baren.github.io/</id>
@@ -27,43 +27,34 @@
 2、每个进程的限制。一个应用可打开的最大文件描述符
 </code></pre>
 
-<p>对于系统限制，可以通过这个查看：</p>
-
+<p>对于系统限制，可以通过这个查看：
 <div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>cat /proc/sys/fs/file-max
 131072
-<span class="nv">$ </span>cat /proc/sys/fs/file-nr 
-<span class="m">510</span>     <span class="m">0</span>       131072</code></pre></div>
-
+<span class="nv">$ </span>cat /proc/sys/fs/file-nr
+<span class="m">510</span>     <span class="m">0</span>       131072</code></pre></div></p>
 
 <p>其中，file-nr返回结果意思是：
     510，已打开的文件句柄
     0，已分配但是没有用的文件句柄
     131072，系统支持最大的文件句柄数</p>
 
-<p>其中，系统支持的最大的文件句柄数还可以用</p>
-
+<p>其中，系统支持的最大的文件句柄数还可以用
 <div class="highlight"><pre><code class="language-bash" data-lang="bash">cat /proc/sys/fs/file-max（或者sysctl fs.file-max）</code></pre></div>
-
-
-<p>来查看。</p>
+来查看。</p>
 
 <p>修改系统限制，可以这样修改：</p>
 
-<p>修改文件/etc/sysctl.conf 中的</p>
-
-<div class="highlight"><pre><code class="language-bash" data-lang="bash">fs.file-max <span class="o">=</span> 100000</code></pre></div>
-
+<p>修改文件/etc/sysctl.conf 中的
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">fs.file-max <span class="o">=</span> 100000</code></pre></div></p>
 
 <p>一行，保存后，让用户重新登录一下，即可永久生效；或者执行sysctl -p命令。</p>
 
-<p>对于用户级限制，可以通过下面命令查看：</p>
-
+<p>对于用户级限制，可以通过下面命令查看：
 <div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">ulimit</span> -Hn
-65536
+65536&lt;/p&gt;
 
-<span class="nv">$ </span><span class="nb">ulimit</span> -Sn
-20240</code></pre></div>
-
+&lt;p&gt;<span class="nv">$ </span><span class="nb">ulimit</span> -Sn
+20240</code></pre></div></p>
 
 <p>其中，
 -H是硬限制. -S是软限制。区别是软限制，任何进程都可以修改，但是硬限制，只允许root权限用户修改。</p>
@@ -71,12 +62,11 @@
 <p>如果要修改默认的用户级限制，可以编辑文件/etc/security/limits.conf
 比如：</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># End of file</span>
+<p><div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># End of file</span>
     * soft nproc 20240
     * hard nproc 16384
     * soft nofile 20240
-    * hard nofile 65536</code></pre></div>
-
+    * hard nofile 65536</code></pre></div></p>
 
 <p>解释如下：
 第一列的意思是设置针对哪些用户生效，* 表示针对所有用户，但是，它不包含root，因此，如果要对root用户有效，需要增加root用户，也就是后面两行。</p>
@@ -91,8 +81,7 @@
 
 <p>如果不想永久设置，还可以使用下面命令临时设置：</p>
 
-<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">ulimit</span> -n 65536</code></pre></div>
-
+<p><div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">ulimit</span> -n 65536</code></pre></div></p>
 
 <p>这样，只影响当前登录用户，下次重新登录后失效</p>
 ]]></content>
