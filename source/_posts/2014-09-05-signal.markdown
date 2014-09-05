@@ -1,0 +1,808 @@
+---
+layout: post
+title: "apue(信号)"
+date: 2014-06-24 20:00:20 +0800
+comments: true
+categories: linux
+---
+
+
+[system]: /images/assets/Figure10-1.png "time-function"
+
+# 信号概念
+
+信号是软中断，提供了一种处理异步事件的方法
+
+关于信号：
+
+* 每个信号都有一个唯一的整数定义，从1开始（不存在为0的信号，值为0可以利用kill函数有其它作用），顺序递增。并且还为每个信号定义了一个名字，以SIG开头。
+这些信号定义在signal.h中
+* 产生信号的条件
+> * 用户按终端键，印发终端产生信号
+> * 硬件异常产生信号，比如无效的内存引用，除数为0等
+> * 进程调用kill函数，将信号发送给另一个进程（包括自己）或进程组（有权限限制）
+> * 用户用kill命令给进程发送信号
+> * 当检测到某种条件已经发生，并应将信号通知有关进程时，也产生信号。比如SIGURG（网络连接传来数据），SIGPIPE在管道的读进程终止后，一个进程写此管道时产生。
+
+几种处理信号的方式
+
+* 忽略信号——只有两种信号不能忽略，SIGKILL和SIGSTOP，若忽略硬件产生的信号，行为是未定义的
+* 捕捉信号——需要注册一个信号处理函数
+* 执行默认操作——大多数的信号的默认动作是终止信号
+
+# signal函数
+
+unix系统提供了两个改变信号处理的方式：signal和signalaction函数
+
+现在推荐使用signalaction函数实现信号处理。因为signal的实现与系统有关，在程序的移植方面，可能会有问题。
+
+```
+void (*signal(int sig, void (*func)(int)))(int)
+// 参数 void (*func)(int)是信号处理函数指针，接收int信号值参数，并返回void
+// signal函数返回一个函数指针，类型与信号处理函数指针一样，返回的是上一个信号处理函数的地址
+```
+
+signal函数太复杂，可以使用typedef类型定义简化一下：
+
+```
+typedef void Sigfunc(int);
+
+Sigfunc *signal(int Sigfunc *func);
+
+```
+
+一般，在singal头文件中，还定义了几个函数指针常量，表示出错、忽略和默认：
+
+```
+#define SIG_ERR (void (*)())-1 // 把-1强制转换成一个函数指针
+#define SIG_DFL (void (*)())0 // 把0强制转换成一个函数指针
+#define SIG_IGN (void (*)())1 // 把-1强制转换成一个函数指针
+
+```
+
+可以使用这几个预定义函数常量，来判断信号捕获程序。
+
+关于信号处理程序，注意点：
+
+* 只能捕获已定义的信号，不能捕获未定义的，比如signal(100, func)，会返回错误
+* SIGUSR1和SIGUSR2是用户定义信号，可用于应用程序，在mac上，其值是30和31
+* kill也只能发送已定义的信号值，不能kill -100 pid，这也是错误的
+
+# 中断的系统调用
+
+## 中断低速系统调用
+
+若进程调用了一个低速的系统调用，
+
+并且这个系统调用正在阻塞
+
+此时，
+
+捕捉到一个信号。
+
+结果是：该系统调用就被中断不被执行了。
+
+
+*注意*：
+* 必须区分是系统调用还是程序函数。当捕捉到某个信号时，被中断的是内核中正在执行的系统调用
+* 还必须区分是低速系统调用还是其它系统调用
+
+低速系统调用是可能是进程阻塞的系统调用，一般包括
+
+* 读写某些类型的文件（管道、终端设备、网络设备），若数据不存在或者不能够接收数据，则会使调用者永远阻塞
+* 打开某些类型的文件，在某个条件发生之前，也可能被阻塞（打开终端设备）
+* pause和wait，pause会使调用进程一直休眠，指导捕获一个信号
+* 某些ioctl操作
+* 某些进程间通信函数
+
+这个需要注意的是，磁盘IO操作并不是低速系统调用。
+
+## 低速系统调用被中断后的处理和重启
+
+一旦低速系统调用被中断，系统调用就失败了，此时，该系统调用出错，并且，系统会设置全局变量error的值为EINTR。
+
+这样我们就能够处理这种失败。有两种处理方式：
+
+* 系统调用失败时手动检查，并根据信号再次调用系统调用或者其它动作
+* 某些中断的系统调用支持自动重启动
+
+
+### 手动检查
+
+比如可以这样处理：
+
+```
+while((cnt=read(fd, buf, BUF_SIZE)) == -1 && errno == EINTR)  // read返回错误，并且全局变量为EINTR，表示被中断
+	continue;  // 啥也不做
+
+if (cnt == -1)	// read读取错误，而不是被中断
+	errExit("read");  
+```
+
+如果经常使用这种检查，还可以定义一个宏：
+
+```
+#define NO_EINTR(stmt)	while((stmt) == -1 && errno == EINTR);
+
+// 然后
+
+NO_EINTR(cnt == read(fd, buf, BUF_SIZE));
+
+if (cnt == -1)	// read读取错误，而不是被中断
+	errExit("read");  
+```
+
+### 自动重启动
+
+为了解决以上这种经常性的重复检查问题，4.2BSD系统引物了某些被中断的系统调用的自动重启动。并不是所有的系统调用都支持自动重启动，只有下列函数：
+
+```
+wait waitpid read write ioctl readv writev
+
+
+```
+
+如果使用系统调用的重启动功能，可以使用sigaction函数，指定flag为SA_RESTART即可。
+
+# 可重入函数
+
+在信号处理程序中，不能调用不可重入函数。
+
+所谓不可重入函数是指：
+
+1. 它们使用了静态数据结构或全局变量
+2. 调用malloc和free，因为malloc维护了一个全局链表
+3. 标准IO函数
+
+而可重入函数，一般是指：
+* 线程安全函数，既任何一个进程内，多个线程可以同时执行的函数
+
+在标准C函数库中，不可重入函数比较普遍。
+
+比如malloc和free
+，在主程序中调用malloc过程中，产生了信号，并在信号处理程序中调用了malloc，有可能会破坏malloc维护的链表，导致不可预料的结果发生。
+
+# 可靠信号的术语和语义
+
+* 递送（delivery）信号：当引发信号的事件*发生*时，为进程产生一个信号（或向进程产生一个信号）
+* 未决（pending）的信号：在信号产生和递送之间的时间间隔内，称信号是未决的
+
+进程可以设置阻塞信号。
+
+若信号被进程设置为阻塞，并且对该信号的动作是系统**默认动作**或**捕捉该信号**，则为该进程将此信号保持为未决状态（产生信号和递送信号之间的状态）。
+
+解除未决状态：
+	* 对信号解除了阻塞
+	* 或者将此信号的动作改为忽略。
+
+注意：
+* 如果信号处理函数不是默认或者捕捉（比如忽略），则信号不会保持为未决状态，
+看下面例子：
+
+```
+#include <stdlib.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/signal.h>
+#include <stdio.h>
+void sig_int(int sig);
+int main(int argc, char **argv)
+{
+	sigset_t osig;
+	sigset_t newsig, o_set;
+
+	sigemptyset(&newsig);
+	sigaddset(&newsig, SIGINT);
+	// if (signal(SIGINT, SIG_DFL) == SIG_ERR) // 忽略处理
+	if (signal(SIGINT, SIG_DFL) == SIG_ERR) // 默认处理
+	{
+		printf("signal sigint err!\n");
+		exit(-1);
+	}
+	if (sigprocmask(SIG_SETMASK, &newsig, &osig) == -1)
+	{
+		printf("sigprocmask err!\n");
+		exit(-1);
+	}
+	//pause();
+	sleep(4);
+
+	if (signal(SIGINT, sig_int) == SIG_ERR)
+	{
+		printf("signal sigint 1 err!\n");
+		exit(-1);
+	}
+	if (sigprocmask(SIG_SETMASK, &osig, NULL) == -1)
+	{
+		printf("sigprocmask 1 err!\n");
+		exit(-1);
+	}
+	printf(" pause ...\n");
+	sigprocmask(0, NULL, &o_set);
+	if (sigismember(&o_set, SIGINT))
+	{
+		printf("is mask\n");
+	}
+	return 0;
+}
+void sig_int(int sig)
+{
+	printf("int sig hand\n");
+}
+```
+执行结果是：
+```
+如果是默认处理，在sleep过程中，产生中断信号，结果是：
+$ ./test_pend
+^Cint sig hand
+ pause ...
+
+ 如果改成忽略，在sleep过程中，产生中断信号，结果是：
+ ./test_pend
+^C pause ...
+```
+
+注意：
+* 在进程解除对某个信号的阻塞之前，信号发生了多次，大多数系统都只递送这种信号一次。
+
+# kill和raise函数
+
+kill函数将信号发送给进程或进程组
+raise函数允许进程向自身发送信号
+
+```
+#include <signal.h>
+
+int kill(pid_t pid, int signo);
+int raise(int signo);
+```
+下面是等价的：
+
+raise(signo) == kill(getpid(), signo)
+
+kill函数的pid参数，有四种不同情况：
+* pid >0——发送给pid
+* pid == 0 ——将信号发送给与发送进程属于同一进程组的所有进程（这些进程的进程组ID等于发送进程的进程组ID）（有权限限制）
+* pid < 0 ——发送给进程组ID为|pid|的进程（有权限限制）
+* pid == -1 —— 将信号发送给发送进程有权限向它们发送信号的系统上的所有进程。
+
+上面提到了，给其它进程发信号需要权限，具体是指：
+
+* 超级用户可以将信号发送给任一进程
+* 非超级用户，规则是发送者的实际或者有效用户ID必须等于接收者的实际或者有效用户ID，若设置了“设置用户权限位”，则检查保存的设置用户ID
+
+注意： 若signo为0，定义为空信号，kill扔执行正常的错误检查，但不发送信号。这常被用来：
+* 确定一个特定的进程是否仍旧存在，若进程不存在，则返回-1，并将errno设置为ESRCH
+
+# alarm和pause函数
+
+alarm函数可以设置一个计时器，在将来某个指定的时间，该计时器会超时
+* 当计时器超时时，产生SIGALRM信号。
+* 若不忽略或者不捕捉此信号，则默认动作是终止调用该alarm函数的进程
+
+```
+#include <unistd.h>
+unsigned int alarm(unsigned int seconds);
+```
+
+对于alarm，注意：
+* 每个进程只能有个闹钟时钟
+* 调用alarm时，以前为该进程设置过闹钟时钟，且没有超时，则将该预留值作为本次alarm调用的值返回，用新值地带旧的
+* 之前调用过alarm，并没有超时，本次调用seconds为0，则取消之前设置的
+
+pause函数使调用进程挂起直到捕捉到一个信号
+
+```
+#include <unistd.h>
+int pause(void)
+```
+
+条件：
+* 只有执行了一个信号处理程序并从其返回时，pause才返回，此时pause返回-1，并设置errno为EINTR
+
+## 使用alarm实现sleep函数，并暴露问题
+
+使用信号时，需要精细而周到的考虑，下面代码列出几个问题：
+
+* 问题1：竞争条件
+
+看下面的sleep1的实现：
+
+```
+unsigned int sleep1(unsigned int nsecs)
+{
+	if(signal(SIGABRT, sig_alarm) == SIG_ERR)
+	{
+		printf("can't signal alarm!\n");
+		return nsecs;
+	}
+	alarm(nsecs);
+	pause();
+	return (alarm(0)); // 返回未完成的时间
+}
+
+void sig_alarm(int signo)
+{
+	;
+}
+```
+这段代码的实现问题是：
+1. 修改了alarm信号的处理函数（如果之前注册过）
+2. 如果之前调用过alarm，这个sleep1的实现，在第一次调用alarm会抹掉之前设置
+3. 有竞争条件，如果系统繁忙，在alarm后pause之前时间到期，则pause会一直等待。
+
+* 问题2：涉及到其它信号交互时，会产生新的问题，这里的代码产生的问题是回提前终止其它信号的处理程序
+
+使用setjmp和longjmp函数来优化上面的sleep1的实现，主要解决第三个问题，也就是竞争条件的问题。
+
+
+第三个问题，主要是在alarm和pause之间，出现竞争条件。使用setjmp和longjmp，可以绕过这个问题：
+
+```
+
+#include <stdlib.h>
+#include <signal.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/signal.h>
+#include <setjmp.h>
+
+void sig_alarm(int signo);
+static jmp_buf env_alrm;
+int sleep2(int);
+int main(int argc, char **argv)
+{
+	sleep2(2);
+	exit(0);
+}
+
+int sleep2(int sec)
+{
+
+	if(signal(SIGALRM, sig_alarm) == SIG_ERR)
+	{
+		printf("sigalarm err!\n");
+		return sec;
+	}
+	if(setjmp(env_alrm) == 0)
+	{
+		alarm(sec);
+		pause();
+	}
+	return (alarm(0));
+}
+
+void sig_alarm(int signo)
+{
+	longjmp(env_alrm, 1);
+}
+
+
+```
+
+这个实现，有个很难察觉到的问题，涉及到其它信号处理程序：如果alarm处理函数中断了正在执行的其它信号处理程序，则调用longjmp导致其它信号处理程序提早终止了（longjmp跳到sleep2的setjmp地方，而不是继续原来的步骤）。
+
+## 除了实现sleep，还可以实现对于可能阻塞的操作设置时间上限
+
+下面例子，简单使用alarm和pause，模拟实现了一个可以超时的read函数：
+
+```
+#include <stdlib.h>
+#include <stdio.h>
+#include <setjmp.h>
+#include <signal.h>
+#include <sys/signal.h>
+#include <unistd.h>
+
+int read_timeout(int fd, void *buf, size_t size, int timeout);
+
+static jmp_buf env_alarm;
+void sig_alarm(int signo);
+int main(int argc, char **argv)
+{
+	char line[100];
+	int n;
+	n = read_timeout(STDIN_FILENO, line, 100, 3);
+	if(n < 0)
+	{
+		printf("read timeout\n");
+	} else {
+		printf("read len %d.\n", n);
+	}
+	exit(0);
+}
+int read_timeout(int fd, void *buf, size_t size, int timeout)
+{
+	int n = 0;
+	if(signal(SIGALRM, sig_alarm) == SIG_ERR)
+	{
+		printf("sig alarm err\n");
+		return -1;
+	}
+	if(setjmp(env_alarm) == 0)
+	{
+		alarm(timeout);
+		if((n=read(fd, buf, size)) < 0)
+		{
+			printf("read err!\n");
+			return n;
+		}
+		alarm(0);
+		return n;
+	}
+	return -1;
+}
+
+void sig_alarm(int signo)
+{
+		longjmp(env_alarm, 1);
+}
+
+```
+
+执行结果：
+
+```
+user@usertekiMacBook-Pro unix_test$ ./read_timeout
+read timeout
+user@usertekiMacBook-Pro unix_test$
+user@usertekiMacBook-Pro unix_test$ ./read_timeout
+dd
+read len 3.
+```
+
+注意：同样，上面这个简单程序，涉及到其它信号时，也会出现提前中断其它信号处理函数的问题。
+
+# 信号集
+
+可以使用sigset_t 数据结构代表信号集，并定义了下列五个处理信号集的函数
+
+
+```
+#include <signal.h>
+
+int sigempty(sigset_t *set);
+int sigfillset(sigset_t *set);
+int sigaddset(sigset_t *set, int signo);
+int sigdelset(sigset_t *set, int signo);
+	// 四个函数返回值：成功，返回0，失败返回-1
+int sigismember(const sigset_t *set, int signo);
+	// 若真，返回1，假，返回0，出错，返回-1
+
+```
+
+# sigpromask函数
+
+调用sigprocmask函数，可以检测或修改其信号屏蔽字或者一个步骤同时执行测试和修改两个动作。
+
+```
+#include <signal.h>
+
+int sigprocmask(int how, const sigset_t *restrict set, sigset_t *restrict oset);  // 成功，返回0，失败返回-1
+
+```
+* oset非空，则进程当前信号屏蔽字通过oset返回
+* set非空，则根据第一个参数how指示如何修改当前信号屏蔽字
+* set为空，不改变
+
+how的值：
+
+* SIG_BLOCK: 新屏蔽字是当前信号屏蔽字+set的并集
+* SIG_UNBLOCK: 新屏蔽字是当前信号屏蔽字+set的交集
+* SIT_SETMASK: 被set指向的值替代
+
+
+# sigpending函数
+
+sigpending函数返回信号集，其中的各个信号对于调用进程是阻塞的，因此不能diliver，因此是未决的。简单说就是返回未决的信号集。
+
+```
+#include <signal.h>
+
+int sigpending(sigset_t *set);
+```
+
+注意：信号处理函数设置为捕捉函数和默认动作，信号是阻塞的。这是发生的信号都是未决的。被block的信号都会等待，知道解除阻塞信号。
+
+例子：
+
+```
+#include <stdlib.h>
+#include <signal.h>
+#include <sys/signal.h>
+#include <unistd.h>
+#include <stdio.h>
+
+void sig_quit(int);
+
+int main(int argc, char **argv)
+{
+	sigset_t oldset, newset, quitset;
+	sigemptyset(&quitset);
+	sigaddset(&quitset, SIGINT);
+
+	// ************这段程序，注释掉，则采用默认值，不注释掉，则采用设置的捕捉函数，可以观察到，信号是如何pending，并在解除后如果递送的。
+	if (signal(SIGINT, sig_quit) == SIG_ERR)
+	{
+		printf("sig err\n");
+		exit(-1);
+	} 
+	// ************
+
+	if (sigprocmask(SIG_BLOCK, &quitset, &oldset) == -1)
+	{
+		printf("mask sig err!\n");
+		exit(0);
+	}
+	// sleep 5 seconds
+	sleep(5);
+	if (sigpending(&newset) == -1)
+	{
+		printf("pending err \n");
+		exit(0);
+	}
+	if (sigismember(&newset, SIGINT))
+		printf("sigquit is block\n");
+
+	if (sigprocmask(SIG_SETMASK, &oldset, NULL) == -1)
+	{
+		printf("mask ret sig err!\n");
+		exit(0);
+	}
+	printf("sig int unblock\n");
+	sleep(5);
+	return 0;
+}
+
+void sig_quit(int signo)
+{
+	printf("sigquit catch\n");
+
+	if (signal(SIGINT, sig_quit) == SIG_ERR)
+	{
+		printf("sig err\n");
+		exit(-1);
+	}
+}
+```
+
+# sigaction函数
+
+sigaction函数的功能是*检查*或*修改*与指定信号相关联的处理动作（或同时执行）。
+
+```
+#include <signal.h>
+
+int sigaction(int signo, const struct sigaction *restrict act, struct sigaction *restrict oact);
+// 成功，返回0，出错返回-1
+
+```
+
+对于参数：
+
+* signo是信号
+* act非空，则修改信号动作
+* oact非空，则由oact返回上一个动作
+
+结构体struct sigaction的定义：
+
+```
+
+struct sigaction {
+	void (*sa_handler)(int); // 信号处理函数的地址，或者SIG_IGN或SIG_DFL
+	sigset_t sa_mask; // 额外需要阻塞的信号集
+	int sa_flags;  // 信号选项，可以设置这个选项来控制处理函数行为
+
+	/*替换的处理程序，当指定sa_flags为SA_SIGINFO时，采用这个处理函数，提供了额外的一些信息*/
+	void (*sa_sigaction)(int, siginfo_t *, void *);
+}
+
+```
+
+若更改信号处理函数，则：
+* sa_handler指定处理函数的地址
+* sa_mask则是信号集，在调用该信号处理函数之前，会先把这个信号集指定的信号加到进程的信号屏蔽字中。信号处理函数返回时，再复原。在信号处理程序被调用时，操作系统建立的新信号屏蔽字也包括正在被递送的信号，这会保证在当前信号处理时，这个信号再次发生，会一直阻塞，直到处理函数完成。
+* sa_flags字段指定对信号处理的各个选项:
+> * SA_RESTART:由此信号中断的系统调用自动重新启动
+> * SA_INTERRUPT: 由此信号中断的系统调用不会自动重启
+> * SA_SIGINFO: 有此选项对信号，会调用sa_sigaction函数，此函数会给额外提供了附加信息：1）指向siginfo结构的指针；2）指向进程上下文标识符的指针
+
+注意：
+> 除了那些为了兼容而继续保留原始的signal函数的语义的系统外，大部分系统都是用sigaction来实现signal函数的。
+
+# sigsetjmp和siglongjmp函数
+
+在捕捉到一个信号时，会进入信号捕捉函数，此时会发生：
+
+* 进入信号处理函数时，当前信号会被自动加到进程的信号屏蔽字中。这阻止了后来产生的这种信号中断该信号处理程序
+* 当正常从信号处理函数中返回时，会自动恢复当前信号为非屏蔽
+
+但是，当在信号处理函数内，调用了longjmp函数，那么是否恢复这个被屏蔽的当前信号？
+
+FreeBSD 5.2.1 和Mac OS X10.3中，setjmp和longjmp保持和恢复信号屏蔽字
+
+Linux2.4.22和Solaris9 并不执行这种操作。FreeBSD 5.2.1 和Mac OS X10.3提供函数_setjmp和_longjmp，他们不保存和恢复信号屏蔽字
+
+为了允许两种形式的行为存在， POSIX.1并没有说明setjmp和longjmp对屏蔽字的作用，而是定义了两个新函数sigsetjmp和siglongjmp。在信号处理程序中进行非局部跳转是，使用这两个。
+
+
+```
+#include <setjmp.h> // 与setjmp和longjmp一个头
+
+int sigsetjmp(sigjmp_buf env, int savemask); // 直接调用，返回0，若从siglongjmp调用返回，则返回非0值
+
+void siglongjmp(sigjmp_buf env, int val);
+
+
+```
+
+若savemask非零，则env保存进程的当前屏蔽字。并在siglongjmp调用时，恢复由env保存进程的当前屏蔽字。
+
+
+涉及到信号时，使用sigsetjmp和siglongjmp的典型使用模板是：
+
+```
+static sigjmp_buf;
+static volatile sig_atomic_t canjump;
+
+
+....
+
+// 在主函数中
+if (sigsetjmp(jmpbuf, 1)) {
+	....
+}
+
+canjump = 1; // 调用sigsetjmp后才设置canjump为非零
+
+
+
+// 然后，在信号处理程序中，这样：
+void sig_handler(int) {}
+
+if (canjmp == 0) // 只有非零时，才调用siglongjmp
+	return
+
+....
+
+siglongjmp(jmpbuf, 1);
+
+
+} 
+```
+
+> 原因：
+> 之所以使用canjump，主要是保护机制，防止当jmpbuf还没有被sigsetjmp初始化时，就调用了信号处理程序。
+> 在非信号环境下没有问题，但在信号环境下，信号是随时发生的，因此需要保护
+
+# sigsuspend函数
+
+屏蔽进程的信号，使用这种技术，可以保护不希望由信号中断的代码临界区。然后在临界区之后等待以前的信号发生。
+
+但是下面的实现方式有问题：
+
+```
+sigprocmask(SIG_BLOCK, &newmask, &oldmask);
+
+// .....临界区代码
+
+1) sigprocmask(SIG_BLOCK, &oldmask, NULL);
+2) pause(); // 等待之前阻塞的信号发生
+
+```
+
+上面代码，1）和2）代码出有问题，会有竞争条件，在sigprocmask和pause之间有可能信号会发生，这会导致pause无法返回，永远阻塞。
+
+解决这个竞争条件的办法就是让这两个操作合并成一个原子操作。这就是sigsuspend函数的由来。
+
+```
+
+#include <signal.h>
+
+int sigsuspend(const sigset_t * sigmask);
+
+```
+
+用sigsuspend实现临界区代码，可以这样：
+
+```
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/signal.h>
+
+void sig_int(int signo);
+
+int main(int argc, char **argv)
+{
+
+	sigset_t newsigset, oldsigset, waitsigset;
+	sigemptyset(&newsigset);
+	sigaddset(&waitsigset, SIGUSR1);
+	struct sigaction act;
+	act.sa_handler = sig_int;
+
+	if(sigaction(SIGINT, &act, NULL) < 0)
+	{
+		printf("siganction err.\n");
+		exit(-1);
+	}
+	if(sigprocmask(SIG_BLOCK, &newsigset, &oldsigset) < 0)
+	{
+		printf("sigprocmask err\n");
+		exit(-1);
+	}
+	// code procted
+	printf("this is procted code!\n");
+
+	if(sigsuspend(&waitsigset) != -1)
+	{
+		printf("sigsuspend err\n");
+		exit(-1);
+	}
+	printf("after sigsuspend\n");
+	if(sigprocmask(SIG_SETMASK, &oldsigset, NULL) < 0)
+	{
+		printf("revert old sig mask err\n");
+		exit(-1);
+	}
+
+	return 0;
+}
+
+void sig_int(int signo)
+{
+	printf("catch signo %d\n", signo);
+}
+```
+
+注意sigsuspend函数实现的巧妙之处：
+
+* 为了实现解除屏蔽（sigprocmask）和等待（pause），sigsuspend把进程的屏蔽信号设置为参数信号，并在返回后设置为调用sigsuspend之前的屏蔽信号值。
+
+sigsuspend函数还有两种经典应用：
+
+1. 等待一个信号处理程序设置一个全局变量
+2. 父子进程实现同步
+
+注意：在实现父子进程通讯，可以使用kill给对象发信号，并使用sigsuspend等待某种条件
+
+# abort函数
+
+abort函数使异常程序终止。
+
+```
+#include <stdlib.h>
+
+void abort(void);
+
+```
+
+这个函数将SIGABRT信号发送给调用进程。
+
+ISO C规定 abort的实现须向主机环境递送一个成功的通知，一般是通过raise(SITABRT)或kill(gitpid(), SIGABRT)实现，这个规定，允许程序做清理工作。
+
+一般系统的abort实现，都会冲洗输出流以及是否要删除临时文件。
+
+可以看一下abort的函数实现示例，通过这个示例，学会：
+
+* sigaction函数的使用
+* kill函数的使用：kill函数可以给其它进程发送信号。若发给本进程，并且此信号是不被阻塞的，那么kill返回之前，该信号（或某个未决、未阻塞的信号）就被传送给了该进程。这样，kill返回了，就知道该进程一定捕捉到该信号。
+
+# system函数
+
+ISO C定义了system函数，这个函数可以执行系统命令，这个函数的实现也牵扯到信号问题。若不处理，会有问题。
+
+这里通过system的实现，注意信号程序开发的各种问题。
+
+看下面调用过程：
+![alt text][system]
+
+若没有处理信号，问题有：
+
+* 若进程（a.out）捕获SIGCHID信号，当system创建的子进程结束，系统会向父进程（a.out）发送SIGCHID信号，父进程会捕捉。*但这阻止了system函数获取它自己创建子进程的状态*
+* 若system系统没有屏蔽中断和退出信号，则如果想给shell调用程序发送中断信号时，系统会同时向负责进程发送信号（因为都属于前台进程组）
+
+
+

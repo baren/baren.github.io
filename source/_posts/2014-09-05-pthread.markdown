@@ -1,0 +1,263 @@
+---
+layout: post
+title: "apue(线程)"
+date: 2014-08-28 20:00:53 +0800
+comments: true
+categories: linux
+---
+
+
+[system]: /images/assets/Figure10-1.png "time-function"
+
+# 线程概念
+
+主要是POSIX线程，也就是pthread。
+
+正常情况下，unix的进程包括一个单一的线程执行，从main开始。有了线程后，一个进程可以有多个线程同时执行。
+
+判断系统是否支持pthread，可以使用宏_POSIX_THREADS进行测试，还可以把_SC_THREADS传递给sysconf函数来运行时判断。
+
+线程可以有多种好处，按照传统的多进程的实现方式，一般是在网络服务器环境下使用，多进程可以同时支持多个客户端的请求。但也有一些限制：
+
+* 进程之间共享数据非常困难
+* 使用fork创建一个进程是耗资源的。即使使用了copy-on-write技术，复制各种进程的属性（page表和fd表等）也意味着是耗时间的。
+
+使用线程，解决这上面这些问题：
+
+* 线程之间共享信息是容易和迅速的。仅仅拷贝数据到共享内存（global或heap）的消耗。
+* 线程创建比进程创建迅速多了。大约有10倍。linux创建线程使用clone系统调用，也还是比进程快。
+
+除了共享全局内存，线程还共享一些其他属性，包括
+
+* 进程id和父进程id
+* 进程组合session id
+* 控制终端
+* 进程凭证（用户和组id）
+* 打开的文件描述符（比较重要）
+* 信号处理
+* 文件系统相关信息：umask、当前工作目录和根目录
+* 等
+
+下面是各个线程不同的属性：
+
+* 线程id
+* 信号mask
+* 线程私有数据
+* errno变量
+* 等
+
+## 线程和errno
+
+进程环境下，errno是一个全局整型变量。在线程环境下，为了防止出现竞争条件（每个线程都去更新这个变量），每个线程都有自己的errno。
+
+这样既避免了errno的条件竞争，又兼容了一些使用errno的函数。
+
+注：
+> 在线程中，使用函数的返回错误码更为清晰整洁。
+
+## 线程ID
+
+进程的编号id是整个系统唯一的。线程的编号是进程内唯一的。进程的编号，使用```pid_t```来表示；线程的ID，使用```pthread_t```类型来表示。
+
+为了可移植性，一般调用函数对线程ID进行处理，而不是把它转换成整型（linux使用无符号整数来实现的）。
+
+下面是处理线程ID的函数：
+
+```
+#include <pthread.h>
+// 比较两个线程ID
+int pthread_equal(pthread_t tid1; pthread_t tid2);  // 相等则返回非零值
+
+// 获取线程的ID
+pthread_t pthread_self(void);
+
+```
+
+# 线程创建
+
+使用pthread_create函数创建线程：
+
+```
+#include <pthread.h>
+
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+void *(*start)(void *), void *arg);
+
+// 成功返回0
+
+```
+
+这个函数的参数意义是：
+
+* thread——线程创建成功后，将线程的ID写入这个指针指向的内存中
+* attr——创建线程的属性
+* start——线程执行的函数指针。这个函数接收一个无类型指针参数，如果函数接收的参数是多个，可以定义一个结构体，并作为参数arg传递给此函数
+* arg——无类型指针参数，作为线程执行函数的参数传入
+
+# 线程终止
+
+* 进程终止会导致线程终止：
+	- 任一线程调用了exit，_Exit或_exit函数，整个进程终止
+	- 若信号的默认动作是终止进程，则把信号发送到线程会终止进程
+
+* 单个进程有三种方式退出，在不终止整个进程的情况下停止线程自己的控制流。
+	- 线程只是从启动程序中返回，返回值是线程的退出码（也就是pthread_create函数的第三个参数start函数的返回值）
+	- 线程可以被同一进程中的其它线程取消（pthread_cancel）
+	- 线程调用pthread_exit函数退出
+
+```
+#include <pthread.h>
+void pthread_exit(void *retval);
+
+```
+
+pthread_exit接收的参数，就是线程的返回值。
+
+其它线程可以通过pthread_join获取这个值。
+
+注意：
+> pthread_exit的效果等同于在线程执行函数中通过return返回。不同之处是pthread_exit函数可以在任意被线程执行函数调用的函数中使用
+> pthread_exit的参数不能是线程栈的数据，因为一旦线程结束，栈就被回收，导致返回值被覆盖。
+
+
+## pthread_join函数
+
+pthread_join函数会等待终止线程。有两种情况：1）如果线程已经终止，则join函数立即返回；2）如果线程还没有终止，则阻塞，直到线程终止。
+
+```
+include <pthread.h>
+int pthread_join(pthread_t thread, void **retval); // 成功，返回0
+
+```
+
+如果retval是个非空指针，则会获取一份线程终止的返回值的拷贝。这个线程返回值或者通过return返回，或者通过调用pthread_exit。
+
+注意：
+> 如果join一个已经被join过的线程，则结果是未定义的。比如有可能会join一个刚刚创建的新线程（重用了之前的线程ID）。
+
+如果一个线程是非分离状态，则必须对这个线程进行pthread_join操作，如果不这样，则：
+* 线程会变成与僵尸进程类似的状态，除了消耗资源外，如果足够多的这种线程存在，我们将不能再创建新线程
+
+还要注意：
+* 线程是平级的：意思是同一个进程内的线程，可以pthread_join任意的其他线程。这与进程不一样，进程只能是父进程wait子进程。
+* 线程没有pthread_jion任意线程操作。进程可以通过waitpid(–1, &status, options)); 等待任意进程，线程没有这个操作。
+
+## pthread_detach函数
+
+默认情况下，线程是可*结合的（joinable）*，可结合的意思，一旦线程终止，任何其它线程都可以通过pthread_join获取其终止状态。
+
+某些情况下，我们不想获取线程的终止状态，希望系统在线程终止时，自动回收线程资源，可以使用pthread_detach函数设置线程是*分离的（detached）*。
+
+```
+#include <pthread.h>
+int pthread_detach(pthread_t thread);
+// 成功返回0
+
+```
+
+注意：
+1. 一旦设置线程为可分离的，则不能使用pthread_join获取其返回状态了
+2. 设置线程为可分离的，则不能再将其设置为可结合的。
+
+# 线程参数传递和返回值
+
+在创建线程时，可能需要传递参数给线程，并可能在线程结束时获取线程返回状态。
+
+* 在调用pthread_create函数创建线程时，可以使用第四个参数传递参数给线程的执行函数
+* 当线程结束时，可以传递返回结果给调用pthread_join的线程，通过：
+> * 在线程执行函数返回一个指针
+> * 调用pthread_exit()，把返回值指针作为pthread_exit的参数
+
+例子：
+
+```
+#include <stdlib.h>
+#include <stdio.h>
+#include <pthread.h>
+#include <errno.h>
+#include <string.h>
+
+/* **************************************************************************/
+/*  our macro for errors checking                                           */
+/* **************************************************************************/
+#define COND_CHECK(func, cond, retv, errv) \
+if ( (cond) ) \
+ { \
+    fprintf(stderr, "\n[CHECK FAILED at %s:%d]\n| %s(...)=%d (%s)\n\n",\
+	              __FILE__,__LINE__,func,retv,strerror(errv)); \
+				     exit(EXIT_FAILURE); \
+ }
+
+#define ErrnoCheck(func,cond,retv)  COND_CHECK(func, cond, retv, errno)
+#define PthreadCheck(func,rc) COND_CHECK(func,(rc!=0), rc, rc)
+
+
+
+
+void *th_func1(void *arg);
+void *th_func2(void *arg);
+void test_thread_ret();
+
+int main(int argc, char *argv[])
+{
+	test_thread_ret();
+	return 0;
+}
+
+void test_thread_ret()
+{
+	int t_ret;
+	// pthread ret
+	pthread_t t1, t2;
+	void *tret;
+	t_ret = pthread_create(&t1, NULL, th_func1, NULL);
+	PthreadCheck("pthread_create", t_ret);
+	t_ret = pthread_create(&t2, NULL, th_func2, (void *)2);
+	PthreadCheck("pthread_create", t_ret);
+
+	printf("join t1\n");
+	t_ret = pthread_join(t1, &tret);
+	PthreadCheck("pthread_join", t_ret);
+	printf("ret of thread 1 is %d.\n", (int) tret);
+
+	printf("join t2\n");
+	t_ret = pthread_join(t2, &tret);
+	PthreadCheck("pthread_join", t_ret);
+	printf("ret of thread 2 is %d.\n", (int) tret);
+
+}
+void *th_func1(void *arg)
+{
+	printf("thread 1 runing\n");
+	return (void *)1;
+}
+
+void *th_func2(void *arg)
+{
+	int * a;
+	a = (int *)arg;
+	printf("thread 2 arg is %d.\n", (int) a);
+	pthread_exit((void *) 2);
+}
+```
+
+
+# 取消线程
+
+线程可以调用pthread_cancel函数*请求*取消同一进程中的其它线程。
+
+```
+#include <pthread.h>
+
+int pthread_cancel(pthread_t tid);
+
+```
+
+pthread_cancel并不等待线程终止仅仅提出请求。
+
+线程在取消请求发出后还继续运行，直到线程打到某个*取消点*。取消点是线程检查是否被取消并按照请求进行动作的一个位置。
+
+# 线程同步
+
+
+
