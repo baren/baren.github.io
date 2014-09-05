@@ -1,0 +1,358 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>linxu 文件系统笔记 - Baren Blog</title>
+  <meta name="author" content="Your Name">
+
+  
+  <meta name="description" content="设备特殊文件 设备可以划分成两种类型： 字符设备。一个字符一个字符的处理数据，终端和键盘就是例子。
+块设备。一次处理一块数据。块大小依赖于设备类型。一般都是512字节的倍数。磁盘就是这种设备。 设备ID 每一个设备文件都有一个主ID号和副ID号。主ID号标记设备的一般类型， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://baren.github.io/blog/2014/02/10/linux-file-system/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Baren Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Baren Blog</a></h1>
+  
+    <h2>A blogging for baren.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:baren.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Linxu 文件系统笔记</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-10T19:33:17+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h1>设备特殊文件</h1>
+
+<p>设备可以划分成两种类型：</p>
+
+<ul>
+<li>字符设备。一个字符一个字符的处理数据，终端和键盘就是例子。</li>
+<li>块设备。一次处理一块数据。块大小依赖于设备类型。一般都是512字节的倍数。磁盘就是这种设备。</li>
+</ul>
+
+
+<h2>设备ID</h2>
+
+<p>每一个设备文件都有一个主ID号和副ID号。主ID号标记设备的一般类型，内核使用这个主ID来寻找这种类型设备对应的驱动。副ID号唯一的标记这个设备类型下得特殊设备了。ls -l可以显示主ID和副ID</p>
+
+<h1>磁盘和分区</h1>
+
+<ul>
+<li>一个磁盘可以分成多个分区。</li>
+<li>信息都放在磁盘的磁道上，磁道被划分成扇区，每一个扇区都由一系列的物理块组成。物理块的大小一般时512或者其倍数个字节，代表了最小的信息单元。</li>
+</ul>
+
+
+<h2>分区</h2>
+
+<p>一个分区可以包含以下信息：</p>
+
+<ul>
+<li>文件系统，也即每个分区可以包含一个文件系统</li>
+<li>数据区域</li>
+<li>swap区域</li>
+</ul>
+
+
+<h1>文件系统</h1>
+
+<p>linux支持广泛的文件系统，包括
+* 传统的ext2文件系统
+* 原生的unix文件系统，包括 Minix, System V和 BSD文件系统
+* 微软的FAT, FAT32, 和 NTFS
+* apple的HFS
+* 网络文件系统，包括sun的NFS等
+* 一系列日志文件系统，包括xt3, ext4, Reiserfs, JFS, XFS, 和 Btrfs</p>
+
+<p>以ext2文件系统为例，介绍文件系统，ext2文件系统源代码很小，大约5000行c程序（<a href="http://e2fsprogs.sourceforge.net/ext2.html.%EF%BC%89">http://e2fsprogs.sourceforge.net/ext2.html.%EF%BC%89</a></p>
+
+<h2>文件系统结构</h2>
+
+<p>磁盘分成多个逻辑分区，每一个分区可拥有一个文件系统，比如：
+<img src="/images/assets/Figure14-1.png" title="layout of disk partitions and a file system" alt="alt text" /></p>
+
+<ul>
+<li>boot块，总是文件系统的第一个块，文件系统不会使用这个块，boot块是用来重启操作系统的。虽然每个分区的文件系统都有一个boot块，但只有一个会被使用。</li>
+<li><p>superblock，紧随boot块后的一个单一块，包含如下信息</p>
+
+<blockquote><ul>
+<li>i-nod表的大小</li>
+<li>此文件系统的逻辑块大小</li>
+<li>文件系统的大小</li>
+</ul>
+</blockquote></li>
+<li><p>inode表。文件系统的每一个文件或者目录都在inode表中对应一个唯一的表项。这个表项记录了文件的各种信息。</p></li>
+<li>数据块，磁盘的最主要的文件数据存储区域。</li>
+</ul>
+
+
+<h2>i-node</h2>
+
+<p>对于所有的文件系统内的文件，文件系统的i-node表都有一个唯一的i-node表项与之对应。i-node使用i-node在表中的顺序号来引用（数组实现？）。
+<em>i-node number</em>是ls -li命令的第一个字段.</p>
+
+<p>i-node包含的信息有：</p>
+
+<ul>
+<li>文件类型，比如目录、普通文件、符号链接等</li>
+<li>拥有者</li>
+<li>所属组</li>
+<li>访问权限</li>
+<li>三个文件相关时间（最后读时间、最后修改内容时间和最后修改i-node时间）</li>
+<li>指向这个文件的硬链接数</li>
+<li>文件大小</li>
+<li>分配的块数</li>
+<li>指向数据块的指针</li>
+</ul>
+
+
+<h2>ext2的i-node的数据块指针</h2>
+
+<p>为了满足一下需求：</p>
+
+<ul>
+<li>i-node结构是固定大小的，同时又文件大小是任意的（因此，i-node的数据指针是任意的）</li>
+<li>允许文件的数据库不是连续存储的，同时又允许文件数据任意的通过lseek()访问</li>
+</ul>
+
+
+<p>基于以上几点，ext2设计了i-node的指针结构:</p>
+
+<p><img src="/images/assets/Figure14-2.png" title="Structure of file blocks for a file in an ext2 file system" alt="alt text" /></p>
+
+<p>每一个i-node包含十五个pointer。前12个指针指向文件数据块的前十二个块。下一个指针指向一个指针块，指针块中指针的个数依赖块的大小。
+每个指针需要4个字节，如果块大小是1024字节，则存放256个指针，如果是4096字节，则存放1024个指针。
+为了能容纳更大数据，第13个指针，是一个双重间接指针（double indirect pointer），它指向一个指针块，块中的指针又指向一个指针块。
+如果需要真正大的文件，还可以使用最后一个triple-indirect pointer。</p>
+
+<p>这样设计的一个好处是，允许文件存在黑洞。对于具有hole的文件，他可以仅仅把指针赋值为0，而不需要为其分配数据位null的块。</p>
+
+<h1>虚拟文件系统（vfs）</h1>
+
+<p>linux支持各种文件系统，文件系统实现各不一样，但是对文件的操作，不会涉及到具体的文件系统实现，而是可以跨文件系统的。这是因为linux定义了一个抽象层，各种文件系统需要实现的。一般称为Virtual File System（vfs）。</p>
+
+<p>vfs是linux的内核特征，定义一个抽象的文件操作层，也就是一系列操作文件的接口。一般包括：open(), read(), write(), lseek(), close(), truncate(), stat(), mount(), umount(), mmap(), mkdir(), link(), unlink(), symlink(), and rename().</p>
+
+<p>如图所示：</p>
+
+<p><img src="/images/assets/Figure14-3.png" title="he virtual file system" alt="alt text" /></p>
+
+<h1>日志文件系统（ournaling File Systems）</h1>
+
+<p>ext2文件系统是典型的传统unix文件系统的例子，也遭受经典的这种文件系统的限制：当down机后，在重启后需要进行一致性检查，来确保文件系统的完整性。这是因为，当系统崩溃时，文件系统的更新有可能只完成了部分操作。文件系统的元数据，包括目录下，i-node信息和数据库指针，可能会处于不一致状态。
+如果不进行修复，文件系统会进一步被破坏。</p>
+
+<p>但是一致性检查需要扫描所有文件，如果文件系统很大，花费时间也会大。</p>
+
+<p>日志文件系统消除了当系统挂了后的漫长的一致性检查。日志文件系统在进行实际的操作时，先把更新的元数据记录到一个日志文件的磁盘文件中。
+写入元数据到日志文件是事务性写入相关的数据。一旦系统崩溃，在重启后，只需要快速的重做未完成的更新，是系统进入一个一致性状态。</p>
+
+<p>这有个缺点是延长了更新文件的时间。</p>
+
+<p>linux的日志文件系统包括：</p>
+
+<ul>
+<li>Reiserfs是第一个整合到linux内核的日志文件系统（2.4.1）。</li>
+<li>ext3是在ext2上增加了日志功能的系统。</li>
+<li>JFS系统是IBM开发的，在2.4.20上整合到内核</li>
+<li>ext4，在2.6.19加入到内核</li>
+<li>Btrfs，通常发音是butter FS。提供了一些现代的系统功能。</li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Your Name</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-10T19:33:17+08:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/linux/'>linux</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2014/02/10/linux-file-system/" data-via="" data-counturl="http://baren.github.io/blog/2014/02/10/linux-file-system/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/02/10/per4-chapter3-type-and-object/" title="Previous Post: 类型和对象(PER4 chapter 3)">&laquo; 类型和对象(PER4 chapter 3)</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/03/03/file-and-dir/" title="Next Post: apue(文件和目录)">apue(文件和目录) &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/03/22/standard-io/">apue(标准I/O库)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/03/file-and-dir/">apue(文件和目录)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/linux-file-system/">linxu 文件系统笔记</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/per4-chapter3-type-and-object/">类型和对象(PER4 chapter 3)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax/">python词法约定和语法(PER4 chapter 2)</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Your Name -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
+  <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

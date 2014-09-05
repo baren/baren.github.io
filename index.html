@@ -9,7 +9,7 @@
   <meta name="author" content="Your Name">
 
   
-  <meta name="description" content="在linux中，所有都是文件，也就是说一个连接也是一个文件。每打开一个文件，内核会分配一个文件描述符，因此一个进程可打开的最大文件描述符决定了可支持的最大连接数。这是一个重要的参数。 linux有两个限制： 1、系统级限制。限制了整个系统可打开的最大文件描述符 2、每个进程的限制。 &hellip;">
+  <meta name="description" content="流和FILE对象 流介绍 对于标准I/O库，他们的操作是围绕流进行的。 与JAVA使用Stream类来代表流不一样，标准I/O采用结构体FILE来代表流，由于大多数标准库的函数使用FILE 来作为参数，因此也用文件指针*来代称流。 struct FILE结构体在stdio.h中做了声明： 1 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -64,6 +64,2970 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/03/22/standard-io/">apue(标准I/O库)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-22T20:06:00+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>流和FILE对象</h1>
+
+<h2>流介绍</h2>
+
+<p>对于标准I/O库，他们的操作是围绕<em>流</em>进行的。</p>
+
+<p>与JAVA使用Stream类来代表流不一样，标准I/O采用结构体FILE来代表流，由于大多数标准库的函数使用FILE <em>来作为参数，因此也用</em>文件指针*来代称流。</p>
+
+<p>struct FILE结构体在stdio.h中做了声明：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>typedef struct _sFILE{...} FILE;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>数据类型FILE
+    > 代表流对象，FILE对象含有所有的连接文件的内部状态，包括文件位置标记和缓存信息等。
+    > 每一个流海包含error和文件末尾状态标记，可以通过ferror和feof函数进行测试。</p>
+
+<h2>流的定向</h2>
+
+<p>标准I/O可以用于单字节的字符集（ascii字符集）和多字节（宽）字符集，这就要求<em>流的定向</em>。
+对于宽字节的处理，有一套专门的多字节处理函数（wchar.h中声明）。
+对于同样的流，为了能处理宽的和正常的字符的操作，有一个限制：</p>
+
+<ul>
+<li>流要么被标记为宽定向的，要么是字节定向的</li>
+<li>一旦确定定向后，不能二者混用</li>
+</ul>
+
+
+<p>有三种方式来定向流：</p>
+
+<ul>
+<li>创建流后，任一个正常字符函数被使用，流被标记为字节定向的。</li>
+<li>创建流后，任一个宽字符函数被使用，流被标记为宽定向的。</li>
+<li>使用<code>fwide函数</code>来设置流的定向。</li>
+<li>freopen函数可以清除流的定向。</li>
+</ul>
+
+
+<p>注意：</p>
+
+<ul>
+<li>流刚被创建时，并没有定向</li>
+<li>在未定向流上使用字节字符函数则置为字节定向的</li>
+<li>在未定向流上使用宽字节函数则置为宽字节定向的</li>
+</ul>
+
+
+<p>fwide函数说明：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>#include &lt;wchar.h&gt;
+</span><span class='line'>
+</span><span class='line'># 返回值：若流是宽定向的，则返回正值；若流是字节定向的，则返回负值；若流是未定向的，则返回0.
+</span><span class='line'>int fwide(FILE *fp, int mode);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>根据mode参数的值，fwide执行不同的工作：</p>
+
+<ul>
+<li>若mode参数为负值，fwide试图使指定的流是字节定向的</li>
+<li>若mode参数为正值，fwide试图使指定的流是宽定向的</li>
+<li>若mode参数为0，fwide将不试图设置流的定向，但返回标识该流定向的值</li>
+</ul>
+
+
+<blockquote><p>注意:
+fwide不会改变已经设置定向的流
+fwide不会出错，想检查错误，唯一可用的是调用之前先清除errno，调用fwide后检查errno的值。（errno是全局变量，每次调用失败，系统会用错误代码赋值给errno）</p></blockquote>
+
+<h1>标准输入/输出/错误</h1>
+
+<p>当main函数被调用，就已经有3哥预先定义的打开的流可以使用，这三个流在stdio.h中声明：</p>
+
+<ul>
+<li>FILE *stdin。标准输入流</li>
+<li>FILE *stdout。标准输出流</li>
+<li>FILE *stderr。标准错误流</li>
+</ul>
+
+
+<p>在GNU C中，stdin、stdout和stderr是正常常量，可以直接用：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>fclost(stdout);
+</span><span class='line'>stdout = fopen("filepath", "w");
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>缓冲</h1>
+
+<p>标准I/O提供了三种类型的缓冲：</p>
+
+<ul>
+<li>全缓冲。填满缓冲区后才进行实际的I/O操作。对于磁盘文件，通常是全缓冲的。在一个流上第一次执行I/O操作时，标准I/O函数通常用malloc获取需要使用的缓冲区。</li>
+<li>行缓冲。当输入和输出中遇到换行符时，标准I/O库执行I/O操作。当涉及到终端时，通常使用行缓冲。</li>
+</ul>
+
+
+<blockquote><p>行缓冲有两个限制：</p>
+
+<p>缓冲区长度是固定的，所以只要填满了缓冲区，即使没有缓冲区，也进行I/O操作</p>
+
+<p>任何时候，只要标准I/O库从 a）不带缓冲的流，或者 b）一个行缓冲的流（但数据从内核获取）得到输入数据，那么就会造成冲洗所有行缓冲输出流。</p>
+
+<p>从实现角度说，这么个限制是有原因的：如果从不带缓冲的流中获取数据，那么缓冲区中的没有冲洗的旧数据会对新数据造成污染。</p></blockquote>
+
+<ul>
+<li>不带缓冲。标准I/O库不对字符进行缓冲存储。标准错误流通常不带缓冲的。</li>
+</ul>
+
+
+<p>iso c 是这样设置缓冲的：
+* 当且仅当标准输入和标准输出并不涉及交互设备时，他们才是全缓冲。
+* 标准错误绝不会是全缓冲。</p>
+
+<p>但是标准输入输出涉及交互设备时，一般：</p>
+
+<ul>
+<li>标准错误不带缓冲。</li>
+<li>其它流，涉及终端设备，则是行缓冲；否则是全缓冲。</li>
+</ul>
+
+
+<p>对于这些默认的缓冲情况，可以使用函数进行修改：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>void setbuf(FILE * fp, char * buf);
+</span><span class='line'>int servbuf(FILE * fp, char * buf, int mode, size_t size);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这些函数的使用限制是：</p>
+
+<ul>
+<li>一定要在流已被打开后调用</li>
+<li>在对流执行任何一个其它操作之前调用</li>
+</ul>
+
+
+<p>setbuf可以打开和关闭缓冲，打开缓冲，将buf指向一个长为BUFSIZE的缓冲区（该常量被定义在stdio.h中）。关闭缓冲，则设置buf为NULL。
+setvbuf，可以精确控制缓冲类型，通过mode参数指定：</p>
+
+<ul>
+<li>_IOFBF    全缓冲</li>
+<li>_IOLBF    行缓冲</li>
+<li>_IONBF    不缓冲</li>
+</ul>
+
+
+<blockquote><p>注意：
+如果在一个函数内分配一个自动变量类的标准I/O缓冲区，则从该函数返回之前，必须关闭该流（也就是把数据冲洗一下）。
+一般而言，应由系统选择缓冲区的长度，并自动分配缓冲区。这种情况下，关闭此流时，标准I/O库将自动释放缓冲区。</p></blockquote>
+
+<p>可以通过函数强制缓冲一个流：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdih.h&gt;
+</span><span class='line'>
+</span><span class='line'>int fflush(FILE * fp);</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>打开流</h1>
+
+<p>使用下列函数打开流：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>FILE *fopen(char * pathname, char *type);
+</span><span class='line'>FILE *freopen(char *pachname, char *type, FILE *fp);
+</span><span class='line'>FILE *fdopen(int fd, char *type);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用fopen函数打开一个文件，创建一个新流，并建立这个流和文件之间的连接。这个过程也会涉及到创建新文件。</p>
+
+<p>其中，type参数指定对该流的读、写方式：</p>
+
+<ul>
+<li><code>'r'</code>: 只读打开文件</li>
+<li><code>'w'</code>: 只写打开，若文件存在，截断为0；否则创建新文件</li>
+<li><code>'a'</code>: 追加打开，为在文件为写而打开。文件若存在，则不改变内容。</li>
+<li><code>'r+'</code>: 读写打开文件，初始化内容不变，初始化文件位置在文件开头。</li>
+<li><code>'w+'</code>: 读写打开文件，若文件存在，截断为0.否则创建新文件</li>
+<li><code>'a+'</code>: 为在文件尾读和写而打开文件。</li>
+</ul>
+
+
+<blockquote><p>注意：</p>
+
+<p>&lsquo;+&#8217;请求一个流可以读和写，当使用这种流时，在读写之间转换时，必须刷新buffer，fflush或者订货函数fseek都可以。不然内部的buffer可能不空。</p></blockquote>
+
+<p>freopen函数像fclos和fopen的联合。受限关闭有fp指向的流（这个过程会忽略任何错误），然后再打开pathname指向的文件，一般用于将一个指定的文件打开为一个预定义的流。</p>
+
+<p>可以使用fclose关闭流：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>int fclose(FILE *fp);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>关闭一个流，关闭文件，并刷新缓冲区的输出数据，并释放由标准I/O库分配的内存。</p>
+
+<blockquote><p>注意：
+当程序正常关闭时（调用exit函数和正常从main返回），所有未写缓冲数据的标准I/O流，都会被冲洗；所有打开的标准I/O都会关闭。</p></blockquote>
+
+<h1>读和写流</h1>
+
+<p>一旦打开了流，就可在三中不同类型的非格式化I/O中选择，进行读写。包括：</p>
+
+<ul>
+<li>每次只读一个字符的I/O，一次读写一个字符。若流是缓冲的，标准I/O会处理所有缓冲。</li>
+<li>每次一行I/O，可以使用fgets和fputs，每行以换行符终止。</li>
+<li>direct I/O，直接I/O。fread和fwrite函数支持这种类型的I/O。每次I/O操作读或写某种数量的对象，而每个对象具有指定的长度。用于从二进制文件中每次读或写一个结构。</li>
+</ul>
+
+
+<h2>一次一个字符</h2>
+
+<p>下面三个函数可以用于一次读一个字符：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'># 三个函数的返回值，若成功，返回下一个字符；达文件末尾或失败，则返回EOF
+</span><span class='line'>int getc(FILE *fp);
+</span><span class='line'>int fgetc(FILE *fp);
+</span><span class='line'>
+</span><span class='line'>int getchar(void);
+</span><span class='line'>
+</span><span class='line'># 写入流
+</span><span class='line'>int putc(int c, FILE *fp);
+</span><span class='line'>int fputc(int c, FILE * fp);
+</span><span class='line'>int putchar(int c);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>getchar 等价于getc(stdin)，而getc和fgetc的区别是前者可以实现为宏；而后者不可。这意味着：</p>
+
+<ul>
+<li>getc的参数不应当是具有副作用的表达式</li>
+<li>fgetc是函数，可得到其地址，允许fgetc地址作为参数传递给其它函数</li>
+<li>fgetc函数执行时间长于getc函数（宏的优势）</li>
+</ul>
+
+
+<p>不管是出错，还是到达文件末尾，三个函数都返回EOF，为了区分是出错还是到达文件末尾，需要使用ferror或feof函数。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>int ferror(FILE *fp);
+</span><span class='line'>
+</span><span class='line'>int feof(FILE *fp);
+</span><span class='line'>
+</span><span class='line'>void clearerr(FILE *fp);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>大多数实现，为每个流在FILE对象中维持了两个标志：</p>
+
+<ul>
+<li>出错标志</li>
+<li>文件结束标志</li>
+</ul>
+
+
+<p>从流中读取数据后，可以调用ungetc奖字符再压回流中。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'># 成功，返回c，出错返回EOF
+</span><span class='line'>int ungetc(int c, FILE *fp);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>关于压回，注意：</p>
+
+<ul>
+<li>压回流中的字符可以再读出，但与压入顺序相反。</li>
+<li>不能压回EOF。</li>
+<li>到达文件末尾，还可压回字符。下次读取将返回该字符，再次读取则返回EOF。这么做的一个原因是，一次成功的ungetc调用会清除该流的文件结束标志。</li>
+</ul>
+
+
+<h2>每次一行</h2>
+
+<p>下面函数是每次一行函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'># 读一行函数，成功，则返回bug，错误或到达末尾，则返回NULL
+</span><span class='line'>char * fgets(char * buf, int n, FILE *fp);
+</span><span class='line'>
+</span><span class='line'>char * gets(char *buf);
+</span><span class='line'>
+</span><span class='line'># 写一行函数，成功，返回非负值，出错返回EOF
+</span><span class='line'>
+</span><span class='line'>int fputs(char * str, FILE *fp);
+</span><span class='line'>
+</span><span class='line'>int puts(char *str);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>两个gets函数，指定了缓冲区，把读的行送入其中。gets从标准输入读，fgets从指定流读。</p>
+
+<ul>
+<li>fgets必须指定缓冲区的长度。此函数一直读到下一个换行符为止，但不超过n-1（放null字符），读入的数据被送入缓冲区。</li>
+<li>该缓冲区一null结尾。</li>
+<li>若该行的字符数超过n-1，则fgets只返回一个不完整的行，但是，缓冲区总是以null字符结尾。</li>
+</ul>
+
+
+<blockquote><p>注意：
+gets函数不推荐，由于没有指定缓冲区大小，容易造成缓冲区溢出。</p></blockquote>
+
+<p>写入一行函数，将一个以null符终止的字符串写入到指定流。尾端null不会被写入。</p>
+
+<h2>二进制I/O</h2>
+
+<p>对于直接I/O，也就是二进制I/O，提供两个函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>size_t fread(void *ptr, size_t size, size_t nobj, FILE *fp);
+</span><span class='line'>
+</span><span class='line'>size_t fwrite(void * ptr, size_t size, size_t nobj, FILE *fp);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这两个函数的常用用法：</p>
+
+<ol>
+<li>读或写一个二进制数组。比如将一个浮点数组的第2~5个元素写到一个文件上：</li>
+</ol>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>float data[10];
+</span><span class='line'>
+</span><span class='line'>if (fwrite(&data[2], sizeof(float), 4, fp) != 4)
+</span><span class='line'>  printf("error");</span></code></pre></td></tr></table></div></figure>
+
+
+<ol>
+<li>读写一个结构</li>
+</ol>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>struct {
+</span><span class='line'>  
+</span><span class='line'>  short count;
+</span><span class='line'>  long total;
+</span><span class='line'>  char name[NAMESIZE];
+</span><span class='line'>
+</span><span class='line'>} item;
+</span><span class='line'>
+</span><span class='line'>if (fwrite(&item, sizeof(item), 1, fp) != 1)
+</span><span class='line'>  printf("error");
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>注意：
+对于二进制读写的问题是：只能用于同一个系统上已写的数据，原因是：
+1. 在同一个结构中，同一个成员的偏移量可能因为编译器和系统而异。
+2. 用来存储多字节整数和浮点值的二进制格式，在不同机器体系结构不同。</p></blockquote>
+
+<h1>定位流</h1>
+
+<p>三种方法定位标准I/O流</p>
+
+<ul>
+<li>ftell和fseek，假设位置偏移量，可以使用长整型。</li>
+<li>ftello和fseeko，文件偏移量，使用off_t代替长整型。</li>
+<li>fgetpos和fsetpos，ISO C引入，使用抽象数据类型fpos_t来记录文件的位置。</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>long ftell(FILE *fp); # 成功，返回当前文件位置指示，出错返回-1
+</span><span class='line'>
+</span><span class='line'>int fseek(FILE *fp, long offset, int whence);
+</span><span class='line'>
+</span><span class='line'>void rewind(FILE *fp);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>定位涉及到文本文件和二进制文件，由于存放格式不一样，里面许多注意点。</p>
+
+<h2>对于二进制文件</h2>
+
+<p>二进制文件，文件位置指示器是从文件起始位置开始度量，并以字节为计量单位。</p>
+
+<p>ftell用于二进制文件时，其返回值就是这种字节位置。</p>
+
+<p>为了使用fseek定位一个二进制文件，必须指定一个字节的<em>offset</em>。以及解释这种偏移量的方式。</p>
+
+<p>whence的值与内核函数lseek函数相同：</p>
+
+<ul>
+<li>SEEK_SET表示从文件的起始位置开始</li>
+<li>SEEK_CUR表示从当前文件位置开始</li>
+<li>SEEK_END表示从文件尾端开始。</li>
+</ul>
+
+
+<h2>文本文件</h2>
+
+<p>对于文本文件，他们的文件位置可能不以简单的字节偏移量来度量。主要是在非unix系统中，以不同格式存放文本文件。</p>
+
+<p>为了定位文本文件，<em>whence</em>一定要是SEEK_SET，而<em>offset</em>的值只有两种：0（绕回到文件的起始位置）。或是对该文件调用ftell返回的值。</p>
+
+<p>使用fewind可以将流设置到文件的起始位置。</p>
+
+<h1>格式化I/O</h1>
+
+<h2>scanf函数</h2>
+
+<p>有以下几个scanf函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>int fscanf(FILE *stream, char const *format, ...);
+</span><span class='line'>
+</span><span class='line'>int scanf(char const *format, ...);
+</span><span class='line'>
+</span><span class='line'>int sscanf(char const *string, char const *format, ...);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这些函数都是从输入源中读取字符并根据format字符串给出的格式代码对他们进行转换。</p>
+
+<p>fscanf输入源就是作为参数给出的流，scanf从标准输入读取，sscanf从第一个参数所给的字符串中读取字符。</p>
+
+<p>读取停止条件：</p>
+
+<ol>
+<li>当格式化字符串到达末尾</li>
+<li>读取的输入不再匹配格式字符串所指定的类型时</li>
+</ol>
+
+
+<p>返回结果是被转换的输入值的数据。</p>
+
+<p>如果在任何输入值被转换之前文件就已经到达尾部，函数就返回常量值EOF。</p>
+
+<blockquote><p>注意：
+对于scanf函数的参数，前面需要使用<code>&amp;</code>。</p></blockquote>
+
+<p>scanf函数族中的format字符串参数可能包含下面内容：</p>
+
+<ul>
+<li>空白字符————她们与输入中得零个或多个空白字符匹配，在处理过程中被忽略。</li>
+<li>格式代码————她们指定函数如何解释接下来的输入字符。</li>
+<li>其它字符————当任何其它字符出现在format字符串时，下一个输入字符必须与它匹配。如果匹配，该输入字符随后就被丢弃。如果不匹配，函数就不再读取直接返回。</li>
+</ul>
+
+
+<p>格式代码的结构是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>%[*] [fldwidth] [lenmodifier]convtype</span></code></pre></td></tr></table></div></figure>
+
+
+<p>针对上面的格式，解释如下：</p>
+
+<ul>
+<li>可选<code>*</code>字符：将使转换后的值被丢弃而不是进行存储</li>
+<li>fldwith宽度：非负整数，它限制将被读取用于转换的输入字符的个数。如果没有给出宽度，函数就连续读入字符直到遇到输入中的下一个空白符。</li>
+<li>lenmodifier限定符：用于修改有些格式代码的含义</li>
+</ul>
+
+
+<blockquote><p>对于限定符，说明：
+限定符的目的是为了指定参数的长度。如果整型参数比缺省的整型值更短或更长时，在格式化代码中省略限定符就是一个常见的错误。
+对于浮点型也是如此。
+如果省略了限定符，可能导致一个较长的变量只有部分被初始化。或者一个较短变量的临近变量也被修改，这都取决于这些类型的相对长度。</p></blockquote>
+
+<p>限定符作用到整型和浮点型的效果如下表：</p>
+
+<table>
+<thead>
+<tr>
+<th>格式代码        </th>
+<th style="text-align:center;"> h           </th>
+<th style="text-align:center;"> l  </th>
+<th style="text-align:center;"> L</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>d,i,n      </td>
+<td style="text-align:center;"> short </td>
+<td style="text-align:center;"> long </td>
+<td style="text-align:center;">    空 </td>
+</tr>
+<tr>
+<td>o,u,x      </td>
+<td style="text-align:center;"> 无符号 short      </td>
+<td style="text-align:center;">       无符号 long </td>
+<td style="text-align:center;"> 空</td>
+</tr>
+<tr>
+<td>e,f,g </td>
+<td style="text-align:center;">     空  </td>
+<td style="text-align:center;">    double </td>
+<td style="text-align:center;">       long double</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>转换符</p>
+
+<p>看下面例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>nfields = fscanf(input, "%4d %4d %4d", &a, &b, &c)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面程序，宽度参数把整数值限制为4个数字或者更少的数字，如果是下面的输入：</p>
+
+<p>1 2</p>
+
+<p>则a的值是1，b的值是2，c没有改变。而nfields值为2.</p>
+
+<p>如果是下面的输入：</p>
+
+<p>12345 67890</p>
+
+<p>则a的值是1234， <strong>b的值是5</strong>。c的值是6789，nfield的值是3。</p>
+
+<p>转换符表格：</p>
+
+<table>
+<thead>
+<tr>
+<th>代码        </th>
+<th style="text-align:center;"> 参数类型           </th>
+<th style="text-align:left;"> 含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>c </td>
+<td style="text-align:center;"> char *</td>
+<td style="text-align:left;"> 读取和存储单个字符。如果给定了宽度，则读取和存储这个数目的字符（因此参数类型是char *），参数必须指向一个足够大的字符数组</td>
+</tr>
+<tr>
+<td>i,d</td>
+<td style="text-align:center;">int * </td>
+<td style="text-align:left;"> 一个可选的有符号整数倍转换，d把输入解释为十进制；i根据它的第一个字符决定值的基数</td>
+</tr>
+<tr>
+<td>u,o,x</td>
+<td style="text-align:center;"> unsigned *</td>
+<td style="text-align:left;"> 无符号，分别是u无符号十进制，o无符号八进制，x无符号十六进制</td>
+</tr>
+<tr>
+<td>e，f，g</td>
+<td style="text-align:center;"> float *</td>
+<td style="text-align:left;">浮点数</td>
+</tr>
+<tr>
+<td>s</td>
+<td style="text-align:center;"> char * </td>
+<td style="text-align:left;"> 字符串</td>
+</tr>
+<tr>
+<td>p </td>
+<td style="text-align:center;"> void * </td>
+<td style="text-align:left;"> 指向void的指针。输入预期为一串字符，诸如那些有printf函数的%p格式代码所产生的输出。</td>
+</tr>
+<tr>
+<td>n </td>
+<td style="text-align:center;"> int * </td>
+<td style="text-align:left;">到目前为止通过这个scanf函数的调用从输入读取的字符数被返回。%n转换的字符不被计算在内。它本身并不耗费任何输入。</td>
+</tr>
+<tr>
+<td>% </td>
+<td style="text-align:center;"> 无</td>
+<td style="text-align:left;"> %</td>
+</tr>
+</tbody>
+</table>
+
+
+<h2>printf函数</h2>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>int fprintf(FILE *stream, char const *format, ...);
+</span><span class='line'>
+</span><span class='line'>int printf(char const *format, ...);
+</span><span class='line'>
+</span><span class='line'>int sprintf(char *buffer, char const *format, ...);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>printf，结果输出送到标准输出，fprintf可以指定输出流。sprintf把结果作为一个NUL结尾的字符串存储到指定的buffer缓冲区中。</p>
+
+<blockquote><p>注意：
+sprintf有潜在的错误，缓存区大小不是一个参数，因此，如果输出结果长于缓冲区，会改写缓冲区后面的内存位置中得数据。</p></blockquote>
+
+<p>printf中得format构成是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>%[flags] [fldwidth] [precision] [lenmodifier]convtype
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>flags字符</h3>
+
+<table>
+<thead>
+<tr>
+<th>标志 </th>
+<th> 含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-   </td>
+<td> 值在字段中左对齐，默认是右对齐</td>
+</tr>
+<tr>
+<td>0   </td>
+<td>当数值为右对齐时，却僧情况下使用空格填充左边未使用的列。使用这个标志，则用零来填充，它可用于d,i,u,o,x,X,e,E,f,g和G代码。</td>
+</tr>
+<tr>
+<td>+   </td>
+<td> 正值前有加号</td>
+</tr>
+<tr>
+<td>空格</td>
+<td> 只用于转换有符号值的代码。当值非负时，这个标志把一个空格添加到它开始的位置。注意这个标志和+互斥。</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>代码：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; print '%0.5f' % 1.1
+</span><span class='line'>1.10000
+</span><span class='line'>&gt;&gt;&gt; print '%0.5d' % 1.1
+</span><span class='line'>00001</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>fldwidth 宽度</h3>
+
+<p>字段宽度是一个十进制整数，用于指定将要出现在结果中得最小字符数。如果字符数少于字段宽度，就对它进行填充以增加长度。flags字段决定填充
+使用空白还是零。</p>
+
+<h3>precision 精度</h3>
+
+<p>精度字段以一个句点开头，后面跟着一个可选的十进制整数，如果没有给出，则精度为0.</p>
+
+<ul>
+<li>如果作用的是d、i、u、o、x和X类型转换符，精度字段指定将出现在结果中的最小数子个数。如果转换后的值的位数小于宽度，就在它签名插入零。如果值为零，精度也为零，则不输出数字。</li>
+<li>如果作用于e，E和f类型转换符，精度决定将要出现在小数点后的数字位数</li>
+<li>如果作用于s，精度指定将被转换的最多字符数。</li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/03/03/file-and-dir/">Apue(文件和目录)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-03T23:06:23+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>stat系列函数</h1>
+
+<p>3个stat函数，位于sys/stat.h头文件中，其声明：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/stat.h&gt;
+</span><span class='line'>
+</span><span class='line'>int stat(const char *restrict path, struct stat *restrict buf);
+</span><span class='line'>int lstat(const char *restrict path, struct stat *restrict buf);
+</span><span class='line'>int fstat(int fildes, struct stat *buf);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>stat函数返回path指定的文件信息，fstat与stat一样，只是接收fd作为参数。
+lstat如果参数是符号链接，返回符号链接的信息，而不是返回符号链接引用的文件的信息。</p>
+
+<p>结构体struct stat成员类型是基本系统数据类型（定义了某些与实现相关的数据），其中字段的定义位于sys/types.h中。</p>
+
+<p>一般struct stat的定义是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>dev_t     st_dev     Device ID of device containing file. 
+</span><span class='line'>ino_t     st_ino     File serial number. 
+</span><span class='line'>mode_t    st_mode    文件类型和mode（权限） 
+</span><span class='line'>nlink_t   st_nlink   指向这个文件的链接数
+</span><span class='line'>uid_t     st_uid     文件的uid. 
+</span><span class='line'>gid_t     st_gid     文件的组id. 
+</span><span class='line'>[XSI][Option Start]
+</span><span class='line'>dev_t     st_rdev    Device ID (if file is character or block special). 
+</span><span class='line'>[Option End]
+</span><span class='line'>off_t     st_size    For regular files, the file size in bytes. 
+</span><span class='line'>                     For symbolic links, the length in bytes of the 
+</span><span class='line'>                     pathname contained in the symbolic link. 
+</span><span class='line'>[SHM][Option Start]
+</span><span class='line'>                     For a shared memory object, the length in bytes. 
+</span><span class='line'>[Option End]
+</span><span class='line'>[TYM][Option Start]
+</span><span class='line'>                     For a typed memory object, the length in bytes. 
+</span><span class='line'>[Option End]
+</span><span class='line'>                     For other file types, the use of this field is 
+</span><span class='line'>                     unspecified. 
+</span><span class='line'>time_t    st_atime   Time of last access. 
+</span><span class='line'>time_t    st_mtime   Time of last data modification. 
+</span><span class='line'>time_t    st_ctime   Time of last status change. 
+</span><span class='line'>[XSI][Option Start]
+</span><span class='line'>blksize_t st_blksize A file system-specific preferred I/O block size for 
+</span><span class='line'>                     this object. In some file system types, this may 
+</span><span class='line'>                     vary from file to file. 
+</span><span class='line'>blkcnt_t  st_blocks  Number of blocks allocated for this object. </span></code></pre></td></tr></table></div></figure>
+
+
+<h1>mode_t    st_mode字段</h1>
+
+<p>mode_t    st_mode成员包含：
+ * 文件类型
+ * 文件权限</p>
+
+<h2>st_mode判断文件类型</h2>
+
+<p>unix文件类型包括：</p>
+
+<ul>
+<li>普通文件、目录文件（stat.h中的宏S_ISREG()和S_ISDIR()判断）</li>
+<li>块特殊文件，提供对设备（磁盘）带缓冲的访问，每次以固定长度为单位访问（S_ISBLK()）</li>
+<li>字符特殊文件，提供对设备不带缓冲的访问，每次访问长度可变。系统中的所有设备，要么是块特殊文件，要么是字符特殊文件。S_ISCHR()</li>
+<li>FIFO，命名管道，用于进程间通信S_ISFIFO()</li>
+<li>符号链接，S_ISLINK()</li>
+</ul>
+
+
+<h2>文件权限信息</h2>
+
+<p>每个文件有9个权限位，分成三类：</p>
+
+<ul>
+<li>用户（读、写、执行）</li>
+<li>组（读、写、执行）</li>
+<li>其它（读、写、执行）</li>
+</ul>
+
+
+<p>chmod命令可以修改文件权限，其中u、g、o分别代表用户、组和其它。</p>
+
+<p>可以使用宏来判断是否有某种权限：
+* S_I(R|W|X)USR
+* S_I(R|W|X)GRP
+* S_I(R|W|X)OTH</p>
+
+<h1>进程相关ID</h1>
+
+<p>介绍进程相关ID，主要用于内核对进程进行权限验证使用。</p>
+
+<p>进程相关联ID有6个或者更多：</p>
+
+<ul>
+<li>实际用户ID和组ID
+
+<blockquote><p>标识究竟是谁，曲子登陆时口令文件的登陆项</p></blockquote></li>
+<li>有效用户ID和组ID
+
+<blockquote><p>内核使用这两个来进行权限验证；一般等于实际用户ID和实际组ID</p></blockquote></li>
+<li>保存的设置用户（组）ID
+
+<blockquote><p>执行一个程序时，保存了有效用户和组ID的副本，一般用在执行文件时，文件设置了set-user-id和set-group-id位时，保存有效用户ID和组ID
+方便进程在两个用户之间切换权限
+对于set-user-id和set-group-id位，stat结构体中的st_mode包含了这两位。
+如果设置了文件的set-uid和set-gid，则进程的有效用户ID设置为文件的用户ID（组类似）</p></blockquote></li>
+</ul>
+
+
+<p>对文件的“设置用户ID”和“设置组ID”，可以使用S_ISUID和S_ISGID进行测试</p>
+
+<h1>文件权限验证规则</h1>
+
+<h2>对文件进行权限测试</h2>
+
+<p>这几个文件权限，验证规则是：</p>
+
+<ul>
+<li>使用名字打开一个文件时，路径中的所有目录（包括隐含的当前目录），都应该具有执行权限（目录的执行权限位通常称为搜索位）
+
+<blockquote><p>目录读权限和执行权限是不一样的，读权限允许读取目录中的文件列表。当一个目录是访问路径中的组成部分时，具有执行权限可通过该目录找到文件。</p></blockquote></li>
+<li>文件读权限决定了我们可以打开文件进行读操作</li>
+<li>文件写权限决定了我们可以打开文件进行写操作</li>
+<li>如果open函数指定了O_TRUNC,必须具有写权限</li>
+<li>删除一个文件，需对文件所在目录具有写和执行权限，对删除的文件本身，则不需要</li>
+<li>6个exec函数中任何一个执行某个文件，都必须对文件有执行权限</li>
+</ul>
+
+
+<p>以上权限验证发生在每当进程打开、创建和删除一个文件时，内核就进行文件访问权限测试，这种验证涉及到</p>
+
+<ul>
+<li>文件所有者（st_uid, st_gid，属于文件性质）</li>
+<li>进程有效ID（有效用户和组ID，属于进程性质）</li>
+<li>进程附加组ID（如果支持，属于进程性质）</li>
+</ul>
+
+
+<h2>对进程进行权限测试</h2>
+
+<ul>
+<li>进程是超级用户（有效用户ID是0），允许访问</li>
+<li>进程有效ID等于文件所有者ID，则进行上面的文件权限验证（若<em>所有者</em>适当的权限位被设置，则允许；否则拒绝）</li>
+<li>进程有效组ID等于文件的组ID，则进行上面的文件权限验证（若<em>组</em>适当的权限位被设置，则允许；否则拒绝）</li>
+<li>若文件其它用户适当权限位被设置，则允许；否则拒绝</li>
+</ul>
+
+
+<p>以上按顺序进行验证。</p>
+
+<h1>以上，基本讲述了stat结构中的st_mode字段涉及到的知识。</h1>
+
+<h1>文件所有权相关</h1>
+
+<h2>新文件和目录所有权</h2>
+
+<p>在对进程进行权限验证时，用到了文件的用户ID和组ID，这里讲一下，创建一个新文件，赋予文件的用户ID和组ID是什么。
+创建文件夹和创建文件一样。</p>
+
+<ul>
+<li>新文件的用户ID设置为进程的有效用户ID</li>
+</ul>
+
+
+<p>对于组ID，可以选择下列之一作为组ID：</p>
+
+<ul>
+<li>新文件的组ID可以是进程的有效用户ID</li>
+<li>新文件的组ID可以是它所在的目录的组ID</li>
+</ul>
+
+
+<blockquote><p>对于FreeBSD 和Mac OS X，使用的是目录组ID作为新文件的组ID
+对于linux 2.4.22，新文件的组ID取决于它所在的目录的设置组ID是否设置，
+如果设置组ID设置了，则为组ID，如果没设置，则为进程的有效组ID。</p></blockquote>
+
+<h2>修改文件所有权</h2>
+
+<p>下面这几个函数修改文件的用户ID和组ID</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int chown(const char *pathname, uid_t owner, gid_t group);
+</span><span class='line'>int fchown(int filedes, uid_t owner, gid_t group);
+</span><span class='line'>int lchown(const char * pathname, uid_t owner, gid_t group);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>access函数</h2>
+
+<p>操作文件时，默认是按照进程的有效用户ID和有效组ID进行权限验证。也可以对进程实际用户ID和实际组ID进行验证，使用access函数</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int access(const char * pathname, int mode);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>其中，mode参数常量，取自unistd.h</p>
+
+<p>R_OK 测试读权限
+W_OK 测试写权限
+X_OK 测试执行权限
+F_OK 测试文件是否存在</p>
+
+<h1>文件权限位相关</h1>
+
+<h2>文件屏蔽字</h2>
+
+<p>创建文件时，文件默认的权限是多少，是由文件屏蔽字来确定的。</p>
+
+<p>文件屏蔽字是与文件模式一样的，只不多，屏蔽字的权限位为1的，创建文件时，文件的对应权限位为0（关闭对应权限）。</p>
+
+<p>可以使用umask函数设置进程的文件屏蔽字</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/stat.h&gt;
+</span><span class='line'>
+</span><span class='line'>mode_t umask(mode_t cmask);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>cmask是</p>
+
+<ul>
+<li>S_I(R|W|X)USR</li>
+<li>S_I(R|W|X)GRP</li>
+<li>S_I(R|W|X)OTH</li>
+</ul>
+
+
+<p>这九个常量的若干个按位“或”构成的。</p>
+
+<p>对于屏蔽字，有以下几点：</p>
+
+<ul>
+<li>进程创建一个文件或目录时，一定会使用屏蔽字</li>
+<li>对于任何屏蔽字中为1的位，文件相应的权限位一定会被关闭（即使在open、create函数中指定了响应权限位也会被关）</li>
+</ul>
+
+
+<p>同时，还需注意：</p>
+
+<ul>
+<li>unix系统一般不处理umask的值，在登陆是，有shell的启动文件设置一次，然后从不改变。</li>
+<li>但是当创建文件时，如果想确保文件的某种权限，必须在运行时修改umask的值。</li>
+<li>shell的umask命令可以查看和修改shell的umask的值</li>
+<li>子进程修改屏蔽字的值，不影响父进程的屏蔽字的值</li>
+</ul>
+
+
+<p>shell的umask命令的值，三位八进制值，从左到右，分别代表用户、组和其它权限位。4表示读，2表示写，1表示执行。
+三个权限经过“或”操作，最大值是7，表示读写执行权限都有。</p>
+
+<p>最常用的是002、022和027等。</p>
+
+<p>umask命令可以使用-S选项打印符号形式的屏蔽字。</p>
+
+<h2>修改文件权限</h2>
+
+<p>除了创建文件时，根据屏蔽字和指定的权限位为文件赋予特定权限外，还可以使用修改权限函数动态修改文件权限：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;sys/stat.h&gt;
+</span><span class='line'>
+</span><span class='line'>int chmod(const char *pathname, mode_t mode);
+</span><span class='line'>int fchmod(int fileds, mode_t mode);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>chmod中的mode参数取值于<code>sys/stat.h</code>中，除了上面那九种权限，还有两个设置ID常量（S_ISUID和S_ISGID）,保存正文常量（S_ISVTX）
+以及三个组合常量（S_IRWX(U|G|O)），一共15种：</p>
+
+<ul>
+<li>S_I(R|W|X)(USR|GRP|OTH)
+——九种</li>
+<li>S_IRWX(U|G|O)  ——三种</li>
+<li>S_ISUID，S_ISGID，S_ISVTX ——三种</li>
+</ul>
+
+
+<h2>粘住位</h2>
+
+<p>如果一个执行文件设置了粘住位(sticky bit)，则该程序在第一次执行并结束时，其程序正文部分（机器指令部分）的一个副本仍被保存在交换区。</p>
+
+<p>这样的好处是：</p>
+
+<ul>
+<li>该程序下次执行时，可快速装入内存。</li>
+</ul>
+
+
+<p>这么做的原因是：
+* 交换区占用连续磁盘空间，可以认为是连续文件（而一般文件是分散放在磁盘各处的）
+* 因此程序的正文也是连续存放的</p>
+
+<p>粘住位也被称为<em>保存正文位（saved-text bit）</em>，因此也就有了S_ISVTX常量。</p>
+
+<p>随着现代系统进化，这个粘住位的功能也被扩展了使用范围。</p>
+
+<p>Single UNIX Specification允许设置目录的粘住位，如果对目录设置了粘住位，则只有对该目录具有写权限的用户，在满足下列条件之一时，才能
+删除或更名该目录下的文件：</p>
+
+<ul>
+<li>拥有此文件</li>
+<li>拥有此目录</li>
+<li>超级用户</li>
+</ul>
+
+
+<p>/tmp目录是设置粘住位的典型候选。</p>
+
+<h1>文件长度</h1>
+
+<p>结构体stat中，st_size表示的是文件长度，单位是字节，这个字段只对普通文件、目录文件和符号链接有意义。</p>
+
+<p>对于文件大小：</p>
+
+<ul>
+<li>对于目录，文件长度通常是一个数（16或512）的倍数</li>
+<li>对于符号链接，文件长度是文件名中的实际字节数，比如lib
+&ndash;> usr/lib,lib的长度是7</li>
+</ul>
+
+
+<p>除了st_size字段外，还有st_blksize和st_blocks两个字段。其中：</p>
+
+<ul>
+<li>st_blksize：是读写这个文件的最佳的块大小，用这个块大小来读文件时，所用的时间最小，标准I/O也尝试一次读写st_blksize个字节。</li>
+<li>st_blocks: 所分配的实际的512（系统依赖）的数量</li>
+</ul>
+
+
+<h2>文件空洞</h2>
+
+<p>普通文件可以包含空洞，造成文件空洞的原因是：</p>
+
+<ul>
+<li>设置文件偏移量超过文件尾端</li>
+<li>并写了数据</li>
+</ul>
+
+
+<p>这两个会导致文件空洞。</p>
+
+<p>如果文件有空洞存在，则ll和du显示的文件大小是不一样的。</p>
+
+<h1>文件截短</h1>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int truncate(const char *pathname, off_t length);
+</span><span class='line'>int ftruncate(int filedes, off_t length);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>link,unlink,remove和rename函数</h1>
+
+<p>任何一个文件可以有多个目录项指向其i节点，创建一个指向现有文件的链接的方法：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>int link(const char *existingpath, const char *newpath);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这是创建一个硬链接的方法。</p>
+
+<ul>
+<li>link这个函数包括两个步骤：1），创建新目录项；2）增加链接计数，这两个操作原子操作</li>
+<li>现在大多数的实现都不支持跨文件系统创建硬链接，也即这两个目录项应在同一个文件系统内</li>
+<li>大部分实现也不支持创建目录的硬链接</li>
+</ul>
+
+
+<p>为了删除一个现有的目录项，使用unlink函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>int unlink(const char *pathname); // 如果pathname是一个符号链接，则取消符号链接</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这个<code>unlink</code>函数删除此目录项，并将pathname所引用的文件的链接数减1.</p>
+
+<p>当链接计数达到0，该文件内容才可被删除，若有进程打开了文件，即使其计数为0，内容也不能删除，进程退出后，才可删除。</p>
+
+<p>关闭一个文件时，内核：</p>
+
+<ul>
+<li>先检查打开文件的进程数</li>
+<li>若进程为0，再检查链接数，若为0，则删除</li>
+</ul>
+
+
+<h2>解释i节点、目录项等</h2>
+
+<p>i-node节点包含了大部分文件信息，比如类型、权限什么的，单并没有包含文件名，因此</p>
+
+<p>一个普通文件，具有 ：一个i-node项，一个目录项（包含文件名和i-node编号）和n个数据块。
+如图：</p>
+
+<p><img src="/images/assets/file.png" title="file system file detail" alt="alt text" /></p>
+
+<p>一个目录，则包含一个数据块，其数据库实际上是一个目录块，目录块中包含目录下的文件的目录项信息（目录项包括i节点和文件名）
+如图：
+<img src="/images/assets/dir.png" title="file system dir detail" alt="alt text" /></p>
+
+<h1>符号链接</h1>
+
+<p>符号链接是指向一个文件的间接指针，主要是避开硬链接的一些限制：</p>
+
+<ul>
+<li>硬链接要求链接和文件位于一个文件系统中</li>
+<li>只有超级用户才能创建指向目录的硬链接</li>
+</ul>
+
+
+<p>符号链接则无此限制。</p>
+
+<blockquote><p>注意：
+当使用以名字引用文件的函数时，应当了解函数是否处理符号链接，也就是是否会自动跟随符号链接到达它所指向的文件。
+若open函数参数是一个符号链接，open会跟随符号链接到达指向的文件，若符号链接指向的文件不存在，则返回错误。</p></blockquote>
+
+<p>创建一个符号链接：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'># include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int symlink(const char *actualpath, const char *sympath);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>open函数打开文件时，会跟随符号链接，若想打开符号链接本身，则使用：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ssize_t readlink(const char *restrict pathname, char *restrict buf, size_t bufsize);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>解除一个符号链接，可以使用unlink函数。因为unlink不跟随符号链接。</p>
+
+<h1>文件时间</h1>
+
+<p>与文件相关的三个时间值：</p>
+
+<ul>
+<li>st_atime. 文件数据的最后访问时间 比如read函数
+， ls命令用-u选项查看</li>
+<li>st_mtime。文件数据的最后修改时间 比如write函数， ls的默认选项就是查看这个时间</li>
+<li>st_ctime。文件i节点状态的最后更改时间 比如chmod，chown函数， ls的-c选项查看这个时间</li>
+</ul>
+
+
+<h1>utime函数</h1>
+
+<p>对文件访问和修改时间，可以用utime函数进行修改</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int utime(const char *pathname, const struct utimebuf * times);
+</span><span class='line'>
+</span><span class='line'>struct utimebuf{
+</span><span class='line'>time_t actime; /*访问时间*/
+</span><span class='line'>time_t modtime; /*修改时间*/
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>注意：
+utime并不修改st_ctime时间，当调用utime时，会自动更新</p></blockquote>
+
+<h1>目录相关</h1>
+
+<h2>mkdir和rmdir函数</h2>
+
+<p>mkdir创建目录，rmdir删除目录</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>int mkdir(const char *pathname, mode_t mode);
+</span><span class='line'>int rmdir(const char *pathname);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对于mkdir，常见的错误是忘记设置其执行权限位，以便能访问目录中的文件名。
+rmdir函数只删除空目录，空目录只包含.和..两个目录</p>
+
+<blockquote><p>注意：
+创建目录时，目录的用户ID和组ID与文件创建时的规则一样。</p></blockquote>
+
+<h2>读目录</h2>
+
+<ul>
+<li>对目录具有访问权限的用户都可读目录</li>
+<li>但只有内核才能写目录。一个目录的写权限位和执行权限位决定了在该目录中能否创建新文件以及删除文件，它们并不代表能否写目录本身</li>
+</ul>
+
+
+<p>虽然目录的实际格式依赖于具体文件系统的实现。但posix.1定义了读目录的相关接口，一般系统实现都组织read函数读目录内容</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;dirent.h&gt;
+</span><span class='line'>
+</span><span class='line'>DIR *opendir(const char *pathname);
+</span><span class='line'>
+</span><span class='line'>struct dirent *readdir(DIR * dp);
+</span><span class='line'>int clostdir(DIR *dp)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>dirent.h中定义的dirent结构与实现相关，但至少会包含下列两个成员：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>struct dirent{
+</span><span class='line'>ino_t d_ino;  /*i-node数*/
+</span><span class='line'>char d_name[NAME_MAX+1];
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>其中，NAME_MAX依赖于具体实现，并没有规定一个常量。</p>
+
+<p>opendir函数返回的指向DIR结构的指针，由另外其它函数使用。
+opendir执行初始化操作，使第一个readdir读目录中的第一个目录项，目录项的顺序与实现有关，通常不按照字母顺序排列。</p>
+
+<h2>工作目录</h2>
+
+<p>每个进程都有一个当前工作目录，此目录是搜索所有相对路径名的起点。</p>
+
+<p>进程可以通过chdir和fchdir函数更改当前工作目录</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>int chdir(const char *pathname);
+</span><span class='line'>int fchdir(int fd);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当前工作目录是进程的一个属性，所以调用chdir只影响当前进程本身，不影响其它进程。</p>
+
+<p>内核保持有当前工作目录的信息，按理应该能取其当前值，但是，内核为进程保存了指向该目录v节点的指针等目录信息，并不保存完整的路径名。</p>
+
+<p>有个函数提供了获取工作目录的功能：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>char *getcwd(char *buf, size_t size);</span></code></pre></td></tr></table></div></figure>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/02/10/linux-file-system/">Linxu 文件系统笔记</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-10T19:33:17+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>设备特殊文件</h1>
+
+<p>设备可以划分成两种类型：</p>
+
+<ul>
+<li>字符设备。一个字符一个字符的处理数据，终端和键盘就是例子。</li>
+<li>块设备。一次处理一块数据。块大小依赖于设备类型。一般都是512字节的倍数。磁盘就是这种设备。</li>
+</ul>
+
+
+<h2>设备ID</h2>
+
+<p>每一个设备文件都有一个主ID号和副ID号。主ID号标记设备的一般类型，内核使用这个主ID来寻找这种类型设备对应的驱动。副ID号唯一的标记这个设备类型下得特殊设备了。ls -l可以显示主ID和副ID</p>
+
+<h1>磁盘和分区</h1>
+
+<ul>
+<li>一个磁盘可以分成多个分区。</li>
+<li>信息都放在磁盘的磁道上，磁道被划分成扇区，每一个扇区都由一系列的物理块组成。物理块的大小一般时512或者其倍数个字节，代表了最小的信息单元。</li>
+</ul>
+
+
+<h2>分区</h2>
+
+<p>一个分区可以包含以下信息：</p>
+
+<ul>
+<li>文件系统，也即每个分区可以包含一个文件系统</li>
+<li>数据区域</li>
+<li>swap区域</li>
+</ul>
+
+
+<h1>文件系统</h1>
+
+<p>linux支持广泛的文件系统，包括
+* 传统的ext2文件系统
+* 原生的unix文件系统，包括 Minix, System V和 BSD文件系统
+* 微软的FAT, FAT32, 和 NTFS
+* apple的HFS
+* 网络文件系统，包括sun的NFS等
+* 一系列日志文件系统，包括xt3, ext4, Reiserfs, JFS, XFS, 和 Btrfs</p>
+
+<p>以ext2文件系统为例，介绍文件系统，ext2文件系统源代码很小，大约5000行c程序（<a href="http://e2fsprogs.sourceforge.net/ext2.html.%EF%BC%89">http://e2fsprogs.sourceforge.net/ext2.html.%EF%BC%89</a></p>
+
+<h2>文件系统结构</h2>
+
+<p>磁盘分成多个逻辑分区，每一个分区可拥有一个文件系统，比如：
+<img src="/images/assets/Figure14-1.png" title="layout of disk partitions and a file system" alt="alt text" /></p>
+
+<ul>
+<li>boot块，总是文件系统的第一个块，文件系统不会使用这个块，boot块是用来重启操作系统的。虽然每个分区的文件系统都有一个boot块，但只有一个会被使用。</li>
+<li><p>superblock，紧随boot块后的一个单一块，包含如下信息</p>
+
+<blockquote><ul>
+<li>i-nod表的大小</li>
+<li>此文件系统的逻辑块大小</li>
+<li>文件系统的大小</li>
+</ul>
+</blockquote></li>
+<li><p>inode表。文件系统的每一个文件或者目录都在inode表中对应一个唯一的表项。这个表项记录了文件的各种信息。</p></li>
+<li>数据块，磁盘的最主要的文件数据存储区域。</li>
+</ul>
+
+
+<h2>i-node</h2>
+
+<p>对于所有的文件系统内的文件，文件系统的i-node表都有一个唯一的i-node表项与之对应。i-node使用i-node在表中的顺序号来引用（数组实现？）。
+<em>i-node number</em>是ls -li命令的第一个字段.</p>
+
+<p>i-node包含的信息有：</p>
+
+<ul>
+<li>文件类型，比如目录、普通文件、符号链接等</li>
+<li>拥有者</li>
+<li>所属组</li>
+<li>访问权限</li>
+<li>三个文件相关时间（最后读时间、最后修改内容时间和最后修改i-node时间）</li>
+<li>指向这个文件的硬链接数</li>
+<li>文件大小</li>
+<li>分配的块数</li>
+<li>指向数据块的指针</li>
+</ul>
+
+
+<h2>ext2的i-node的数据块指针</h2>
+
+<p>为了满足一下需求：</p>
+
+<ul>
+<li>i-node结构是固定大小的，同时又文件大小是任意的（因此，i-node的数据指针是任意的）</li>
+<li>允许文件的数据库不是连续存储的，同时又允许文件数据任意的通过lseek()访问</li>
+</ul>
+
+
+<p>基于以上几点，ext2设计了i-node的指针结构:</p>
+
+<p><img src="/images/assets/Figure14-2.png" title="Structure of file blocks for a file in an ext2 file system" alt="alt text" /></p>
+
+<p>每一个i-node包含十五个pointer。前12个指针指向文件数据块的前十二个块。下一个指针指向一个指针块，指针块中指针的个数依赖块的大小。
+每个指针需要4个字节，如果块大小是1024字节，则存放256个指针，如果是4096字节，则存放1024个指针。
+为了能容纳更大数据，第13个指针，是一个双重间接指针（double indirect pointer），它指向一个指针块，块中的指针又指向一个指针块。
+如果需要真正大的文件，还可以使用最后一个triple-indirect pointer。</p>
+
+<p>这样设计的一个好处是，允许文件存在黑洞。对于具有hole的文件，他可以仅仅把指针赋值为0，而不需要为其分配数据位null的块。</p>
+
+<h1>虚拟文件系统（vfs）</h1>
+
+<p>linux支持各种文件系统，文件系统实现各不一样，但是对文件的操作，不会涉及到具体的文件系统实现，而是可以跨文件系统的。这是因为linux定义了一个抽象层，各种文件系统需要实现的。一般称为Virtual File System（vfs）。</p>
+
+<p>vfs是linux的内核特征，定义一个抽象的文件操作层，也就是一系列操作文件的接口。一般包括：open(), read(), write(), lseek(), close(), truncate(), stat(), mount(), umount(), mmap(), mkdir(), link(), unlink(), symlink(), and rename().</p>
+
+<p>如图所示：</p>
+
+<p><img src="/images/assets/Figure14-3.png" title="he virtual file system" alt="alt text" /></p>
+
+<h1>日志文件系统（ournaling File Systems）</h1>
+
+<p>ext2文件系统是典型的传统unix文件系统的例子，也遭受经典的这种文件系统的限制：当down机后，在重启后需要进行一致性检查，来确保文件系统的完整性。这是因为，当系统崩溃时，文件系统的更新有可能只完成了部分操作。文件系统的元数据，包括目录下，i-node信息和数据库指针，可能会处于不一致状态。
+如果不进行修复，文件系统会进一步被破坏。</p>
+
+<p>但是一致性检查需要扫描所有文件，如果文件系统很大，花费时间也会大。</p>
+
+<p>日志文件系统消除了当系统挂了后的漫长的一致性检查。日志文件系统在进行实际的操作时，先把更新的元数据记录到一个日志文件的磁盘文件中。
+写入元数据到日志文件是事务性写入相关的数据。一旦系统崩溃，在重启后，只需要快速的重做未完成的更新，是系统进入一个一致性状态。</p>
+
+<p>这有个缺点是延长了更新文件的时间。</p>
+
+<p>linux的日志文件系统包括：</p>
+
+<ul>
+<li>Reiserfs是第一个整合到linux内核的日志文件系统（2.4.1）。</li>
+<li>ext3是在ext2上增加了日志功能的系统。</li>
+<li>JFS系统是IBM开发的，在2.4.20上整合到内核</li>
+<li>ext4，在2.6.19加入到内核</li>
+<li>Btrfs，通常发音是butter FS。提供了一些现代的系统功能。</li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/02/10/per4-chapter3-type-and-object/">类型和对象(PER4 Chapter 3)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-10T19:33:16+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>对象身份和类型</h1>
+
+<p>内置函数 <em>id()</em> 以整数的方式返回对象的身份。这个整数通常指的是内存的位置，但并不保证，这依赖于实现。</p>
+
+<p><em>is</em> 操作符用来比较两个对象的<em>身份</em>的。</p>
+
+<p><em>type()</em> 返回对象的类型。</p>
+
+<p>使用例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'># Compare two objects 
+</span><span class='line'>def compare(a,b):
+</span><span class='line'>    if a is b:
+</span><span class='line'>        # a和b是同样的对象，也就是身份相同 
+</span><span class='line'>        statements
+</span><span class='line'>    if a == b:
+</span><span class='line'>        # a和b具有同样的值，身份可以不一样，只要值一样 
+</span><span class='line'>        statements
+</span><span class='line'>  if type(a) is type(b):
+</span><span class='line'>      # a和b具有同样的类型 
+</span><span class='line'>      statements
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对象的类型：</p>
+
+<p>对象的类型本身就是一个对象。这个类型对象被称为对象的类。这个类型对象是被唯一定义的，并且给定类型的所有实例的类型都是一样的。因此类型对象之间进行比较，可以使用操作符 <em>is</em> 进行比较。</p>
+
+<p>所有的类型对象都赋予一个名字，可以用来进行类型检查。大多数这种名字都是内置的，比如list、dict等。例如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>if type(s) is list: 
+</span><span class='line'>  s.append(item)
+</span><span class='line'>if type(d) is dict: 
+</span><span class='line'>  d.update(t)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>一个比较好的判断类型的方式是使用内置的<code>isinstance(object, type)</code>函数，因为这个函数是可以识别继承的。比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>if isinstance(s,list): 
+</span><span class='line'>  s.append(item)
+</span><span class='line'>if isinstance(d,dict): 
+</span><span class='line'>  d.update(t)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>引用计数和垃圾回收</h1>
+
+<p>所有的对象都是引用计数的。</p>
+
+<p>只要把对象赋给一个新名字，或者存放在容器中（list、dict等），都会使引用数增加。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>a = 37 # Creates an object with value 37 
+</span><span class='line'>b = a # Increases reference count on 37 
+</span><span class='line'>c = []
+</span><span class='line'>c.append(b) # Increases reference count on 37
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当a赋值给b的时候，值为37的对象的引用数加1；当b存放在容器c中，值为37的对象的引用数加1.</p>
+
+<p>整个例子中，只有一个对象保存了37的值，其它的操作仅仅是创建了一个新的指向这个对象的引用。</p>
+
+<p>这就是引用计数的概念。在考虑引用计数，一定要记住，所有都是对象。</p>
+
+<p>还可以通过操作来减少引用，比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>del a # Decrease reference count of 37 
+</span><span class='line'>b = 42 # Decrease reference count of 37 
+</span><span class='line'>c[0] = 2.0 # Decrease reference count of 37</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以通过函数来查看对象的引用情况：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt;
+</span><span class='line'>&gt;&gt;&gt; a = 37
+</span><span class='line'>&gt;&gt;&gt; import sys
+</span><span class='line'>&gt;&gt;&gt; sys.getrefcount(a)
+</span><span class='line'>7
+</span><span class='line'>&gt;&gt;&gt; sys.getrefcount(37)
+</span><span class='line'>9</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当对象的引用计数到0的时候，就会被垃圾回收。</p>
+
+<p>对于循环引用，其引用计数不为零，但是已经不被使用的对象，解释器会定期执行循环引用检查。发现就会回收。</p>
+
+<h1>引用和拷贝</h1>
+
+<p>拷贝分浅拷贝和深拷贝。</p>
+
+<p>copy模块提供了浅拷贝和深拷贝操作</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>copy.copy(x)
+</span><span class='line'>  Return a shallow copy of x.
+</span><span class='line'>
+</span><span class='line'>copy.deepcopy(x)
+</span><span class='line'>  Return a deep copy of x.</span></code></pre></td></tr></table></div></figure>
+
+
+<p>浅拷贝和深拷贝的区别只与组合对象相关（包含其它对象的对象，比如list等）</p>
+
+<ul>
+<li>浅拷贝构建了一个新的组合对象，然后把从原对象中发现的引用插入到新组合对象中</li>
+<li>深拷贝构建了一个新的组合对象，然后递归的把原对象的拷贝插入到新对象中</li>
+</ul>
+
+
+<p>浅拷贝创建一个引用，包含的元素是原对象包含的元素的引用。比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; a = [1,2,[3,4]]
+</span><span class='line'>&gt;&gt;&gt; b = list(a)
+</span><span class='line'>&gt;&gt;&gt; b is a
+</span><span class='line'>False
+</span><span class='line'>&gt;&gt;&gt; b.append(100)
+</span><span class='line'>&gt;&gt;&gt; b
+</span><span class='line'>[1, 2, [3, 4], 100]
+</span><span class='line'>&gt;&gt;&gt; a
+</span><span class='line'>[1, 2, [3, 4]]
+</span><span class='line'>&gt;&gt;&gt; b[2][0] = -100
+</span><span class='line'>&gt;&gt;&gt; b
+</span><span class='line'>[1, 2, [-100, 4], 100]
+</span><span class='line'>&gt;&gt;&gt; a
+</span><span class='line'>[1, 2, [-100, 4]]
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对dict的浅拷贝，可以使用 dict.copy()，对于list的浅拷贝，可以使用<code>copied_list = original_list[:]</code></p>
+
+<p>深拷贝可以使用copy模块下的deepcopy函数实现：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; import copy
+</span><span class='line'>&gt;&gt;&gt; a = [1, 2, [3, 4]]
+</span><span class='line'>&gt;&gt;&gt; b = copy.deepcopy(a)
+</span><span class='line'>&gt;&gt;&gt; b[2][0] = -100
+</span><span class='line'>&gt;&gt;&gt; b
+</span><span class='line'>[1, 2, [-100, 4]]
+</span><span class='line'>&gt;&gt;&gt; a # Notice that a is unchanged [1, 2, [3, 4]]
+</span><span class='line'>&gt;&gt;&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果一个类想定义自己的浅拷贝和深拷贝实现，可以实现特殊方法<code>__copy__() and __deepcopy__()</code>。前者是在浅拷贝的时候调用（copy.copy(x)）。后者是在深拷贝的时候调用(copy.deepcopy(x))。</p>
+
+<h1>第一类对象</h1>
+
+<p>第一类对象是指可以在执行期创造并作为参数传递给其他函数或存入一个变量的实体。一般第一类对象具有的特征是：</p>
+
+<ul>
+<li>可以被存入变量或其他结构</li>
+<li>可以被作为参数传递给其他函数</li>
+<li>可以被作为函数的返回值</li>
+<li>以在执行期创造，而无需完全在设计期全部写出</li>
+</ul>
+
+
+<p>在python中，所有的对象都是第一类对象。</p>
+
+<p>所有对象都是第一类对象的好处是可以写出很紧凑简洁的代码。</p>
+
+<h1>表示数据的内置类型</h1>
+
+<p>略</p>
+
+<h1>表示程序结构的内置类型</h1>
+
+<h2>可调用类型</h2>
+
+<p>可调用类型表示对象支持函数调用操作。包括用户定义函数，内置函数、实例方法和<strong>类</strong>。</p>
+
+<h3>用户定义函数</h3>
+
+<p>在模块级别创建的，通过def或者lambda操作符创建的用户定义的函数，是可调用的对象。</p>
+
+<p>比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>def foo(x, y):
+</span><span class='line'>  return x + y
+</span><span class='line'>
+</span><span class='line'>foo = lambda x,y: x + y
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用户定义函数的属性包括：</p>
+
+<table>
+<thead>
+<tr>
+<th>描述        </th>
+<th style="text-align:center;"> 描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f.<em> </em>dict_ _ </td>
+<td style="text-align:center;"> 包含函数属性的dict</td>
+</tr>
+<tr>
+<td>f.<em> </em>defaults_ _ </td>
+<td style="text-align:center;"> 包含默认参数的元组</td>
+</tr>
+</tbody>
+</table>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; def foo(x=1, y=1):
+</span><span class='line'>...     return x + y
+</span><span class='line'>...
+</span><span class='line'>&gt;&gt;&gt; foo.__defaults__
+</span><span class='line'>(1, 1)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用户定义的函数的类型是<code>types.FunctionType</code></p>
+
+<p>比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>&gt;&gt;&gt; def foo(x=1, y=1):
+</span><span class='line'>...     return x + y
+</span><span class='line'>...
+</span><span class='line'>
+</span><span class='line'>&gt;&gt;&gt; import types
+</span><span class='line'>&gt;&gt;&gt; type(foo) is types.FunctionType
+</span><span class='line'>True
+</span><span class='line'>&gt;&gt;&gt; type(foo) is types.MethodType
+</span><span class='line'>False</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>方法</h3>
+
+<p>方法是定义在类内部的函数。有三种方法：</p>
+
+<ul>
+<li>实例方法——对对象实例上操作的函数</li>
+<li>类方法——类本身作为一个对象，类方法是在类本身操作的函数</li>
+<li>静态方法——仅仅是个函数，不接收类本身或类的实例作为参数</li>
+</ul>
+
+
+<p>比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>class Foo(object):
+</span><span class='line'>  # 实例方法，第一个参数self
+</span><span class='line'>  def instance_method(self, arg):
+</span><span class='line'>      statements 
+</span><span class='line'>
+</span><span class='line'>  # 类方法， 第一个参数cls
+</span><span class='line'>  @classmethod
+</span><span class='line'>  def class_method(cls, arg): 
+</span><span class='line'>      statements
+</span><span class='line'>
+</span><span class='line'>  # 静态方法，没有self或cls的参数
+</span><span class='line'>  @staticmethod
+</span><span class='line'>  def static_method(arg):
+</span><span class='line'>      statements</span></code></pre></td></tr></table></div></figure>
+
+
+<p>实例方法和类方法都由types.MethodType来表示。</p>
+
+<p>详细了解对象查询属性操作（.）是如何工作的，对理解这种特殊类型是有好处的。</p>
+
+<p>在一个对象上查询什么（.）与函数调用总是分开的，当调用方法时，两个操作都会发生，只是步骤差别。</p>
+
+<ol>
+<li>在实例上查询</li>
+</ol>
+
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>f = Foo() # 创建一个实例
+</span><span class='line'>
+</span><span class='line'>meth = f.instance_method # 查询方法，注意，后面没有括号"()"
+</span><span class='line'>
+</span><span class='line'>meth(37) # 现在调用函数</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面例子中，meth被称为<strong>绑定方法</strong>。绑定函数是一个可调用对象，它包括了函数（method）和相关的实例。</p>
+
+<p>当调用绑定函数时，相关实例会作为第一个参数传递给函数（self）。</p>
+
+<ol>
+<li>在类上查询</li>
+</ol>
+
+
+<p>接上面例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>umeth = Foo.instance_method # 在Foo上查询instance_method
+</span><span class='line'>
+</span><span class='line'>umeth(f,37) # 明确提供self，并且调用
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在这个例子中，umeth被称为未绑定方法。未绑定方法只包含了方法函数，但是需要明确传递正确类型的实例对象作为第一个参数。</p>
+
+<p>在这个例子中，传了Foo的实例f作为第一个参数。</p>
+
+<p>对用户定义的类，绑定方法和未绑定方法都是作为types.MethodType的对象。</p>
+
+<p>下面是方法对象的属性</p>
+
+<table>
+<thead>
+<tr>
+<th>描述        </th>
+<th style="text-align:center;"> 描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>m.<strong>class</strong> </td>
+<td style="text-align:center;"> 函数定义的类</td>
+</tr>
+<tr>
+<td>m.<strong>func</strong> </td>
+<td style="text-align:center;"> 实现方法的函数对象</td>
+</tr>
+<tr>
+<td>m.<strong>self</strong> </td>
+<td style="text-align:center;"> 与方法相关的实例，如果没有，返回None</td>
+</tr>
+</tbody>
+</table>
+
+
+<h3>内置函数和方法</h3>
+
+<p>对象types.BuiltinFunctionType用来描述用c或c++实现的函数和方法。属性和上面类似。</p>
+
+<h3>类和实例作为可调用对象</h3>
+
+<p>类对象和实例也可以作为可调用对象。一个类对象被<code>class</code>创建，可以作为一个函数来调用，用来创建类的实例。这种情况下，传递的参数会传递给<strong>init</strong>方法中，用来初始化实例对象。</p>
+
+<p>如果一个实例实现了<strong>call</strong>方法，那么这个实例也可以模拟函数调用。如果对象x定义了<strong>call</strong>函数，那么x(args)会调用x.<strong>call</strong>(args)。</p>
+
+<h2>类、类型和实例</h2>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax/">python词法约定和语法(PER4 Chapter 2)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-08T10:33:00+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>行结构和缩进</h1>
+
+<p>python中，每一行用换行符来结束，如果一行太长，可以使用<em>行继续操作符“\”</em>来分割，比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>a = math.cos(3 * (x - n)) + \ 
+</span><span class='line'>  math.sin(3 * (y - n))</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在(&hellip;), [&hellip;], {&hellip;}, &ldquo;&rdquo;&ldquo;&hellip;&rdquo;&ldquo;&#8221;和&#8217;&lsquo;&rsquo;&hellip;&lsquo;&rsquo;&lsquo;之间的代码，如果跨越多行，可以不用这个操作符。</p>
+
+<p>如果函数、条件、循环或者类的代码体只有一行语句，可以放在同一行中，比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>if a:    statement1
+</span><span class='line'>else: statement2</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果多个语句放在一行，可以使用&#8221;;&ldquo;来分割。</p>
+
+<h1>标识符</h1>
+
+<ul>
+<li>以下划线开头的标识符是不会被导入语句<code>from module import *</code>导入的。</li>
+<li>前后有两个下划线的标识符（比如<code>__init__</code>），是为特殊方法保留的。</li>
+<li>前面有两个下划线的标识符（比如<code>__bar</code>），为了实现私有的类成员。</li>
+</ul>
+
+
+<h1>数字字面量</h1>
+
+<p>有四种数字类型：</p>
+
+<ul>
+<li>布尔</li>
+<li>整数</li>
+<li>浮点数</li>
+<li>复数</li>
+</ul>
+
+
+<p>作为布尔值的True和False被解释成1和0.</p>
+
+<p>除了十进制，还可以把整数指定为八进制、十六进制和二进制，分别用前缀0、0x和0b（比如：0644, 0x100fea8, or 0b11101010）</p>
+
+<p>python的整数没有限制，可以任意写。</p>
+
+<h1>字符串字面量</h1>
+
+<p>字符串字面常量使用单引号（&#8217;）、双引号（&#8221;）或者三个引号（&#8217;&lsquo;&#8217;或者&#8221;&ldquo;&#8221;）括起来。</p>
+
+<p>在字面常量内，反斜线（\）字符可以被用来特殊字符比如换行，反斜线自己，引号和不能打印的字符。如果转义字符不能识别，则保留原样。</p>
+
+<p>除了\r \n等常用的转移字符外，几个不常用的列到下：</p>
+
+<ul>
+<li>\OOO              八进制值，后面三个数字。（\000 到 \377，\377的十进制值是255）</li>
+<li>\uxxxx            Unicode字符，x是十六进制字符（\u0000到\uffff）</li>
+<li>\Uxxxxxxxx        Unicode字符（\U00000000到\Uffffffff）</li>
+<li>\xhh              十六进制值（\x00到\xff，\xff的值是255）</li>
+</ul>
+
+
+<p>\OOO和\xhh的用法是在字符串内嵌入不能够容易的打出的字符（控制字符，不能打印字符，符号和国际化字符等）。比如：</p>
+
+<p>如果写字符串“Jalapeño”，可以&#8221;Jalape\xf1o&#8221; \xf1就是字符ñ。</p>
+
+<p>在python 2中，字符串字面量对应的是8-bit的字符或者说面向字节的数据。为了能够使用国际化字符集，需要在字符串前面前缀一个字符“u”</p>
+
+<p>不管使用哪种字符串，可以使用\u或者\U来嵌入一个国际化字符到字符串中。</p>
+
+<p>原始字符串，在字符串前缀一个“r”字符。原始字符串中，所有的反斜线字符串都不转义，原样保存。这种字符串，多用在正则表达式中。</p>
+
+<p>如果一个字符串前缀既有u又有r，则r必须在u之后。比如<code>ur"\\u1234"</code></p>
+
+<p>注意：</p>
+
+<blockquote><p>当使用utf-8和utf-16对字符串字面量进行编码时，不能够使用原始的byte的数据，比如直接写一个utf-8编码的字符串字面量&#8217;Jalape\xc3\xb1o&#8217;，以为简单的表示9个字符。
+但是实际上可能不是想的那样。因为在utf-8编码中，多个byte序列\xc3\xb1表示单一字符U+00F1。而不是这两个字符U+00C3 和 U+00B1。
+为了能让这样的字符串进行编码，需要在字符串前面前缀一个字符“b”，比如：b&#8221;Jalape\xc3\xb1o&#8221;。</p>
+
+<p>正常情况下，很少用到这种（byte literals）字符串字面常量</p></blockquote>
+
+<h1>文档字符串</h1>
+
+<p>模块、类和函数的第一行语句是个字符串，那这个字符串变成这个对象的文档字符串。比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>def fact(n):
+</span><span class='line'>  "This function computes a factorial" 
+</span><span class='line'>  if (n &lt;= 1): return 1
+</span><span class='line'>  else: return n * fact(n - 1)</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; print fact.__doc__
+</span><span class='line'>This function computes a factorial 
+</span><span class='line'>&gt;&gt;&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>源代码编码</h1>
+
+<p>为了让python的源代码以不同的编码方式编码，需要在源代码的前面两行包含：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#!/usr/bin/env python 
+</span><span class='line'># -*- coding: UTF-8 -*-
+</span><span class='line'>s = "Jalapeño" # String in quotes is directly encoded in UTF-8.</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当这样指定后，注释、字符串字面量，可以直接在识别unicode的编辑器中输入。但是其它的，包括标识符，都必须是ascii的字符。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/01/26/chapter-9-linux-programming-interface/">进程凭据(chapter 9 Linux Programming Interface)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-26T10:33:32+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>每一个进程，都有一组与之关联的数字的用户ID和组ID。有时候这些ID被成为进程凭据（process credentials），这些ID包含：</p>
+
+<ul>
+<li>实际用户ID和实际组ID</li>
+<li>有效用户ID和有效组ID</li>
+<li>保存的设置用户ID和保存的设置组ID</li>
+<li>文件系统用户ID和组ID（linux特定的）</li>
+<li>补充组ID（supplementary group IDs）</li>
+</ul>
+
+
+<h2>实际用户ID和实际组ID</h2>
+
+<p>实际用户和组ID标记了进程属于哪个用户或者组ID。其值是登陆用户的id和组id。作为登陆进程的一部分，shell读取登陆口令中的用户ID和组ID。同时在shell执行的程序会继承这个实际用户ID和组ID。</p>
+
+<h2>有效用户ID和有效组ID</h2>
+
+<p>在大多数的Unix实现中，当进程执行这种操作时，有效用户id和有效组id加上补充的组id（supplementary group IDs）联合起来决定进程所具有的权限（linux稍微不同）。</p>
+
+<ul>
+<li>如果进程有效用户ID是0（root的id），拥有所有超级用户权限。这种进程被称为特权进程，许多系统进程只能被特权进程调用</li>
+<li>正常情况下，进程有效用户id和有效组id与实际用户id和实际组id是一样的。</li>
+</ul>
+
+
+<p>有两种方式可以修改进程的有效用户（组）id：</p>
+
+<ul>
+<li>通过系统调用。</li>
+<li>执行set-user-ID和set-group-ID的程序。</li>
+</ul>
+
+
+<h2>set-user-ID和set-group-ID的程序</h2>
+
+<p>通过把进程的有效用户id和有效组id设置为可执行文件的用户id和组id，可以使进程拥有正常情况下没有的权限。</p>
+
+<p>一般文件，除了表示文件拥有关系的用户id和组id外，还有两个特殊的权限位：<em>set-user-ID</em> 和 <em>set-group-ID</em>。可以通过chmod来修改这两个位：</p>
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'># ls -l prog
+</span><span class='line'>-rwxr-xr-x 1 root root 
+</span><span class='line'># chmod u+s prog  打开set-user-ID权限位
+</span><span class='line'># chmod g+s prog  打开set-group-ID权限位
+</span><span class='line'># ls -l prog
+</span><span class='line'>-rwsr-sr-x 1 root root 302585 Jun 26 15:05 prog</span></code></pre></td></tr></table></div></figure>
+
+
+<p>修改密码程序passwd，mount和Unmount等都设置色set-user-id权限位。</p>
+
+<h2>保存的Set-User-ID和保存的Set-Group-ID</h2>
+
+<p>保存的Set-User-ID和保存的Set-Group-ID被设计成让设置了Set-User-ID和Set-Group-ID的程序用的。执行步骤：
+1. 如果执行文件的Set-User-ID和Set-Group-ID权限位被设置了。则进程有效用户id和有效组id改成改文件的用户id和组id。如果这个权限位没有设置，则没有任何改变。
+2. 保存的Set-Group-ID和保存的Set-User-ID值，拷贝自进程的有效用户id和有效组id。不管Set-User-ID和Set-Group-ID权限位设不设置，拷贝过程都会执行。</p>
+
+<p>如果一个进程的实际用户id、有效用户id和保存的设置用户id都是1000.当它执行了一个root拥有的set-user-ID的程序，执行后，进程的实际、有效和保存的设置用户id分别是：</p>
+
+<p>1000、0、0</p>
+
+<p>许多系统调用允许set-user-ID的程序在实际用户id和保存用户id之间进行切换。这时，程序可以临时性的获取或者抛弃与可执行文件相关联的用户id的特殊权限。这是一种安全的编程实践。</p>
+
+<h2>文件系统用户id和文件系统组id</h2>
+
+<p>在linux系统上，操作文件的权限，不是根据进程的有效用户（组）id来确定的，而是根据文件系统的用户（组）id判断，其它操作，仍然用有效用户（组）id来进行权限判断。</p>
+
+<p>正常情况下，文件系统用户（组）id与进程的有效用户（组）id是一样的。当进程的有效用户（组）id被修改时，不管是通过系统调用或者是通过执行set-user（group）-ID的程序，文件系统的用户（组）id也会跟着修改成同样的值。这意味着，linux与其它unix的实现，在行为上市一致的，除了在明确调用setfsuid() and setfsgid()两个系统调用的时候。</p>
+
+<p>由于在表现上，文件系统用户（组）id与进程有效的用户id和组id是一样的，因此虽然在底层，操作文件时，linux是用文件系统的用户（组）id来判断权限的，我们只关心进程的有效用户（组）id即可。</p>
+
+<h2>补充的组ids（Supplementary Group IDs）</h2>
+
+<p>补充的组ids是一个额外的进程所属于的组的集合。</p>
+
+<p>新进程会从父进程中继承这些组ids。一个登录shell进程从系统组文件（system group file）获取其补充组ids。这些ids与有效用户（组）id来检查进程的操作权限。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/30/fileio-further-details/">Linux文件io进一步描述</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-30T13:15:19+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>原子性和条件竞争</h2>
+
+<p>所有系统调用都是原子执行的。原子执行避免了条件竞争。所谓条件竞争，指的是两个进程，在共享资源上操作，产生的结果依赖于两个进程的执行顺序。</p>
+
+<h3>排他性创建文件</h3>
+
+<p>在调用open系统调用函数时，如果文件存在，则如果指定O_EXCL和O_CREAT会导致open失败。这就为进程提供了一种确保是他创建了文件的方式。
+如果没有这个选项，则一般是先检查文件存在不存在，如果不存在，就创建一个文件。由于是check-if-absent方式，产生条件竞争。</p>
+
+<h3>追加文件内容</h3>
+
+<p>如果多个进程往一个文件中追加数据（比如一个全局日志文件），通常的做法是lseek到文件末尾，然后write，比如：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">lseek</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">SEEK_END</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;lseek&quot;</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">write</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">len</span><span class="p">)</span> <span class="o">!=</span> <span class="n">len</span><span class="p">)</span> 
+        <span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Partial/failed write&quot;</span><span class="p">);</span></code></pre></div>
+
+
+<p>这也产生了条件竞争。</p>
+
+<p>解决这个问题的方法，就是使用open函数的O_APPEND设置。</p>
+
+<h2>fcntl()文件控制操作</h2>
+
+<p>函数定义：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &lt;fcntl.h&gt;</span>
+    <span class="kt">int</span> <span class="nf">fcntl</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cmd</span><span class="p">,</span> <span class="p">...);</span></code></pre></div>
+
+
+<h3>获得打开文件的状态标记（flag）</h3>
+
+<p>open函数的定义是：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">open</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">path</span><span class="p">,</span> <span class="kt">int</span> <span class="n">oflag</span><span class="p">,</span> <span class="p">...</span> <span class="p">);</span></code></pre></div>
+
+
+<p>使用fcntl系统调用，可以获取文件或者修改文件的状态标记（标记的值是在open时由参数设置的）。</p>
+
+<p>比如下面代码：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="n">flags</span><span class="p">,</span> <span class="n">accessMode</span><span class="p">;</span>
+<span class="n">flags</span> <span class="o">=</span> <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_GETFL</span><span class="p">);</span> <span class="cm">/* Third argument is not required */</span> 
+<span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span></code></pre></div>
+
+
+<p>获得flags后，可以检查是否具有某种标记：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">O_SYNC</span><span class="p">)</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;writes are synchronized</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span></code></pre></div>
+
+
+<p>但是，对于O_RDONLY (0), O_WRONLY (1), and O_RDWR (2)，使用上面这种方式判断就不行（O_RDONLY的值是0，怎么&amp;，都是0；写功能，两个值wronly和rdwr都具有写功能，读功能，rdonly和rdwr都具有读功能）。</p>
+
+<p>为了判断，可以使用O_ACCMODE(3),比如下面代码：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">accessMode</span> <span class="o">=</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">O_ACCMODE</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">accessMode</span> <span class="o">==</span> <span class="n">O_WRONLY</span> <span class="o">||</span> <span class="n">accessMode</span> <span class="o">==</span> <span class="n">O_RDWR</span><span class="p">)</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;file is writable</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span></code></pre></div>
+
+
+<p>还可以使用F_SETFL来修改已打开文件的标记。可修改的标记为：O_APPEND, O_NONBLOCK, O_NOATIME, O_ASYNC, and O_DIRECT，试图修改其它会被忽略。</p>
+
+<p>设置标记的办法是先获取标记，再设置，比如：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+<span class="n">flags</span> <span class="o">=</span> <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_GETFL</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span>
+<span class="n">flags</span> <span class="o">|=</span> <span class="n">O_APPEND</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_SETFL</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span></code></pre></div>
+
+
+<h2>文件描述符和打开文件的关系</h2>
+
+<p>内核维护的三个数据结构：</p>
+
+<ul>
+<li>一个进程一个文件描述符表(<a href="http://en.wikipedia.org/wiki/Array_data_structure">Array data type</a>)</li>
+<li>系统级别的打开的文件描述符的表</li>
+<li>文件系统的i-node表</li>
+</ul>
+
+
+<p>对于每一个进程，内核都维护了这个进程打开的文件描述符表。每一个表项包含的信息是：</p>
+
+<ul>
+<li>控制操作文件描述符的标记集。其实就是一个标记close-on-exec</li>
+<li>一个指向打开的文件描述符（存储在open file table中的记录，也就是系统级别的打开的文件描述符的表项）的引用。</li>
+</ul>
+
+
+<p>内核维护了一个系统级别的所有的打开文件描述符（通常叫做<em>open file table</em>，其表项一般被称做open file handles）的表。
+一个打开文件描述符存储了关于打开文件的所有信息，包括：</p>
+
+<ul>
+<li>当前文件的偏移（read()和write()会更新这个值，或者通过lseek()指定）</li>
+<li>当打开文件指定的状态标记（比如open()函数的flags参数）</li>
+<li>文件访问模式（read-only，write-only或者read-write）</li>
+<li>一个指向这个文件的i-node对象的引用</li>
+</ul>
+
+
+<blockquote><p> #include &lt;sys/stat.h></p>
+
+<p> #include &lt;fcntl.h></p>
+
+<p> int open(const char <em>pathname, int flags, &hellip; /</em> mode_t mode */);</p>
+
+<table>
+<thead>
+<tr>
+<th>Access mode </th>
+<th style="text-align:center;"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O_RDONLY    </td>
+<td style="text-align:center;"> Open the file for reading only</td>
+</tr>
+<tr>
+<td>O_WRONLY    </td>
+<td style="text-align:center;"> Open the file for writing only</td>
+</tr>
+<tr>
+<td>O_RDWR      </td>
+<td style="text-align:center;"> Open the file for both reading and writing</td>
+</tr>
+</tbody>
+</table>
+
+
+<table>
+<thead>
+<tr>
+<th>File creation flags </th>
+<th style="text-align:center;"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O_CLOEXEC    </td>
+<td style="text-align:center;"> Set the close-on-exec flag (since Linux 2.6.23)</td>
+</tr>
+<tr>
+<td>O_CREAT      </td>
+<td style="text-align:center;"> Create file if it doesn’t already exist </td>
+</tr>
+<tr>
+<td>O_DIRECT     </td>
+<td style="text-align:center;"> File I/O bypasses buffer cache</td>
+</tr>
+<tr>
+<td>O_DIRECTORY  </td>
+<td style="text-align:center;"> Fail if pathname is not a directory </td>
+</tr>
+<tr>
+<td>O_EXCL       </td>
+<td style="text-align:center;"> With O_CREAT: create file exclusively </td>
+</tr>
+<tr>
+<td>O_LARGEFILE  </td>
+<td style="text-align:center;"> Used on 32-bit systems to open large files </td>
+</tr>
+<tr>
+<td>O_NOATIME    </td>
+<td style="text-align:center;"> Don’t update file last access time on read() (since Linux 2.6.8) </td>
+</tr>
+<tr>
+<td>O_NOCTTY     </td>
+<td style="text-align:center;"> Don’t let pathname become the controlling terminal </td>
+</tr>
+<tr>
+<td>O_NOFOLLOW   </td>
+<td style="text-align:center;"> Don’t dereference symbolic links </td>
+</tr>
+<tr>
+<td>O_TRUNC      </td>
+<td style="text-align:center;"> Truncate existing file to zero length </td>
+</tr>
+</tbody>
+</table>
+
+
+<table>
+<thead>
+<tr>
+<th> file status flags </th>
+<th style="text-align:center;"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O_APPEND    </td>
+<td style="text-align:center;"> Writes are always appended to end of file</td>
+</tr>
+<tr>
+<td>O_ASYNC    </td>
+<td style="text-align:center;"> Generate a signal when I/O is possible</td>
+</tr>
+<tr>
+<td>O_DSYNC     </td>
+<td style="text-align:center;"> Provide synchronized I/O data integrity (since Linux 2.6.33)</td>
+</tr>
+<tr>
+<td>O_NONBLOCK      </td>
+<td style="text-align:center;"> Open in nonblocking mode</td>
+</tr>
+<tr>
+<td>O_SYNC      </td>
+<td style="text-align:center;"> Make file writes synchronous</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+
+<p>每一个文件的i-node包含的信息有：</p>
+
+<ul>
+<li>文件类型（正常文件、socket或者FIFO）和文件权限</li>
+<li>一个指向加在这个文件上的锁列表的指针</li>
+<li>各种文件属性，包括文件大小，和不同操作相关的时间。</li>
+</ul>
+
+
+<blockquote><p>i-node在磁盘上的描述和在内存中的描述不一样。如果在磁盘上，则记录了一个文件的持久化属性。比如类型、大小和权限等。
+i-node在内存的描述，记录了打开的文件描述符指向这个i-node节点的数目、这个i-node所在的磁盘的主要（major）和次要（minor）的ID，还记录的一些短暂的属性，比如加在文件上的锁等。</p></blockquote>
+
+<p>如图：
+<img src="/images/assets/Figure5-2.png" title="Relationship between file descriptors, open file descriptions, and i-nodes" alt="alt text" /></p>
+
+<p>根据上面描述，得出下面几个隐含的意思来：</p>
+
+<ul>
+<li>两个不同的文件描述符引用同一个文件，则他们共享同一个文件偏移量。</li>
+<li>同样规则也适用于使用fcntl()函数获取或者修改文件状态标记（上面表格中的file status flags,比如O_APPEND, O_NONBLOCK, O_ASYNC）</li>
+<li>文件描述符标记（close-on-exec）则是私有的，修改它不会影响到其他的。</li>
+</ul>
+
+
+<h2>dup文件描述符</h2>
+
+<p>使用shell的I/O重定向语法 <em>2>&amp;1</em> 时，会通知shell，我们想要标准错误输出，输出到与标准输出到同一个地方。shell是从左到右计算I/O导向的。因此，下面的shell：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ ./myscript &gt; results.log 2&gt;&1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>会将标准输出输出到与标准输出同一个位置，也即results.log。</p>
+
+<p>为了实现这个效果，使用dup和dup2两个函数。</p>
+
+<blockquote><p>如果不使用这两个函数，简单的打开results.log两次，一次使用文件描述符1，一次使用文件描述符2.这是不够的。因为从上面图可以看出，打开两次文件，这两个文件描述符并不共享同一个文件的offset，因此两个会相互覆盖。另一个原因是打开文件不一定是磁盘文件，比如$ ./myscript  2>&amp;1 | less</p></blockquote>
+
+<p>下面是dup的声明：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int dup(int oldfd);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>dup函数接收一个已经打开的文件描述符oldfd，返回一个指向同一个文件的新的文件描述符。如果失败，则返回-1.返回的新的文件描述符保证使用最小的未使用的文件描述符。</p>
+
+<p>为了实现上面shell的命令，可以这样：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/*前提是文件描述符0已经被使用*/
+</span><span class='line'>close(2);
+</span><span class='line'>int newfd = dup(1)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>为了方便实现这个功能，还有个dup2函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int dup2(int oldfd, int newfd);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>dup2函数使用给定的newfd来复制已经打开的旧的文件描述符oldfd。返回的是新的文件描述符。</p>
+
+<p>还可以使用fcntl函数来完成dup命令，保证使用的新文件描述符大于等于指定的文件描述符：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>newfd = fcntl(oldfd, F_DUPFD, startfd);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这在保证在特定范围内dup文件描述符是有用的。</p>
+
+<h2>pread()和pwrite()在指定offset进行I/O操作</h2>
+
+<p>使用pread和pwrite，可以在指定的offset完成读和写操作，而不会影响文件的原始offset的值。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>/*返回读得字节数，如果到EOF，为0；如果错误，返回-1*/
+</span><span class='line'>ssize_t pread(int fd, void *buf, size_t count, off_t offset);
+</span><span class='line'>
+</span><span class='line'>/*返回写入的字节数，-1表示错误*/
+</span><span class='line'>ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>使用pread和pwrite函数，传入的文件描述符必须是可seek的。</p>
+
+<p>注意：
+使用pread和pwrite在多线程环境下，可以避免条件竞争。如果使用lseek、write这种方式写文件，会产生条件竞争。使用pwrite，则多个线程会避免条件竞争。</p></blockquote>
+
+<h2>Scatter-Gather I/O: readv() 和 writev()</h2>
+
+<p>readv和writev函数定义：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/uio.h&gt;
+</span><span class='line'>
+</span><span class='line'>ssize_t readv(int fd, const struct iovec *iov, int iovcnt);
+</span><span class='line'>
+</span><span class='line'>ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>与read只读取数据到一个buffer不同，readv可以一次性把读取的数据分散（scatter）到多个buffer中。iov是一个数组，数组的每个元素是一个结构，结构类型是struct iovec。buffer的个数有iovcnt指定。</p>
+
+<p>struct iovec的定义是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>struct iovec {
+</span><span class='line'>  void *iov_base; /* 缓存的起始地址 */
+</span><span class='line'>  size_t iov_len; /* Number of bytes to transfer to/from buffer */
+</span><span class='line'>};
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>下图描述了iov参数和iovcnt参数的关系：
+<img src="/images/assets/Figure5-3.png" title="Relationship between readv iov and iovcnt parameter" alt="alt text" /></p>
+
+<h3>分散输入（scatter input）</h3>
+
+<p>readv系统调用完成了<em>scatter input</em>，读取由fd指定的文件的持续的字节序列，然后顺序的把这些数据写入到由iov参数指定的buffer中。所有的这些buffer，从iov[0]开始，会被完全的写满之后，才会继续写入下一个buffer。</p>
+
+<p>注意：
+一个readv的重要的属性是，这些都是完全自动的。从调用者角度，内核会把一连续的字节序列写入到buffer中。意味着，如果从一个文件中读取数据时，能够确保读入的数据是连续的，即使在这其间，有其它线程试图修改同一个文件的offset，也不会影响。</p>
+
+<p>readv返回读取的数据的字节数。调用者需要自己检查一下。</p>
+
+<h3>聚集输出（gather output）</h3>
+
+<p>writev系统调用完成了<em>gather output</em>。参数意义与readv类似。</p>
+
+<p>与write一样，writev也可能只写入部分，因此需要检查是否请求的数据全部被写入了。</p>
+
+<h3>writev和readv的原因</h3>
+
+<p>主要原因还是</p>
+
+<pre><code>1. 易用性
+2. 性能
+</code></pre>
+
+<p>使用场景，比如：
+    * 如果需要调用一系列的write函数来输出buffer数据时</p>
+
+<h2>截断一个文件truncate()和ftruncate()</h2>
+
+<p>截断一个文件，两个函数定义如下：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>int truncate(const char *pathname, off_t length); 
+</span><span class='line'>
+</span><span class='line'>int ftruncate(int fd, off_t length);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这两个函数不会对文件的offset有影响。</p>
+
+<h2>非阻塞I/O</h2>
+
+<p>当打开一个文件，指定O_NONBLOCK标记时，主要有两种目的：</p>
+
+<ul>
+<li>如果文件不能立即被打开，open()函数会返回错误，而不是一直阻塞着。</li>
+<li>如果open()打开成功，随后的I/O操作仍然是非阻塞的。</li>
+</ul>
+
+
+<p>非阻塞模式可以用于设备、FIFO（命名管道，用于Linux进程通信）、socket。由于管道和socket的文件描述符
+不能够通过open()获得，因此我们必须使用 fcntl() F_SETFL操作来使这个标记可用。</p>
+
+<p>注意：</p>
+
+<blockquote><p>O_NONBLOCK对于普通文件是忽略的。因此linux的内核的buffer确保了普通文件的I/O是非阻塞的。</p></blockquote>
+
+<h2>I/O大文件</h2>
+
+<p>linux使用off_t数据类型来存储文件的offset，off_t使用有符号的长整型来描述（之所以有符号，是方便用-1表示失败）。
+因此在32位机器上，一个文件的最大限制是2<sup>31</sup>-1 byte。</p>
+
+<p>为了在32位机器上实现大文件操作，厂商提供了Large File Summit (LFS)概念。linux自从2.4开始支持LFS。为了支持大文件，文件系统也需要支持。大部分linux文件系统都支持（微软的VFAT and NFSv2都不支持）</p>
+
+<p>为了在linux操作大文件，有两种方法：</p>
+
+<ul>
+<li>采用支持大文件的替换的API，也就是ransitional LFS API。</li>
+<li>在编译我们代码时，定义宏_FILE_OFFSET_BITS的值为64.这种方式是推荐的方式。</li>
+</ul>
+
+
+<h3>使用LSF API</h3>
+
+<p>采用过渡的LFS API时，在编译时，需要测试_LARGEFILE64_SOURCE的宏（命令行或者源文件）。这组API可以处理64位的文件大小和offset。这组api的函数名字后面都有64.比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>fopen64(), open64(), lseek64(), truncate64(), stat64(), mmap64(), and setrlimit64()</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>使用_FILE_OFFSET_BITS</h3>
+
+<p>推荐的方式是定义_FILE_OFFSET_BITS宏的值为64.
+这会自动的替换32位函数和数据类型到64位的函数和数据类型。这意味这，我们可以重新编译以前写好的文件来支持大文件。</p>
+
+<p>只遗留了一个问题，就是打印off_t 的值的时候，需要使用lld%来正确的显示off_t的值。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#define _FILE_OFFSET_BITS 64
+</span><span class='line'>
+</span><span class='line'>off_t offset; /* Will be 64 bits, the size of 'long long' */ 
+</span><span class='line'>
+</span><span class='line'>/* Other code assigning a value to 'offset' */
+</span><span class='line'>printf("offset=%lld\n", (long long) offset);</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>/dev/fd 目录</h2>
+
+<p>对于每一个进程，内核提供了一个虚拟目录/dev/fd ，这个目录包含的文件形式是<em>/dev/fd/n</em>。n对应的进程中的打开的文件描述符。因此使用/dev/fd/n或者fd都可以指向一个文件。</p>
+
+<p>但是在程序内很少使用这种方式，一般只在shell中使用。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/23/the-universal-io-model/">FiFe I/O 通用的I/O模型</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-23T14:36:16+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>总述</h2>
+
+<p>所有完成IO的系统调用，都是使用文件描述符（file descriptor）来引用一个文件。文件描述符用来引用打开的所有类型文件，包括管道、socket、设备等。每个进程都有自己的文件描述符集。</p>
+
+<p>根据惯例，大多数的应用程序都希望打开三个标准的文件描述符（标准输入、输出和错误）。这三个文集描述符，一般是由在程序启动之前启动的shell程序打开的。</p>
+
+<table>
+<thead>
+<tr>
+<th> 文件描述符        </th>
+<th style="text-align:center;"> POSIX 名称（在unistd.h头文件中定义）           </th>
+<th style="text-align:right;"> 描述  </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> 0      </td>
+<td style="text-align:center;"> STDIN_FILENO </td>
+<td style="text-align:right;"> 标准输入 </td>
+</tr>
+<tr>
+<td> 1     </td>
+<td style="text-align:center;"> STDOUT_FILENO      </td>
+<td style="text-align:right;">   标准输出 </td>
+</tr>
+<tr>
+<td> 2 </td>
+<td style="text-align:center;"> STDERR_FILENO     </td>
+<td style="text-align:right;">    标准错误 </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>在程序中，既可以使用数字，也可以使用posix的名称来指向这几个文件描述符。</p>
+
+<p>下面是四个关键的完成IO的系统调用：
+* fd = open(pathname, flags, mode) 。通过制定flags参数，open函数既可以打开文件，也可以创建文件。如果创建文件，mode参数用来指定创建文件的访问权限。如果不是用来创建文件，可以忽略mode这个文件。SUSv3规定，如果open成功，他保证使用这个进程的最小的没有使用的文件描述符。
+* numread = read(fd, buffer, count)。读取fd引用的文件，最多读取count个字节，返回的是实际读取的字节数，如果到了文件末尾，返回0。
+* numwritten = write(fd, buffer, count)。从buffer中，写入count个字节数据到fd所指向的文件中。返回的是实际写入的字节数，有可能小于count。
+* status = close(fd) 。释放文件描述符，以及相关的内核资源</p>
+
+<h2>I/O通用性</h2>
+
+<p>所谓通用性，是指这四个函数可以作用于所有的类型文件，来完成IO操作。这些文件包括管道、设备、socket等。</p>
+
+<p>如果需要使用特定类型文件特有的功能，可以使用ioctl系统调用，它提供了所有通用功能以外的特定功能。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -190,7 +3154,23 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2013/12/17/linux-open-max-fd-num/">linux最大文件描述符设置</a>
+        <a href="/blog/2014/03/22/standard-io/">apue(标准I/O库)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/03/file-and-dir/">apue(文件和目录)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/linux-file-system/">linxu 文件系统笔记</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/per4-chapter3-type-and-object/">类型和对象(PER4 chapter 3)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax/">python词法约定和语法(PER4 chapter 2)</a>
       </li>
     
   </ul>

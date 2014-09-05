@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: python | Baren Blog]]></title>
+  <link href="http://baren.github.io/blog/categories/python/atom.xml" rel="self"/>
+  <link href="http://baren.github.io/"/>
+  <updated>2014-09-05T15:37:08+08:00</updated>
+  <id>http://baren.github.io/</id>
+  <author>
+    <name><![CDATA[Your Name]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[类型和对象(PER4 chapter 3)]]></title>
+    <link href="http://baren.github.io/blog/2014/02/10/per4-chapter3-type-and-object/"/>
+    <updated>2014-02-10T19:33:16+08:00</updated>
+    <id>http://baren.github.io/blog/2014/02/10/per4-chapter3-type-and-object</id>
+    <content type="html"><![CDATA[<h1>对象身份和类型</h1>
+
+<p>内置函数 <em>id()</em> 以整数的方式返回对象的身份。这个整数通常指的是内存的位置，但并不保证，这依赖于实现。</p>
+
+<p><em>is</em> 操作符用来比较两个对象的<em>身份</em>的。</p>
+
+<p><em>type()</em> 返回对象的类型。</p>
+
+<p>使用例子：</p>
+
+<pre><code>
+# Compare two objects 
+def compare(a,b):
+    if a is b:
+        # a和b是同样的对象，也就是身份相同 
+        statements
+    if a == b:
+        # a和b具有同样的值，身份可以不一样，只要值一样 
+        statements
+    if type(a) is type(b):
+        # a和b具有同样的类型 
+        statements
+</code></pre>
+
+<p>对象的类型：</p>
+
+<p>对象的类型本身就是一个对象。这个类型对象被称为对象的类。这个类型对象是被唯一定义的，并且给定类型的所有实例的类型都是一样的。因此类型对象之间进行比较，可以使用操作符 <em>is</em> 进行比较。</p>
+
+<p>所有的类型对象都赋予一个名字，可以用来进行类型检查。大多数这种名字都是内置的，比如list、dict等。例如：</p>
+
+<pre><code>
+if type(s) is list: 
+    s.append(item)
+if type(d) is dict: 
+    d.update(t)
+</code></pre>
+
+<p>一个比较好的判断类型的方式是使用内置的<code>isinstance(object, type)</code>函数，因为这个函数是可以识别继承的。比如：</p>
+
+<pre><code>
+if isinstance(s,list): 
+    s.append(item)
+if isinstance(d,dict): 
+    d.update(t)
+</code></pre>
+
+<h1>引用计数和垃圾回收</h1>
+
+<p>所有的对象都是引用计数的。</p>
+
+<p>只要把对象赋给一个新名字，或者存放在容器中（list、dict等），都会使引用数增加。</p>
+
+<pre><code>a = 37 # Creates an object with value 37 
+b = a # Increases reference count on 37 
+c = []
+c.append(b) # Increases reference count on 37
+</code></pre>
+
+<p>当a赋值给b的时候，值为37的对象的引用数加1；当b存放在容器c中，值为37的对象的引用数加1.</p>
+
+<p>整个例子中，只有一个对象保存了37的值，其它的操作仅仅是创建了一个新的指向这个对象的引用。</p>
+
+<p>这就是引用计数的概念。在考虑引用计数，一定要记住，所有都是对象。</p>
+
+<p>还可以通过操作来减少引用，比如：</p>
+
+<pre><code>del a # Decrease reference count of 37 
+b = 42 # Decrease reference count of 37 
+c[0] = 2.0 # Decrease reference count of 37
+</code></pre>
+
+<p>可以通过函数来查看对象的引用情况：</p>
+
+<pre><code>&gt;&gt;&gt;
+&gt;&gt;&gt; a = 37
+&gt;&gt;&gt; import sys
+&gt;&gt;&gt; sys.getrefcount(a)
+7
+&gt;&gt;&gt; sys.getrefcount(37)
+9
+</code></pre>
+
+<p>当对象的引用计数到0的时候，就会被垃圾回收。</p>
+
+<p>对于循环引用，其引用计数不为零，但是已经不被使用的对象，解释器会定期执行循环引用检查。发现就会回收。</p>
+
+<h1>引用和拷贝</h1>
+
+<p>拷贝分浅拷贝和深拷贝。</p>
+
+<p>copy模块提供了浅拷贝和深拷贝操作</p>
+
+<pre><code>copy.copy(x)
+    Return a shallow copy of x.
+
+copy.deepcopy(x)
+    Return a deep copy of x.
+</code></pre>
+
+<p>浅拷贝和深拷贝的区别只与组合对象相关（包含其它对象的对象，比如list等）</p>
+
+<ul>
+<li>浅拷贝构建了一个新的组合对象，然后把从原对象中发现的引用插入到新组合对象中</li>
+<li>深拷贝构建了一个新的组合对象，然后递归的把原对象的拷贝插入到新对象中</li>
+</ul>
+
+
+<p>浅拷贝创建一个引用，包含的元素是原对象包含的元素的引用。比如：</p>
+
+<pre><code>&gt;&gt;&gt; a = [1,2,[3,4]]
+&gt;&gt;&gt; b = list(a)
+&gt;&gt;&gt; b is a
+False
+&gt;&gt;&gt; b.append(100)
+&gt;&gt;&gt; b
+[1, 2, [3, 4], 100]
+&gt;&gt;&gt; a
+[1, 2, [3, 4]]
+&gt;&gt;&gt; b[2][0] = -100
+&gt;&gt;&gt; b
+[1, 2, [-100, 4], 100]
+&gt;&gt;&gt; a
+[1, 2, [-100, 4]]
+</code></pre>
+
+<p>对dict的浅拷贝，可以使用 dict.copy()，对于list的浅拷贝，可以使用<code>copied_list = original_list[:]</code></p>
+
+<p>深拷贝可以使用copy模块下的deepcopy函数实现：</p>
+
+<pre><code>&gt;&gt;&gt; import copy
+&gt;&gt;&gt; a = [1, 2, [3, 4]]
+&gt;&gt;&gt; b = copy.deepcopy(a)
+&gt;&gt;&gt; b[2][0] = -100
+&gt;&gt;&gt; b
+[1, 2, [-100, 4]]
+&gt;&gt;&gt; a # Notice that a is unchanged [1, 2, [3, 4]]
+&gt;&gt;&gt;
+</code></pre>
+
+<p>如果一个类想定义自己的浅拷贝和深拷贝实现，可以实现特殊方法<code>__copy__() and __deepcopy__()</code>。前者是在浅拷贝的时候调用（copy.copy(x)）。后者是在深拷贝的时候调用(copy.deepcopy(x))。</p>
+
+<h1>第一类对象</h1>
+
+<p>第一类对象是指可以在执行期创造并作为参数传递给其他函数或存入一个变量的实体。一般第一类对象具有的特征是：</p>
+
+<ul>
+<li>可以被存入变量或其他结构</li>
+<li>可以被作为参数传递给其他函数</li>
+<li>可以被作为函数的返回值</li>
+<li>以在执行期创造，而无需完全在设计期全部写出</li>
+</ul>
+
+
+<p>在python中，所有的对象都是第一类对象。</p>
+
+<p>所有对象都是第一类对象的好处是可以写出很紧凑简洁的代码。</p>
+
+<h1>表示数据的内置类型</h1>
+
+<p>略</p>
+
+<h1>表示程序结构的内置类型</h1>
+
+<h2>可调用类型</h2>
+
+<p>可调用类型表示对象支持函数调用操作。包括用户定义函数，内置函数、实例方法和<strong>类</strong>。</p>
+
+<h3>用户定义函数</h3>
+
+<p>在模块级别创建的，通过def或者lambda操作符创建的用户定义的函数，是可调用的对象。</p>
+
+<p>比如：</p>
+
+<pre><code>
+def foo(x, y):
+    return x + y
+
+foo = lambda x,y: x + y
+</code></pre>
+
+<p>用户定义函数的属性包括：</p>
+
+<table>
+<thead>
+<tr>
+<th>描述        </th>
+<th style="text-align:center;"> 描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f.<em> </em>dict_ _ </td>
+<td style="text-align:center;"> 包含函数属性的dict</td>
+</tr>
+<tr>
+<td>f.<em> </em>defaults_ _ </td>
+<td style="text-align:center;"> 包含默认参数的元组</td>
+</tr>
+</tbody>
+</table>
+
+
+<pre><code>&gt;&gt;&gt; def foo(x=1, y=1):
+...     return x + y
+...
+&gt;&gt;&gt; foo.__defaults__
+(1, 1)
+</code></pre>
+
+<p>用户定义的函数的类型是<code>types.FunctionType</code></p>
+
+<p>比如：</p>
+
+<pre><code>
+&gt;&gt;&gt; def foo(x=1, y=1):
+...     return x + y
+...
+
+&gt;&gt;&gt; import types
+&gt;&gt;&gt; type(foo) is types.FunctionType
+True
+&gt;&gt;&gt; type(foo) is types.MethodType
+False
+</code></pre>
+
+<h3>方法</h3>
+
+<p>方法是定义在类内部的函数。有三种方法：</p>
+
+<ul>
+<li>实例方法——对对象实例上操作的函数</li>
+<li>类方法——类本身作为一个对象，类方法是在类本身操作的函数</li>
+<li>静态方法——仅仅是个函数，不接收类本身或类的实例作为参数</li>
+</ul>
+
+
+<p>比如：</p>
+
+<pre><code>class Foo(object):
+    # 实例方法，第一个参数self
+    def instance_method(self, arg):
+        statements 
+
+    # 类方法， 第一个参数cls
+    @classmethod
+    def class_method(cls, arg): 
+        statements
+
+    # 静态方法，没有self或cls的参数
+    @staticmethod
+    def static_method(arg):
+        statements
+</code></pre>
+
+<p>实例方法和类方法都由types.MethodType来表示。</p>
+
+<p>详细了解对象查询属性操作（.）是如何工作的，对理解这种特殊类型是有好处的。</p>
+
+<p>在一个对象上查询什么（.）与函数调用总是分开的，当调用方法时，两个操作都会发生，只是步骤差别。</p>
+
+<ol>
+<li>在实例上查询</li>
+</ol>
+
+
+<p>例子：</p>
+
+<pre><code>f = Foo() # 创建一个实例
+
+meth = f.instance_method # 查询方法，注意，后面没有括号"()"
+
+meth(37) # 现在调用函数
+</code></pre>
+
+<p>上面例子中，meth被称为<strong>绑定方法</strong>。绑定函数是一个可调用对象，它包括了函数（method）和相关的实例。</p>
+
+<p>当调用绑定函数时，相关实例会作为第一个参数传递给函数（self）。</p>
+
+<ol>
+<li>在类上查询</li>
+</ol>
+
+
+<p>接上面例子：</p>
+
+<pre><code>umeth = Foo.instance_method # 在Foo上查询instance_method
+
+umeth(f,37) # 明确提供self，并且调用
+</code></pre>
+
+<p>在这个例子中，umeth被称为未绑定方法。未绑定方法只包含了方法函数，但是需要明确传递正确类型的实例对象作为第一个参数。</p>
+
+<p>在这个例子中，传了Foo的实例f作为第一个参数。</p>
+
+<p>对用户定义的类，绑定方法和未绑定方法都是作为types.MethodType的对象。</p>
+
+<p>下面是方法对象的属性</p>
+
+<table>
+<thead>
+<tr>
+<th>描述        </th>
+<th style="text-align:center;"> 描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>m.<strong>class</strong> </td>
+<td style="text-align:center;"> 函数定义的类</td>
+</tr>
+<tr>
+<td>m.<strong>func</strong> </td>
+<td style="text-align:center;"> 实现方法的函数对象</td>
+</tr>
+<tr>
+<td>m.<strong>self</strong> </td>
+<td style="text-align:center;"> 与方法相关的实例，如果没有，返回None</td>
+</tr>
+</tbody>
+</table>
+
+
+<h3>内置函数和方法</h3>
+
+<p>对象types.BuiltinFunctionType用来描述用c或c++实现的函数和方法。属性和上面类似。</p>
+
+<h3>类和实例作为可调用对象</h3>
+
+<p>类对象和实例也可以作为可调用对象。一个类对象被<code>class</code>创建，可以作为一个函数来调用，用来创建类的实例。这种情况下，传递的参数会传递给<strong>init</strong>方法中，用来初始化实例对象。</p>
+
+<p>如果一个实例实现了<strong>call</strong>方法，那么这个实例也可以模拟函数调用。如果对象x定义了<strong>call</strong>函数，那么x(args)会调用x.<strong>call</strong>(args)。</p>
+
+<h2>类、类型和实例</h2>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[python词法约定和语法(PER4 chapter 2)]]></title>
+    <link href="http://baren.github.io/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax/"/>
+    <updated>2014-02-08T10:33:00+08:00</updated>
+    <id>http://baren.github.io/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax</id>
+    <content type="html"><![CDATA[<h1>行结构和缩进</h1>
+
+<p>python中，每一行用换行符来结束，如果一行太长，可以使用<em>行继续操作符“\”</em>来分割，比如：</p>
+
+<pre><code>a = math.cos(3 * (x - n)) + \ 
+    math.sin(3 * (y - n))
+</code></pre>
+
+<p>在(&hellip;), [&hellip;], {&hellip;}, &ldquo;&rdquo;&ldquo;&hellip;&rdquo;&ldquo;&#8221;和&#8217;&lsquo;&rsquo;&hellip;&lsquo;&rsquo;&lsquo;之间的代码，如果跨越多行，可以不用这个操作符。</p>
+
+<p>如果函数、条件、循环或者类的代码体只有一行语句，可以放在同一行中，比如：</p>
+
+<pre><code>if a:   statement1
+else:   statement2
+</code></pre>
+
+<p>如果多个语句放在一行，可以使用&#8221;;&ldquo;来分割。</p>
+
+<h1>标识符</h1>
+
+<ul>
+<li>以下划线开头的标识符是不会被导入语句<code>from module import *</code>导入的。</li>
+<li>前后有两个下划线的标识符（比如<code>__init__</code>），是为特殊方法保留的。</li>
+<li>前面有两个下划线的标识符（比如<code>__bar</code>），为了实现私有的类成员。</li>
+</ul>
+
+
+<h1>数字字面量</h1>
+
+<p>有四种数字类型：</p>
+
+<ul>
+<li>布尔</li>
+<li>整数</li>
+<li>浮点数</li>
+<li>复数</li>
+</ul>
+
+
+<p>作为布尔值的True和False被解释成1和0.</p>
+
+<p>除了十进制，还可以把整数指定为八进制、十六进制和二进制，分别用前缀0、0x和0b（比如：0644, 0x100fea8, or 0b11101010）</p>
+
+<p>python的整数没有限制，可以任意写。</p>
+
+<h1>字符串字面量</h1>
+
+<p>字符串字面常量使用单引号（&#8217;）、双引号（&#8221;）或者三个引号（&#8217;&lsquo;&#8217;或者&#8221;&ldquo;&#8221;）括起来。</p>
+
+<p>在字面常量内，反斜线（\）字符可以被用来特殊字符比如换行，反斜线自己，引号和不能打印的字符。如果转义字符不能识别，则保留原样。</p>
+
+<p>除了\r \n等常用的转移字符外，几个不常用的列到下：</p>
+
+<ul>
+<li>\OOO              八进制值，后面三个数字。（\000 到 \377，\377的十进制值是255）</li>
+<li>\uxxxx            Unicode字符，x是十六进制字符（\u0000到\uffff）</li>
+<li>\Uxxxxxxxx        Unicode字符（\U00000000到\Uffffffff）</li>
+<li>\xhh              十六进制值（\x00到\xff，\xff的值是255）</li>
+</ul>
+
+
+<p>\OOO和\xhh的用法是在字符串内嵌入不能够容易的打出的字符（控制字符，不能打印字符，符号和国际化字符等）。比如：</p>
+
+<p>如果写字符串“Jalapeño”，可以&#8221;Jalape\xf1o&#8221; \xf1就是字符ñ。</p>
+
+<p>在python 2中，字符串字面量对应的是8-bit的字符或者说面向字节的数据。为了能够使用国际化字符集，需要在字符串前面前缀一个字符“u”</p>
+
+<p>不管使用哪种字符串，可以使用\u或者\U来嵌入一个国际化字符到字符串中。</p>
+
+<p>原始字符串，在字符串前缀一个“r”字符。原始字符串中，所有的反斜线字符串都不转义，原样保存。这种字符串，多用在正则表达式中。</p>
+
+<p>如果一个字符串前缀既有u又有r，则r必须在u之后。比如<code>ur"\\u1234"</code></p>
+
+<p>注意：</p>
+
+<blockquote><p>当使用utf-8和utf-16对字符串字面量进行编码时，不能够使用原始的byte的数据，比如直接写一个utf-8编码的字符串字面量&#8217;Jalape\xc3\xb1o&#8217;，以为简单的表示9个字符。
+但是实际上可能不是想的那样。因为在utf-8编码中，多个byte序列\xc3\xb1表示单一字符U+00F1。而不是这两个字符U+00C3 和 U+00B1。
+为了能让这样的字符串进行编码，需要在字符串前面前缀一个字符“b”，比如：b&#8221;Jalape\xc3\xb1o&#8221;。</p>
+
+<p>正常情况下，很少用到这种（byte literals）字符串字面常量</p></blockquote>
+
+<h1>文档字符串</h1>
+
+<p>模块、类和函数的第一行语句是个字符串，那这个字符串变成这个对象的文档字符串。比如：</p>
+
+<pre><code>def fact(n):
+    "This function computes a factorial" 
+    if (n &lt;= 1): return 1
+    else: return n * fact(n - 1)
+</code></pre>
+
+<pre><code>&gt;&gt;&gt; print fact.__doc__
+This function computes a factorial 
+&gt;&gt;&gt;
+</code></pre>
+
+<h1>源代码编码</h1>
+
+<p>为了让python的源代码以不同的编码方式编码，需要在源代码的前面两行包含：</p>
+
+<pre><code>#!/usr/bin/env python 
+# -*- coding: UTF-8 -*-
+s = "Jalapeño" # String in quotes is directly encoded in UTF-8.
+</code></pre>
+
+<p>当这样指定后，注释、字符串字面量，可以直接在识别unicode的编辑器中输入。但是其它的，包括标识符，都必须是ascii的字符。</p>
+]]></content>
+  </entry>
+  
+</feed>

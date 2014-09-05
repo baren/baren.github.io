@@ -1,0 +1,305 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>进程凭据(chapter 9 linux programming interface) - Baren Blog</title>
+  <meta name="author" content="Your Name">
+
+  
+  <meta name="description" content="每一个进程，都有一组与之关联的数字的用户ID和组ID。有时候这些ID被成为进程凭据（process credentials），这些ID包含： 实际用户ID和实际组ID
+有效用户ID和有效组ID
+保存的设置用户ID和保存的设置组ID
+文件系统用户ID和组ID（linux特定的）
+补充组ID（ &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://baren.github.io/blog/2014/01/26/chapter-9-linux-programming-interface/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Baren Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Baren Blog</a></h1>
+  
+    <h2>A blogging for baren.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:baren.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">进程凭据(chapter 9 Linux Programming Interface)</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-26T10:33:32+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>每一个进程，都有一组与之关联的数字的用户ID和组ID。有时候这些ID被成为进程凭据（process credentials），这些ID包含：</p>
+
+<ul>
+<li>实际用户ID和实际组ID</li>
+<li>有效用户ID和有效组ID</li>
+<li>保存的设置用户ID和保存的设置组ID</li>
+<li>文件系统用户ID和组ID（linux特定的）</li>
+<li>补充组ID（supplementary group IDs）</li>
+</ul>
+
+
+<h2>实际用户ID和实际组ID</h2>
+
+<p>实际用户和组ID标记了进程属于哪个用户或者组ID。其值是登陆用户的id和组id。作为登陆进程的一部分，shell读取登陆口令中的用户ID和组ID。同时在shell执行的程序会继承这个实际用户ID和组ID。</p>
+
+<h2>有效用户ID和有效组ID</h2>
+
+<p>在大多数的Unix实现中，当进程执行这种操作时，有效用户id和有效组id加上补充的组id（supplementary group IDs）联合起来决定进程所具有的权限（linux稍微不同）。</p>
+
+<ul>
+<li>如果进程有效用户ID是0（root的id），拥有所有超级用户权限。这种进程被称为特权进程，许多系统进程只能被特权进程调用</li>
+<li>正常情况下，进程有效用户id和有效组id与实际用户id和实际组id是一样的。</li>
+</ul>
+
+
+<p>有两种方式可以修改进程的有效用户（组）id：</p>
+
+<ul>
+<li>通过系统调用。</li>
+<li>执行set-user-ID和set-group-ID的程序。</li>
+</ul>
+
+
+<h2>set-user-ID和set-group-ID的程序</h2>
+
+<p>通过把进程的有效用户id和有效组id设置为可执行文件的用户id和组id，可以使进程拥有正常情况下没有的权限。</p>
+
+<p>一般文件，除了表示文件拥有关系的用户id和组id外，还有两个特殊的权限位：<em>set-user-ID</em> 和 <em>set-group-ID</em>。可以通过chmod来修改这两个位：</p>
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'># ls -l prog
+</span><span class='line'>-rwxr-xr-x 1 root root 
+</span><span class='line'># chmod u+s prog  打开set-user-ID权限位
+</span><span class='line'># chmod g+s prog  打开set-group-ID权限位
+</span><span class='line'># ls -l prog
+</span><span class='line'>-rwsr-sr-x 1 root root 302585 Jun 26 15:05 prog</span></code></pre></td></tr></table></div></figure>
+
+
+<p>修改密码程序passwd，mount和Unmount等都设置色set-user-id权限位。</p>
+
+<h2>保存的Set-User-ID和保存的Set-Group-ID</h2>
+
+<p>保存的Set-User-ID和保存的Set-Group-ID被设计成让设置了Set-User-ID和Set-Group-ID的程序用的。执行步骤：
+1. 如果执行文件的Set-User-ID和Set-Group-ID权限位被设置了。则进程有效用户id和有效组id改成改文件的用户id和组id。如果这个权限位没有设置，则没有任何改变。
+2. 保存的Set-Group-ID和保存的Set-User-ID值，拷贝自进程的有效用户id和有效组id。不管Set-User-ID和Set-Group-ID权限位设不设置，拷贝过程都会执行。</p>
+
+<p>如果一个进程的实际用户id、有效用户id和保存的设置用户id都是1000.当它执行了一个root拥有的set-user-ID的程序，执行后，进程的实际、有效和保存的设置用户id分别是：</p>
+
+<p>1000、0、0</p>
+
+<p>许多系统调用允许set-user-ID的程序在实际用户id和保存用户id之间进行切换。这时，程序可以临时性的获取或者抛弃与可执行文件相关联的用户id的特殊权限。这是一种安全的编程实践。</p>
+
+<h2>文件系统用户id和文件系统组id</h2>
+
+<p>在linux系统上，操作文件的权限，不是根据进程的有效用户（组）id来确定的，而是根据文件系统的用户（组）id判断，其它操作，仍然用有效用户（组）id来进行权限判断。</p>
+
+<p>正常情况下，文件系统用户（组）id与进程的有效用户（组）id是一样的。当进程的有效用户（组）id被修改时，不管是通过系统调用或者是通过执行set-user（group）-ID的程序，文件系统的用户（组）id也会跟着修改成同样的值。这意味着，linux与其它unix的实现，在行为上市一致的，除了在明确调用setfsuid() and setfsgid()两个系统调用的时候。</p>
+
+<p>由于在表现上，文件系统用户（组）id与进程有效的用户id和组id是一样的，因此虽然在底层，操作文件时，linux是用文件系统的用户（组）id来判断权限的，我们只关心进程的有效用户（组）id即可。</p>
+
+<h2>补充的组ids（Supplementary Group IDs）</h2>
+
+<p>补充的组ids是一个额外的进程所属于的组的集合。</p>
+
+<p>新进程会从父进程中继承这些组ids。一个登录shell进程从系统组文件（system group file）获取其补充组ids。这些ids与有效用户（组）id来检查进程的操作权限。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Your Name</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-26T10:33:32+08:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/linux/'>linux</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2014/01/26/chapter-9-linux-programming-interface/" data-via="" data-counturl="http://baren.github.io/blog/2014/01/26/chapter-9-linux-programming-interface/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/12/30/fileio-further-details/" title="Previous Post: linux文件io进一步描述">&laquo; linux文件io进一步描述</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax/" title="Next Post: python词法约定和语法(PER4 chapter 2)">python词法约定和语法(PER4 chapter 2) &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/03/22/standard-io/">apue(标准I/O库)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/03/file-and-dir/">apue(文件和目录)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/linux-file-system/">linxu 文件系统笔记</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/per4-chapter3-type-and-object/">类型和对象(PER4 chapter 3)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax/">python词法约定和语法(PER4 chapter 2)</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Your Name -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
+  <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

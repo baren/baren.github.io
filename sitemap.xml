@@ -3,6 +3,54 @@
   
   
   <url>
+    <loc>http://baren.github.io/blog/2014/03/22/standard-io/</loc>
+    <lastmod>2014-03-22T20:06:00+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/03/03/file-and-dir/</loc>
+    <lastmod>2014-03-03T23:06:23+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/02/10/linux-file-system/</loc>
+    <lastmod>2014-02-10T19:33:17+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/02/10/per4-chapter3-type-and-object/</loc>
+    <lastmod>2014-02-10T19:33:16+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax/</loc>
+    <lastmod>2014-02-08T10:33:00+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/01/26/chapter-9-linux-programming-interface/</loc>
+    <lastmod>2014-01-26T10:33:32+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2013/12/30/fileio-further-details/</loc>
+    <lastmod>2013-12-30T13:15:19+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2013/12/23/the-universal-io-model/</loc>
+    <lastmod>2013-12-23T14:36:16+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://baren.github.io/blog/2013/12/17/linux-open-max-fd-num/</loc>
     <lastmod>2013-12-17T14:36:20+08:00</lastmod>
     <priority>0.8</priority>
@@ -11,14 +59,14 @@
   
   <url>
     <loc>http://baren.github.io/blog/archives/</loc>
-    <lastmod>2014-09-05T13:52:14+08:00</lastmod>
+    <lastmod>2014-09-05T15:37:08+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://baren.github.io/</loc>
-    <lastmod>2014-09-05T13:52:14+08:00</lastmod>
+    <lastmod>2014-09-05T15:37:08+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>

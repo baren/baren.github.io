@@ -1,0 +1,979 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>apue(标准I/O库) - Baren Blog</title>
+  <meta name="author" content="Your Name">
+
+  
+  <meta name="description" content="流和FILE对象 流介绍 对于标准I/O库，他们的操作是围绕流进行的。 与JAVA使用Stream类来代表流不一样，标准I/O采用结构体FILE来代表流，由于大多数标准库的函数使用FILE 来作为参数，因此也用文件指针*来代称流。 struct FILE结构体在stdio.h中做了声明： 1 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://baren.github.io/blog/2014/03/22/standard-io/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Baren Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Baren Blog</a></h1>
+  
+    <h2>A blogging for baren.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:baren.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">apue(标准I/O库)</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-22T20:06:00+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h1>流和FILE对象</h1>
+
+<h2>流介绍</h2>
+
+<p>对于标准I/O库，他们的操作是围绕<em>流</em>进行的。</p>
+
+<p>与JAVA使用Stream类来代表流不一样，标准I/O采用结构体FILE来代表流，由于大多数标准库的函数使用FILE <em>来作为参数，因此也用</em>文件指针*来代称流。</p>
+
+<p>struct FILE结构体在stdio.h中做了声明：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>typedef struct _sFILE{...} FILE;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>数据类型FILE
+    > 代表流对象，FILE对象含有所有的连接文件的内部状态，包括文件位置标记和缓存信息等。
+    > 每一个流海包含error和文件末尾状态标记，可以通过ferror和feof函数进行测试。</p>
+
+<h2>流的定向</h2>
+
+<p>标准I/O可以用于单字节的字符集（ascii字符集）和多字节（宽）字符集，这就要求<em>流的定向</em>。
+对于宽字节的处理，有一套专门的多字节处理函数（wchar.h中声明）。
+对于同样的流，为了能处理宽的和正常的字符的操作，有一个限制：</p>
+
+<ul>
+<li>流要么被标记为宽定向的，要么是字节定向的</li>
+<li>一旦确定定向后，不能二者混用</li>
+</ul>
+
+
+<p>有三种方式来定向流：</p>
+
+<ul>
+<li>创建流后，任一个正常字符函数被使用，流被标记为字节定向的。</li>
+<li>创建流后，任一个宽字符函数被使用，流被标记为宽定向的。</li>
+<li>使用<code>fwide函数</code>来设置流的定向。</li>
+<li>freopen函数可以清除流的定向。</li>
+</ul>
+
+
+<p>注意：</p>
+
+<ul>
+<li>流刚被创建时，并没有定向</li>
+<li>在未定向流上使用字节字符函数则置为字节定向的</li>
+<li>在未定向流上使用宽字节函数则置为宽字节定向的</li>
+</ul>
+
+
+<p>fwide函数说明：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>#include &lt;wchar.h&gt;
+</span><span class='line'>
+</span><span class='line'># 返回值：若流是宽定向的，则返回正值；若流是字节定向的，则返回负值；若流是未定向的，则返回0.
+</span><span class='line'>int fwide(FILE *fp, int mode);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>根据mode参数的值，fwide执行不同的工作：</p>
+
+<ul>
+<li>若mode参数为负值，fwide试图使指定的流是字节定向的</li>
+<li>若mode参数为正值，fwide试图使指定的流是宽定向的</li>
+<li>若mode参数为0，fwide将不试图设置流的定向，但返回标识该流定向的值</li>
+</ul>
+
+
+<blockquote><p>注意:
+fwide不会改变已经设置定向的流
+fwide不会出错，想检查错误，唯一可用的是调用之前先清除errno，调用fwide后检查errno的值。（errno是全局变量，每次调用失败，系统会用错误代码赋值给errno）</p></blockquote>
+
+<h1>标准输入/输出/错误</h1>
+
+<p>当main函数被调用，就已经有3哥预先定义的打开的流可以使用，这三个流在stdio.h中声明：</p>
+
+<ul>
+<li>FILE *stdin。标准输入流</li>
+<li>FILE *stdout。标准输出流</li>
+<li>FILE *stderr。标准错误流</li>
+</ul>
+
+
+<p>在GNU C中，stdin、stdout和stderr是正常常量，可以直接用：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>fclost(stdout);
+</span><span class='line'>stdout = fopen("filepath", "w");
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>缓冲</h1>
+
+<p>标准I/O提供了三种类型的缓冲：</p>
+
+<ul>
+<li>全缓冲。填满缓冲区后才进行实际的I/O操作。对于磁盘文件，通常是全缓冲的。在一个流上第一次执行I/O操作时，标准I/O函数通常用malloc获取需要使用的缓冲区。</li>
+<li>行缓冲。当输入和输出中遇到换行符时，标准I/O库执行I/O操作。当涉及到终端时，通常使用行缓冲。</li>
+</ul>
+
+
+<blockquote><p>行缓冲有两个限制：</p>
+
+<p>缓冲区长度是固定的，所以只要填满了缓冲区，即使没有缓冲区，也进行I/O操作</p>
+
+<p>任何时候，只要标准I/O库从 a）不带缓冲的流，或者 b）一个行缓冲的流（但数据从内核获取）得到输入数据，那么就会造成冲洗所有行缓冲输出流。</p>
+
+<p>从实现角度说，这么个限制是有原因的：如果从不带缓冲的流中获取数据，那么缓冲区中的没有冲洗的旧数据会对新数据造成污染。</p></blockquote>
+
+<ul>
+<li>不带缓冲。标准I/O库不对字符进行缓冲存储。标准错误流通常不带缓冲的。</li>
+</ul>
+
+
+<p>iso c 是这样设置缓冲的：
+* 当且仅当标准输入和标准输出并不涉及交互设备时，他们才是全缓冲。
+* 标准错误绝不会是全缓冲。</p>
+
+<p>但是标准输入输出涉及交互设备时，一般：</p>
+
+<ul>
+<li>标准错误不带缓冲。</li>
+<li>其它流，涉及终端设备，则是行缓冲；否则是全缓冲。</li>
+</ul>
+
+
+<p>对于这些默认的缓冲情况，可以使用函数进行修改：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>void setbuf(FILE * fp, char * buf);
+</span><span class='line'>int servbuf(FILE * fp, char * buf, int mode, size_t size);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这些函数的使用限制是：</p>
+
+<ul>
+<li>一定要在流已被打开后调用</li>
+<li>在对流执行任何一个其它操作之前调用</li>
+</ul>
+
+
+<p>setbuf可以打开和关闭缓冲，打开缓冲，将buf指向一个长为BUFSIZE的缓冲区（该常量被定义在stdio.h中）。关闭缓冲，则设置buf为NULL。
+setvbuf，可以精确控制缓冲类型，通过mode参数指定：</p>
+
+<ul>
+<li>_IOFBF    全缓冲</li>
+<li>_IOLBF    行缓冲</li>
+<li>_IONBF    不缓冲</li>
+</ul>
+
+
+<blockquote><p>注意：
+如果在一个函数内分配一个自动变量类的标准I/O缓冲区，则从该函数返回之前，必须关闭该流（也就是把数据冲洗一下）。
+一般而言，应由系统选择缓冲区的长度，并自动分配缓冲区。这种情况下，关闭此流时，标准I/O库将自动释放缓冲区。</p></blockquote>
+
+<p>可以通过函数强制缓冲一个流：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdih.h&gt;
+</span><span class='line'>
+</span><span class='line'>int fflush(FILE * fp);</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>打开流</h1>
+
+<p>使用下列函数打开流：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>FILE *fopen(char * pathname, char *type);
+</span><span class='line'>FILE *freopen(char *pachname, char *type, FILE *fp);
+</span><span class='line'>FILE *fdopen(int fd, char *type);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用fopen函数打开一个文件，创建一个新流，并建立这个流和文件之间的连接。这个过程也会涉及到创建新文件。</p>
+
+<p>其中，type参数指定对该流的读、写方式：</p>
+
+<ul>
+<li><code>'r'</code>: 只读打开文件</li>
+<li><code>'w'</code>: 只写打开，若文件存在，截断为0；否则创建新文件</li>
+<li><code>'a'</code>: 追加打开，为在文件为写而打开。文件若存在，则不改变内容。</li>
+<li><code>'r+'</code>: 读写打开文件，初始化内容不变，初始化文件位置在文件开头。</li>
+<li><code>'w+'</code>: 读写打开文件，若文件存在，截断为0.否则创建新文件</li>
+<li><code>'a+'</code>: 为在文件尾读和写而打开文件。</li>
+</ul>
+
+
+<blockquote><p>注意：</p>
+
+<p>&lsquo;+&#8217;请求一个流可以读和写，当使用这种流时，在读写之间转换时，必须刷新buffer，fflush或者订货函数fseek都可以。不然内部的buffer可能不空。</p></blockquote>
+
+<p>freopen函数像fclos和fopen的联合。受限关闭有fp指向的流（这个过程会忽略任何错误），然后再打开pathname指向的文件，一般用于将一个指定的文件打开为一个预定义的流。</p>
+
+<p>可以使用fclose关闭流：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>int fclose(FILE *fp);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>关闭一个流，关闭文件，并刷新缓冲区的输出数据，并释放由标准I/O库分配的内存。</p>
+
+<blockquote><p>注意：
+当程序正常关闭时（调用exit函数和正常从main返回），所有未写缓冲数据的标准I/O流，都会被冲洗；所有打开的标准I/O都会关闭。</p></blockquote>
+
+<h1>读和写流</h1>
+
+<p>一旦打开了流，就可在三中不同类型的非格式化I/O中选择，进行读写。包括：</p>
+
+<ul>
+<li>每次只读一个字符的I/O，一次读写一个字符。若流是缓冲的，标准I/O会处理所有缓冲。</li>
+<li>每次一行I/O，可以使用fgets和fputs，每行以换行符终止。</li>
+<li>direct I/O，直接I/O。fread和fwrite函数支持这种类型的I/O。每次I/O操作读或写某种数量的对象，而每个对象具有指定的长度。用于从二进制文件中每次读或写一个结构。</li>
+</ul>
+
+
+<h2>一次一个字符</h2>
+
+<p>下面三个函数可以用于一次读一个字符：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'># 三个函数的返回值，若成功，返回下一个字符；达文件末尾或失败，则返回EOF
+</span><span class='line'>int getc(FILE *fp);
+</span><span class='line'>int fgetc(FILE *fp);
+</span><span class='line'>
+</span><span class='line'>int getchar(void);
+</span><span class='line'>
+</span><span class='line'># 写入流
+</span><span class='line'>int putc(int c, FILE *fp);
+</span><span class='line'>int fputc(int c, FILE * fp);
+</span><span class='line'>int putchar(int c);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>getchar 等价于getc(stdin)，而getc和fgetc的区别是前者可以实现为宏；而后者不可。这意味着：</p>
+
+<ul>
+<li>getc的参数不应当是具有副作用的表达式</li>
+<li>fgetc是函数，可得到其地址，允许fgetc地址作为参数传递给其它函数</li>
+<li>fgetc函数执行时间长于getc函数（宏的优势）</li>
+</ul>
+
+
+<p>不管是出错，还是到达文件末尾，三个函数都返回EOF，为了区分是出错还是到达文件末尾，需要使用ferror或feof函数。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>int ferror(FILE *fp);
+</span><span class='line'>
+</span><span class='line'>int feof(FILE *fp);
+</span><span class='line'>
+</span><span class='line'>void clearerr(FILE *fp);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>大多数实现，为每个流在FILE对象中维持了两个标志：</p>
+
+<ul>
+<li>出错标志</li>
+<li>文件结束标志</li>
+</ul>
+
+
+<p>从流中读取数据后，可以调用ungetc奖字符再压回流中。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'># 成功，返回c，出错返回EOF
+</span><span class='line'>int ungetc(int c, FILE *fp);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>关于压回，注意：</p>
+
+<ul>
+<li>压回流中的字符可以再读出，但与压入顺序相反。</li>
+<li>不能压回EOF。</li>
+<li>到达文件末尾，还可压回字符。下次读取将返回该字符，再次读取则返回EOF。这么做的一个原因是，一次成功的ungetc调用会清除该流的文件结束标志。</li>
+</ul>
+
+
+<h2>每次一行</h2>
+
+<p>下面函数是每次一行函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'># 读一行函数，成功，则返回bug，错误或到达末尾，则返回NULL
+</span><span class='line'>char * fgets(char * buf, int n, FILE *fp);
+</span><span class='line'>
+</span><span class='line'>char * gets(char *buf);
+</span><span class='line'>
+</span><span class='line'># 写一行函数，成功，返回非负值，出错返回EOF
+</span><span class='line'>
+</span><span class='line'>int fputs(char * str, FILE *fp);
+</span><span class='line'>
+</span><span class='line'>int puts(char *str);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>两个gets函数，指定了缓冲区，把读的行送入其中。gets从标准输入读，fgets从指定流读。</p>
+
+<ul>
+<li>fgets必须指定缓冲区的长度。此函数一直读到下一个换行符为止，但不超过n-1（放null字符），读入的数据被送入缓冲区。</li>
+<li>该缓冲区一null结尾。</li>
+<li>若该行的字符数超过n-1，则fgets只返回一个不完整的行，但是，缓冲区总是以null字符结尾。</li>
+</ul>
+
+
+<blockquote><p>注意：
+gets函数不推荐，由于没有指定缓冲区大小，容易造成缓冲区溢出。</p></blockquote>
+
+<p>写入一行函数，将一个以null符终止的字符串写入到指定流。尾端null不会被写入。</p>
+
+<h2>二进制I/O</h2>
+
+<p>对于直接I/O，也就是二进制I/O，提供两个函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>size_t fread(void *ptr, size_t size, size_t nobj, FILE *fp);
+</span><span class='line'>
+</span><span class='line'>size_t fwrite(void * ptr, size_t size, size_t nobj, FILE *fp);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这两个函数的常用用法：</p>
+
+<ol>
+<li>读或写一个二进制数组。比如将一个浮点数组的第2~5个元素写到一个文件上：</li>
+</ol>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>float data[10];
+</span><span class='line'>
+</span><span class='line'>if (fwrite(&data[2], sizeof(float), 4, fp) != 4)
+</span><span class='line'>  printf("error");</span></code></pre></td></tr></table></div></figure>
+
+
+<ol>
+<li>读写一个结构</li>
+</ol>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>struct {
+</span><span class='line'>  
+</span><span class='line'>  short count;
+</span><span class='line'>  long total;
+</span><span class='line'>  char name[NAMESIZE];
+</span><span class='line'>
+</span><span class='line'>} item;
+</span><span class='line'>
+</span><span class='line'>if (fwrite(&item, sizeof(item), 1, fp) != 1)
+</span><span class='line'>  printf("error");
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>注意：
+对于二进制读写的问题是：只能用于同一个系统上已写的数据，原因是：
+1. 在同一个结构中，同一个成员的偏移量可能因为编译器和系统而异。
+2. 用来存储多字节整数和浮点值的二进制格式，在不同机器体系结构不同。</p></blockquote>
+
+<h1>定位流</h1>
+
+<p>三种方法定位标准I/O流</p>
+
+<ul>
+<li>ftell和fseek，假设位置偏移量，可以使用长整型。</li>
+<li>ftello和fseeko，文件偏移量，使用off_t代替长整型。</li>
+<li>fgetpos和fsetpos，ISO C引入，使用抽象数据类型fpos_t来记录文件的位置。</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>long ftell(FILE *fp); # 成功，返回当前文件位置指示，出错返回-1
+</span><span class='line'>
+</span><span class='line'>int fseek(FILE *fp, long offset, int whence);
+</span><span class='line'>
+</span><span class='line'>void rewind(FILE *fp);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>定位涉及到文本文件和二进制文件，由于存放格式不一样，里面许多注意点。</p>
+
+<h2>对于二进制文件</h2>
+
+<p>二进制文件，文件位置指示器是从文件起始位置开始度量，并以字节为计量单位。</p>
+
+<p>ftell用于二进制文件时，其返回值就是这种字节位置。</p>
+
+<p>为了使用fseek定位一个二进制文件，必须指定一个字节的<em>offset</em>。以及解释这种偏移量的方式。</p>
+
+<p>whence的值与内核函数lseek函数相同：</p>
+
+<ul>
+<li>SEEK_SET表示从文件的起始位置开始</li>
+<li>SEEK_CUR表示从当前文件位置开始</li>
+<li>SEEK_END表示从文件尾端开始。</li>
+</ul>
+
+
+<h2>文本文件</h2>
+
+<p>对于文本文件，他们的文件位置可能不以简单的字节偏移量来度量。主要是在非unix系统中，以不同格式存放文本文件。</p>
+
+<p>为了定位文本文件，<em>whence</em>一定要是SEEK_SET，而<em>offset</em>的值只有两种：0（绕回到文件的起始位置）。或是对该文件调用ftell返回的值。</p>
+
+<p>使用fewind可以将流设置到文件的起始位置。</p>
+
+<h1>格式化I/O</h1>
+
+<h2>scanf函数</h2>
+
+<p>有以下几个scanf函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>int fscanf(FILE *stream, char const *format, ...);
+</span><span class='line'>
+</span><span class='line'>int scanf(char const *format, ...);
+</span><span class='line'>
+</span><span class='line'>int sscanf(char const *string, char const *format, ...);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这些函数都是从输入源中读取字符并根据format字符串给出的格式代码对他们进行转换。</p>
+
+<p>fscanf输入源就是作为参数给出的流，scanf从标准输入读取，sscanf从第一个参数所给的字符串中读取字符。</p>
+
+<p>读取停止条件：</p>
+
+<ol>
+<li>当格式化字符串到达末尾</li>
+<li>读取的输入不再匹配格式字符串所指定的类型时</li>
+</ol>
+
+
+<p>返回结果是被转换的输入值的数据。</p>
+
+<p>如果在任何输入值被转换之前文件就已经到达尾部，函数就返回常量值EOF。</p>
+
+<blockquote><p>注意：
+对于scanf函数的参数，前面需要使用<code>&amp;</code>。</p></blockquote>
+
+<p>scanf函数族中的format字符串参数可能包含下面内容：</p>
+
+<ul>
+<li>空白字符————她们与输入中得零个或多个空白字符匹配，在处理过程中被忽略。</li>
+<li>格式代码————她们指定函数如何解释接下来的输入字符。</li>
+<li>其它字符————当任何其它字符出现在format字符串时，下一个输入字符必须与它匹配。如果匹配，该输入字符随后就被丢弃。如果不匹配，函数就不再读取直接返回。</li>
+</ul>
+
+
+<p>格式代码的结构是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>%[*] [fldwidth] [lenmodifier]convtype</span></code></pre></td></tr></table></div></figure>
+
+
+<p>针对上面的格式，解释如下：</p>
+
+<ul>
+<li>可选<code>*</code>字符：将使转换后的值被丢弃而不是进行存储</li>
+<li>fldwith宽度：非负整数，它限制将被读取用于转换的输入字符的个数。如果没有给出宽度，函数就连续读入字符直到遇到输入中的下一个空白符。</li>
+<li>lenmodifier限定符：用于修改有些格式代码的含义</li>
+</ul>
+
+
+<blockquote><p>对于限定符，说明：
+限定符的目的是为了指定参数的长度。如果整型参数比缺省的整型值更短或更长时，在格式化代码中省略限定符就是一个常见的错误。
+对于浮点型也是如此。
+如果省略了限定符，可能导致一个较长的变量只有部分被初始化。或者一个较短变量的临近变量也被修改，这都取决于这些类型的相对长度。</p></blockquote>
+
+<p>限定符作用到整型和浮点型的效果如下表：</p>
+
+<table>
+<thead>
+<tr>
+<th>格式代码        </th>
+<th style="text-align:center;"> h           </th>
+<th style="text-align:center;"> l  </th>
+<th style="text-align:center;"> L</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>d,i,n      </td>
+<td style="text-align:center;"> short </td>
+<td style="text-align:center;"> long </td>
+<td style="text-align:center;">    空 </td>
+</tr>
+<tr>
+<td>o,u,x      </td>
+<td style="text-align:center;"> 无符号 short      </td>
+<td style="text-align:center;">       无符号 long </td>
+<td style="text-align:center;"> 空</td>
+</tr>
+<tr>
+<td>e,f,g </td>
+<td style="text-align:center;">     空  </td>
+<td style="text-align:center;">    double </td>
+<td style="text-align:center;">       long double</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>转换符</p>
+
+<p>看下面例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>nfields = fscanf(input, "%4d %4d %4d", &a, &b, &c)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面程序，宽度参数把整数值限制为4个数字或者更少的数字，如果是下面的输入：</p>
+
+<p>1 2</p>
+
+<p>则a的值是1，b的值是2，c没有改变。而nfields值为2.</p>
+
+<p>如果是下面的输入：</p>
+
+<p>12345 67890</p>
+
+<p>则a的值是1234， <strong>b的值是5</strong>。c的值是6789，nfield的值是3。</p>
+
+<p>转换符表格：</p>
+
+<table>
+<thead>
+<tr>
+<th>代码        </th>
+<th style="text-align:center;"> 参数类型           </th>
+<th style="text-align:left;"> 含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>c </td>
+<td style="text-align:center;"> char *</td>
+<td style="text-align:left;"> 读取和存储单个字符。如果给定了宽度，则读取和存储这个数目的字符（因此参数类型是char *），参数必须指向一个足够大的字符数组</td>
+</tr>
+<tr>
+<td>i,d</td>
+<td style="text-align:center;">int * </td>
+<td style="text-align:left;"> 一个可选的有符号整数倍转换，d把输入解释为十进制；i根据它的第一个字符决定值的基数</td>
+</tr>
+<tr>
+<td>u,o,x</td>
+<td style="text-align:center;"> unsigned *</td>
+<td style="text-align:left;"> 无符号，分别是u无符号十进制，o无符号八进制，x无符号十六进制</td>
+</tr>
+<tr>
+<td>e，f，g</td>
+<td style="text-align:center;"> float *</td>
+<td style="text-align:left;">浮点数</td>
+</tr>
+<tr>
+<td>s</td>
+<td style="text-align:center;"> char * </td>
+<td style="text-align:left;"> 字符串</td>
+</tr>
+<tr>
+<td>p </td>
+<td style="text-align:center;"> void * </td>
+<td style="text-align:left;"> 指向void的指针。输入预期为一串字符，诸如那些有printf函数的%p格式代码所产生的输出。</td>
+</tr>
+<tr>
+<td>n </td>
+<td style="text-align:center;"> int * </td>
+<td style="text-align:left;">到目前为止通过这个scanf函数的调用从输入读取的字符数被返回。%n转换的字符不被计算在内。它本身并不耗费任何输入。</td>
+</tr>
+<tr>
+<td>% </td>
+<td style="text-align:center;"> 无</td>
+<td style="text-align:left;"> %</td>
+</tr>
+</tbody>
+</table>
+
+
+<h2>printf函数</h2>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>int fprintf(FILE *stream, char const *format, ...);
+</span><span class='line'>
+</span><span class='line'>int printf(char const *format, ...);
+</span><span class='line'>
+</span><span class='line'>int sprintf(char *buffer, char const *format, ...);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>printf，结果输出送到标准输出，fprintf可以指定输出流。sprintf把结果作为一个NUL结尾的字符串存储到指定的buffer缓冲区中。</p>
+
+<blockquote><p>注意：
+sprintf有潜在的错误，缓存区大小不是一个参数，因此，如果输出结果长于缓冲区，会改写缓冲区后面的内存位置中得数据。</p></blockquote>
+
+<p>printf中得format构成是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>%[flags] [fldwidth] [precision] [lenmodifier]convtype
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>flags字符</h3>
+
+<table>
+<thead>
+<tr>
+<th>标志 </th>
+<th> 含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-   </td>
+<td> 值在字段中左对齐，默认是右对齐</td>
+</tr>
+<tr>
+<td>0   </td>
+<td>当数值为右对齐时，却僧情况下使用空格填充左边未使用的列。使用这个标志，则用零来填充，它可用于d,i,u,o,x,X,e,E,f,g和G代码。</td>
+</tr>
+<tr>
+<td>+   </td>
+<td> 正值前有加号</td>
+</tr>
+<tr>
+<td>空格</td>
+<td> 只用于转换有符号值的代码。当值非负时，这个标志把一个空格添加到它开始的位置。注意这个标志和+互斥。</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>代码：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; print '%0.5f' % 1.1
+</span><span class='line'>1.10000
+</span><span class='line'>&gt;&gt;&gt; print '%0.5d' % 1.1
+</span><span class='line'>00001</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>fldwidth 宽度</h3>
+
+<p>字段宽度是一个十进制整数，用于指定将要出现在结果中得最小字符数。如果字符数少于字段宽度，就对它进行填充以增加长度。flags字段决定填充
+使用空白还是零。</p>
+
+<h3>precision 精度</h3>
+
+<p>精度字段以一个句点开头，后面跟着一个可选的十进制整数，如果没有给出，则精度为0.</p>
+
+<ul>
+<li>如果作用的是d、i、u、o、x和X类型转换符，精度字段指定将出现在结果中的最小数子个数。如果转换后的值的位数小于宽度，就在它签名插入零。如果值为零，精度也为零，则不输出数字。</li>
+<li>如果作用于e，E和f类型转换符，精度决定将要出现在小数点后的数字位数</li>
+<li>如果作用于s，精度指定将被转换的最多字符数。</li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Your Name</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-22T20:06:00+08:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/linux/'>linux</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2014/03/22/standard-io/" data-via="" data-counturl="http://baren.github.io/blog/2014/03/22/standard-io/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/03/03/file-and-dir/" title="Previous Post: apue(文件和目录)">&laquo; apue(文件和目录)</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/03/22/standard-io/">apue(标准I/O库)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/03/03/file-and-dir/">apue(文件和目录)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/linux-file-system/">linxu 文件系统笔记</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/10/per4-chapter3-type-and-object/">类型和对象(PER4 chapter 3)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax/">python词法约定和语法(PER4 chapter 2)</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Your Name -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
+  <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
