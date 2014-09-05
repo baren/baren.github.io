@@ -4,7 +4,7 @@
   <title><![CDATA[Baren Blog]]></title>
   <link href="http://baren.github.io/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-05T15:37:08+08:00</updated>
+  <updated>2014-09-05T16:02:19+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[Your Name]]></name>
@@ -12,6 +12,3266 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[apue(线程)]]></title>
+    <link href="http://baren.github.io/blog/2014/08/28/pthread/"/>
+    <updated>2014-08-28T20:00:53+08:00</updated>
+    <id>http://baren.github.io/blog/2014/08/28/pthread</id>
+    <content type="html"><![CDATA[<h1>线程概念</h1>
+
+<p>主要是POSIX线程，也就是pthread。</p>
+
+<p>正常情况下，unix的进程包括一个单一的线程执行，从main开始。有了线程后，一个进程可以有多个线程同时执行。</p>
+
+<p>判断系统是否支持pthread，可以使用宏<em>POSIX_THREADS进行测试，还可以把</em>SC_THREADS传递给sysconf函数来运行时判断。</p>
+
+<p>线程可以有多种好处，按照传统的多进程的实现方式，一般是在网络服务器环境下使用，多进程可以同时支持多个客户端的请求。但也有一些限制：</p>
+
+<ul>
+<li>进程之间共享数据非常困难</li>
+<li>使用fork创建一个进程是耗资源的。即使使用了copy-on-write技术，复制各种进程的属性（page表和fd表等）也意味着是耗时间的。</li>
+</ul>
+
+
+<p>使用线程，解决这上面这些问题：</p>
+
+<ul>
+<li>线程之间共享信息是容易和迅速的。仅仅拷贝数据到共享内存（global或heap）的消耗。</li>
+<li>线程创建比进程创建迅速多了。大约有10倍。linux创建线程使用clone系统调用，也还是比进程快。</li>
+</ul>
+
+
+<p>除了共享全局内存，线程还共享一些其他属性，包括</p>
+
+<ul>
+<li>进程id和父进程id</li>
+<li>进程组合session id</li>
+<li>控制终端</li>
+<li>进程凭证（用户和组id）</li>
+<li>打开的文件描述符（比较重要）</li>
+<li>信号处理</li>
+<li>文件系统相关信息：umask、当前工作目录和根目录</li>
+<li>等</li>
+</ul>
+
+
+<p>下面是各个线程不同的属性：</p>
+
+<ul>
+<li>线程id</li>
+<li>信号mask</li>
+<li>线程私有数据</li>
+<li>errno变量</li>
+<li>等</li>
+</ul>
+
+
+<h2>线程和errno</h2>
+
+<p>进程环境下，errno是一个全局整型变量。在线程环境下，为了防止出现竞争条件（每个线程都去更新这个变量），每个线程都有自己的errno。</p>
+
+<p>这样既避免了errno的条件竞争，又兼容了一些使用errno的函数。</p>
+
+<p>注：</p>
+
+<blockquote><p>在线程中，使用函数的返回错误码更为清晰整洁。</p></blockquote>
+
+<h2>线程ID</h2>
+
+<p>进程的编号id是整个系统唯一的。线程的编号是进程内唯一的。进程的编号，使用<code>pid_t</code>来表示；线程的ID，使用<code>pthread_t</code>类型来表示。</p>
+
+<p>为了可移植性，一般调用函数对线程ID进行处理，而不是把它转换成整型（linux使用无符号整数来实现的）。</p>
+
+<p>下面是处理线程ID的函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>// 比较两个线程ID
+</span><span class='line'>int pthread_equal(pthread_t tid1; pthread_t tid2);  // 相等则返回非零值
+</span><span class='line'>
+</span><span class='line'>// 获取线程的ID
+</span><span class='line'>pthread_t pthread_self(void);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>线程创建</h1>
+
+<p>使用pthread_create函数创建线程：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>
+</span><span class='line'>int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+</span><span class='line'>void *(*start)(void *), void *arg);
+</span><span class='line'>
+</span><span class='line'>// 成功返回0
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这个函数的参数意义是：</p>
+
+<ul>
+<li>thread——线程创建成功后，将线程的ID写入这个指针指向的内存中</li>
+<li>attr——创建线程的属性</li>
+<li>start——线程执行的函数指针。这个函数接收一个无类型指针参数，如果函数接收的参数是多个，可以定义一个结构体，并作为参数arg传递给此函数</li>
+<li>arg——无类型指针参数，作为线程执行函数的参数传入</li>
+</ul>
+
+
+<h1>线程终止</h1>
+
+<ul>
+<li><p>进程终止会导致线程终止：</p>
+
+<ul>
+<li>任一线程调用了exit，<em>Exit或</em>exit函数，整个进程终止</li>
+<li>若信号的默认动作是终止进程，则把信号发送到线程会终止进程</li>
+</ul>
+</li>
+<li><p>单个进程有三种方式退出，在不终止整个进程的情况下停止线程自己的控制流。</p>
+
+<ul>
+<li>线程只是从启动程序中返回，返回值是线程的退出码（也就是pthread_create函数的第三个参数start函数的返回值）</li>
+<li>线程可以被同一进程中的其它线程取消（pthread_cancel）</li>
+<li>线程调用pthread_exit函数退出</li>
+</ul>
+</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>void pthread_exit(void *retval);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>pthread_exit接收的参数，就是线程的返回值。</p>
+
+<p>其它线程可以通过pthread_join获取这个值。</p>
+
+<p>注意：</p>
+
+<blockquote><p>pthread_exit的效果等同于在线程执行函数中通过return返回。不同之处是pthread_exit函数可以在任意被线程执行函数调用的函数中使用
+pthread_exit的参数不能是线程栈的数据，因为一旦线程结束，栈就被回收，导致返回值被覆盖。</p></blockquote>
+
+<h2>pthread_join函数</h2>
+
+<p>pthread_join函数会等待终止线程。有两种情况：1）如果线程已经终止，则join函数立即返回；2）如果线程还没有终止，则阻塞，直到线程终止。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>include &lt;pthread.h&gt;
+</span><span class='line'>int pthread_join(pthread_t thread, void **retval); // 成功，返回0
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果retval是个非空指针，则会获取一份线程终止的返回值的拷贝。这个线程返回值或者通过return返回，或者通过调用pthread_exit。</p>
+
+<p>注意：</p>
+
+<blockquote><p>如果join一个已经被join过的线程，则结果是未定义的。比如有可能会join一个刚刚创建的新线程（重用了之前的线程ID）。</p></blockquote>
+
+<p>如果一个线程是非分离状态，则必须对这个线程进行pthread_join操作，如果不这样，则：
+* 线程会变成与僵尸进程类似的状态，除了消耗资源外，如果足够多的这种线程存在，我们将不能再创建新线程</p>
+
+<p>还要注意：
+* 线程是平级的：意思是同一个进程内的线程，可以pthread_join任意的其他线程。这与进程不一样，进程只能是父进程wait子进程。
+* 线程没有pthread_jion任意线程操作。进程可以通过waitpid(–1, &amp;status, options)); 等待任意进程，线程没有这个操作。</p>
+
+<h2>pthread_detach函数</h2>
+
+<p>默认情况下，线程是可<em>结合的（joinable）</em>，可结合的意思，一旦线程终止，任何其它线程都可以通过pthread_join获取其终止状态。</p>
+
+<p>某些情况下，我们不想获取线程的终止状态，希望系统在线程终止时，自动回收线程资源，可以使用pthread_detach函数设置线程是<em>分离的（detached）</em>。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>int pthread_detach(pthread_t thread);
+</span><span class='line'>// 成功返回0
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>注意：
+1. 一旦设置线程为可分离的，则不能使用pthread_join获取其返回状态了
+2. 设置线程为可分离的，则不能再将其设置为可结合的。</p>
+
+<h1>线程参数传递和返回值</h1>
+
+<p>在创建线程时，可能需要传递参数给线程，并可能在线程结束时获取线程返回状态。</p>
+
+<ul>
+<li>在调用pthread_create函数创建线程时，可以使用第四个参数传递参数给线程的执行函数</li>
+<li>当线程结束时，可以传递返回结果给调用pthread_join的线程，通过：
+
+<blockquote><ul>
+<li>在线程执行函数返回一个指针</li>
+<li>调用pthread_exit()，把返回值指针作为pthread_exit的参数</li>
+</ul>
+</blockquote></li>
+</ul>
+
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>#include &lt;errno.h&gt;
+</span><span class='line'>#include &lt;string.h&gt;
+</span><span class='line'>
+</span><span class='line'>/* **************************************************************************/
+</span><span class='line'>/*  our macro for errors checking                                           */
+</span><span class='line'>/* **************************************************************************/
+</span><span class='line'>#define COND_CHECK(func, cond, retv, errv) \
+</span><span class='line'>if ( (cond) ) \
+</span><span class='line'> { \
+</span><span class='line'>    fprintf(stderr, "\n[CHECK FAILED at %s:%d]\n| %s(...)=%d (%s)\n\n",\
+</span><span class='line'>                __FILE__,__LINE__,func,retv,strerror(errv)); \
+</span><span class='line'>                   exit(EXIT_FAILURE); \
+</span><span class='line'> }
+</span><span class='line'>
+</span><span class='line'>#define ErrnoCheck(func,cond,retv)  COND_CHECK(func, cond, retv, errno)
+</span><span class='line'>#define PthreadCheck(func,rc) COND_CHECK(func,(rc!=0), rc, rc)
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>void *th_func1(void *arg);
+</span><span class='line'>void *th_func2(void *arg);
+</span><span class='line'>void test_thread_ret();
+</span><span class='line'>
+</span><span class='line'>int main(int argc, char *argv[])
+</span><span class='line'>{
+</span><span class='line'>  test_thread_ret();
+</span><span class='line'>  return 0;
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>void test_thread_ret()
+</span><span class='line'>{
+</span><span class='line'>  int t_ret;
+</span><span class='line'>  // pthread ret
+</span><span class='line'>  pthread_t t1, t2;
+</span><span class='line'>  void *tret;
+</span><span class='line'>  t_ret = pthread_create(&t1, NULL, th_func1, NULL);
+</span><span class='line'>  PthreadCheck("pthread_create", t_ret);
+</span><span class='line'>  t_ret = pthread_create(&t2, NULL, th_func2, (void *)2);
+</span><span class='line'>  PthreadCheck("pthread_create", t_ret);
+</span><span class='line'>
+</span><span class='line'>  printf("join t1\n");
+</span><span class='line'>  t_ret = pthread_join(t1, &tret);
+</span><span class='line'>  PthreadCheck("pthread_join", t_ret);
+</span><span class='line'>  printf("ret of thread 1 is %d.\n", (int) tret);
+</span><span class='line'>
+</span><span class='line'>  printf("join t2\n");
+</span><span class='line'>  t_ret = pthread_join(t2, &tret);
+</span><span class='line'>  PthreadCheck("pthread_join", t_ret);
+</span><span class='line'>  printf("ret of thread 2 is %d.\n", (int) tret);
+</span><span class='line'>
+</span><span class='line'>}
+</span><span class='line'>void *th_func1(void *arg)
+</span><span class='line'>{
+</span><span class='line'>  printf("thread 1 runing\n");
+</span><span class='line'>  return (void *)1;
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>void *th_func2(void *arg)
+</span><span class='line'>{
+</span><span class='line'>  int * a;
+</span><span class='line'>  a = (int *)arg;
+</span><span class='line'>  printf("thread 2 arg is %d.\n", (int) a);
+</span><span class='line'>  pthread_exit((void *) 2);
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>取消线程</h1>
+
+<p>线程可以调用pthread_cancel函数<em>请求</em>取消同一进程中的其它线程。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>
+</span><span class='line'>int pthread_cancel(pthread_t tid);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>pthread_cancel并不等待线程终止仅仅提出请求。</p>
+
+<p>线程在取消请求发出后还继续运行，直到线程打到某个<em>取消点</em>。取消点是线程检查是否被取消并按照请求进行动作的一个位置。</p>
+
+<h1>线程同步</h1>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[apue(信号)]]></title>
+    <link href="http://baren.github.io/blog/2014/06/24/signal/"/>
+    <updated>2014-06-24T20:00:20+08:00</updated>
+    <id>http://baren.github.io/blog/2014/06/24/signal</id>
+    <content type="html"><![CDATA[<h1>信号概念</h1>
+
+<p>信号是软中断，提供了一种处理异步事件的方法</p>
+
+<p>关于信号：</p>
+
+<ul>
+<li>每个信号都有一个唯一的整数定义，从1开始（不存在为0的信号，值为0可以利用kill函数有其它作用），顺序递增。并且还为每个信号定义了一个名字，以SIG开头。
+这些信号定义在signal.h中</li>
+<li>产生信号的条件
+
+<blockquote><ul>
+<li>用户按终端键，印发终端产生信号</li>
+<li>硬件异常产生信号，比如无效的内存引用，除数为0等</li>
+<li>进程调用kill函数，将信号发送给另一个进程（包括自己）或进程组（有权限限制）</li>
+<li>用户用kill命令给进程发送信号</li>
+<li>当检测到某种条件已经发生，并应将信号通知有关进程时，也产生信号。比如SIGURG（网络连接传来数据），SIGPIPE在管道的读进程终止后，一个进程写此管道时产生。</li>
+</ul>
+</blockquote></li>
+</ul>
+
+
+<p>几种处理信号的方式</p>
+
+<ul>
+<li>忽略信号——只有两种信号不能忽略，SIGKILL和SIGSTOP，若忽略硬件产生的信号，行为是未定义的</li>
+<li>捕捉信号——需要注册一个信号处理函数</li>
+<li>执行默认操作——大多数的信号的默认动作是终止信号</li>
+</ul>
+
+
+<h1>signal函数</h1>
+
+<p>unix系统提供了两个改变信号处理的方式：signal和signalaction函数</p>
+
+<p>现在推荐使用signalaction函数实现信号处理。因为signal的实现与系统有关，在程序的移植方面，可能会有问题。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>void (*signal(int sig, void (*func)(int)))(int)
+</span><span class='line'>// 参数 void (*func)(int)是信号处理函数指针，接收int信号值参数，并返回void
+</span><span class='line'>// signal函数返回一个函数指针，类型与信号处理函数指针一样，返回的是上一个信号处理函数的地址</span></code></pre></td></tr></table></div></figure>
+
+
+<p>signal函数太复杂，可以使用typedef类型定义简化一下：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>typedef void Sigfunc(int);
+</span><span class='line'>
+</span><span class='line'>Sigfunc *signal(int Sigfunc *func);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>一般，在singal头文件中，还定义了几个函数指针常量，表示出错、忽略和默认：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#define SIG_ERR (void (*)())-1 // 把-1强制转换成一个函数指针
+</span><span class='line'>#define SIG_DFL (void (*)())0 // 把0强制转换成一个函数指针
+</span><span class='line'>#define SIG_IGN (void (*)())1 // 把-1强制转换成一个函数指针
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以使用这几个预定义函数常量，来判断信号捕获程序。</p>
+
+<p>关于信号处理程序，注意点：</p>
+
+<ul>
+<li>只能捕获已定义的信号，不能捕获未定义的，比如signal(100, func)，会返回错误</li>
+<li>SIGUSR1和SIGUSR2是用户定义信号，可用于应用程序，在mac上，其值是30和31</li>
+<li>kill也只能发送已定义的信号值，不能kill -100 pid，这也是错误的</li>
+</ul>
+
+
+<h1>中断的系统调用</h1>
+
+<h2>中断低速系统调用</h2>
+
+<p>若进程调用了一个低速的系统调用，</p>
+
+<p>并且这个系统调用正在阻塞</p>
+
+<p>此时，</p>
+
+<p>捕捉到一个信号。</p>
+
+<p>结果是：该系统调用就被中断不被执行了。</p>
+
+<p><em>注意</em>：
+* 必须区分是系统调用还是程序函数。当捕捉到某个信号时，被中断的是内核中正在执行的系统调用
+* 还必须区分是低速系统调用还是其它系统调用</p>
+
+<p>低速系统调用是可能是进程阻塞的系统调用，一般包括</p>
+
+<ul>
+<li>读写某些类型的文件（管道、终端设备、网络设备），若数据不存在或者不能够接收数据，则会使调用者永远阻塞</li>
+<li>打开某些类型的文件，在某个条件发生之前，也可能被阻塞（打开终端设备）</li>
+<li>pause和wait，pause会使调用进程一直休眠，指导捕获一个信号</li>
+<li>某些ioctl操作</li>
+<li>某些进程间通信函数</li>
+</ul>
+
+
+<p>这个需要注意的是，磁盘IO操作并不是低速系统调用。</p>
+
+<h2>低速系统调用被中断后的处理和重启</h2>
+
+<p>一旦低速系统调用被中断，系统调用就失败了，此时，该系统调用出错，并且，系统会设置全局变量error的值为EINTR。</p>
+
+<p>这样我们就能够处理这种失败。有两种处理方式：</p>
+
+<ul>
+<li>系统调用失败时手动检查，并根据信号再次调用系统调用或者其它动作</li>
+<li>某些中断的系统调用支持自动重启动</li>
+</ul>
+
+
+<h3>手动检查</h3>
+
+<p>比如可以这样处理：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>while((cnt=read(fd, buf, BUF_SIZE)) == -1 && errno == EINTR)  // read返回错误，并且全局变量为EINTR，表示被中断
+</span><span class='line'>  continue;  // 啥也不做
+</span><span class='line'>
+</span><span class='line'>if (cnt == -1)    // read读取错误，而不是被中断
+</span><span class='line'>  errExit("read");  </span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果经常使用这种检查，还可以定义一个宏：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#define NO_EINTR(stmt)   while((stmt) == -1 && errno == EINTR);
+</span><span class='line'>
+</span><span class='line'>// 然后
+</span><span class='line'>
+</span><span class='line'>NO_EINTR(cnt == read(fd, buf, BUF_SIZE));
+</span><span class='line'>
+</span><span class='line'>if (cnt == -1)    // read读取错误，而不是被中断
+</span><span class='line'>  errExit("read");  </span></code></pre></td></tr></table></div></figure>
+
+
+<h3>自动重启动</h3>
+
+<p>为了解决以上这种经常性的重复检查问题，4.2BSD系统引物了某些被中断的系统调用的自动重启动。并不是所有的系统调用都支持自动重启动，只有下列函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>wait waitpid read write ioctl readv writev
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果使用系统调用的重启动功能，可以使用sigaction函数，指定flag为SA_RESTART即可。</p>
+
+<h1>可重入函数</h1>
+
+<p>在信号处理程序中，不能调用不可重入函数。</p>
+
+<p>所谓不可重入函数是指：</p>
+
+<ol>
+<li>它们使用了静态数据结构或全局变量</li>
+<li>调用malloc和free，因为malloc维护了一个全局链表</li>
+<li>标准IO函数</li>
+</ol>
+
+
+<p>而可重入函数，一般是指：
+* 线程安全函数，既任何一个进程内，多个线程可以同时执行的函数</p>
+
+<p>在标准C函数库中，不可重入函数比较普遍。</p>
+
+<p>比如malloc和free
+，在主程序中调用malloc过程中，产生了信号，并在信号处理程序中调用了malloc，有可能会破坏malloc维护的链表，导致不可预料的结果发生。</p>
+
+<h1>可靠信号的术语和语义</h1>
+
+<ul>
+<li>递送（delivery）信号：当引发信号的事件<em>发生</em>时，为进程产生一个信号（或向进程产生一个信号）</li>
+<li>未决（pending）的信号：在信号产生和递送之间的时间间隔内，称信号是未决的</li>
+</ul>
+
+
+<p>进程可以设置阻塞信号。</p>
+
+<p>若信号被进程设置为阻塞，并且对该信号的动作是系统<strong>默认动作</strong>或<strong>捕捉该信号</strong>，则为该进程将此信号保持为未决状态（产生信号和递送信号之间的状态）。</p>
+
+<p>解除未决状态：
+    * 对信号解除了阻塞
+    * 或者将此信号的动作改为忽略。</p>
+
+<p>注意：
+* 如果信号处理函数不是默认或者捕捉（比如忽略），则信号不会保持为未决状态，
+看下面例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>#include &lt;signal.h&gt;
+</span><span class='line'>#include &lt;sys/signal.h&gt;
+</span><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>void sig_int(int sig);
+</span><span class='line'>int main(int argc, char **argv)
+</span><span class='line'>{
+</span><span class='line'>  sigset_t osig;
+</span><span class='line'>  sigset_t newsig, o_set;
+</span><span class='line'>
+</span><span class='line'>  sigemptyset(&newsig);
+</span><span class='line'>  sigaddset(&newsig, SIGINT);
+</span><span class='line'>  // if (signal(SIGINT, SIG_DFL) == SIG_ERR) // 忽略处理
+</span><span class='line'>  if (signal(SIGINT, SIG_DFL) == SIG_ERR) // 默认处理
+</span><span class='line'>  {
+</span><span class='line'>      printf("signal sigint err!\n");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  }
+</span><span class='line'>  if (sigprocmask(SIG_SETMASK, &newsig, &osig) == -1)
+</span><span class='line'>  {
+</span><span class='line'>      printf("sigprocmask err!\n");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  }
+</span><span class='line'>  //pause();
+</span><span class='line'>  sleep(4);
+</span><span class='line'>
+</span><span class='line'>  if (signal(SIGINT, sig_int) == SIG_ERR)
+</span><span class='line'>  {
+</span><span class='line'>      printf("signal sigint 1 err!\n");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  }
+</span><span class='line'>  if (sigprocmask(SIG_SETMASK, &osig, NULL) == -1)
+</span><span class='line'>  {
+</span><span class='line'>      printf("sigprocmask 1 err!\n");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  }
+</span><span class='line'>  printf(" pause ...\n");
+</span><span class='line'>  sigprocmask(0, NULL, &o_set);
+</span><span class='line'>  if (sigismember(&o_set, SIGINT))
+</span><span class='line'>  {
+</span><span class='line'>      printf("is mask\n");
+</span><span class='line'>  }
+</span><span class='line'>  return 0;
+</span><span class='line'>}
+</span><span class='line'>void sig_int(int sig)
+</span><span class='line'>{
+</span><span class='line'>  printf("int sig hand\n");
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>执行结果是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>如果是默认处理，在sleep过程中，产生中断信号，结果是：
+</span><span class='line'>$ ./test_pend
+</span><span class='line'>^Cint sig hand
+</span><span class='line'> pause ...
+</span><span class='line'>
+</span><span class='line'> 如果改成忽略，在sleep过程中，产生中断信号，结果是：
+</span><span class='line'> ./test_pend
+</span><span class='line'>^C pause ...</span></code></pre></td></tr></table></div></figure>
+
+
+<p>注意：
+* 在进程解除对某个信号的阻塞之前，信号发生了多次，大多数系统都只递送这种信号一次。</p>
+
+<h1>kill和raise函数</h1>
+
+<p>kill函数将信号发送给进程或进程组
+raise函数允许进程向自身发送信号</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;signal.h&gt;
+</span><span class='line'>
+</span><span class='line'>int kill(pid_t pid, int signo);
+</span><span class='line'>int raise(int signo);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>下面是等价的：</p>
+
+<p>raise(signo) == kill(getpid(), signo)</p>
+
+<p>kill函数的pid参数，有四种不同情况：
+* pid >0——发送给pid
+* pid == 0 ——将信号发送给与发送进程属于同一进程组的所有进程（这些进程的进程组ID等于发送进程的进程组ID）（有权限限制）
+* pid &lt; 0 ——发送给进程组ID为|pid|的进程（有权限限制）
+* pid == -1 —— 将信号发送给发送进程有权限向它们发送信号的系统上的所有进程。</p>
+
+<p>上面提到了，给其它进程发信号需要权限，具体是指：</p>
+
+<ul>
+<li>超级用户可以将信号发送给任一进程</li>
+<li>非超级用户，规则是发送者的实际或者有效用户ID必须等于接收者的实际或者有效用户ID，若设置了“设置用户权限位”，则检查保存的设置用户ID</li>
+</ul>
+
+
+<p>注意： 若signo为0，定义为空信号，kill扔执行正常的错误检查，但不发送信号。这常被用来：
+* 确定一个特定的进程是否仍旧存在，若进程不存在，则返回-1，并将errno设置为ESRCH</p>
+
+<h1>alarm和pause函数</h1>
+
+<p>alarm函数可以设置一个计时器，在将来某个指定的时间，该计时器会超时
+* 当计时器超时时，产生SIGALRM信号。
+* 若不忽略或者不捕捉此信号，则默认动作是终止调用该alarm函数的进程</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>unsigned int alarm(unsigned int seconds);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对于alarm，注意：
+* 每个进程只能有个闹钟时钟
+* 调用alarm时，以前为该进程设置过闹钟时钟，且没有超时，则将该预留值作为本次alarm调用的值返回，用新值地带旧的
+* 之前调用过alarm，并没有超时，本次调用seconds为0，则取消之前设置的</p>
+
+<p>pause函数使调用进程挂起直到捕捉到一个信号</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>int pause(void)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>条件：
+* 只有执行了一个信号处理程序并从其返回时，pause才返回，此时pause返回-1，并设置errno为EINTR</p>
+
+<h2>使用alarm实现sleep函数，并暴露问题</h2>
+
+<p>使用信号时，需要精细而周到的考虑，下面代码列出几个问题：</p>
+
+<ul>
+<li>问题1：竞争条件</li>
+</ul>
+
+
+<p>看下面的sleep1的实现：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>unsigned int sleep1(unsigned int nsecs)
+</span><span class='line'>{
+</span><span class='line'>  if(signal(SIGABRT, sig_alarm) == SIG_ERR)
+</span><span class='line'>  {
+</span><span class='line'>      printf("can't signal alarm!\n");
+</span><span class='line'>      return nsecs;
+</span><span class='line'>  }
+</span><span class='line'>  alarm(nsecs);
+</span><span class='line'>  pause();
+</span><span class='line'>  return (alarm(0)); // 返回未完成的时间
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>void sig_alarm(int signo)
+</span><span class='line'>{
+</span><span class='line'>  ;
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这段代码的实现问题是：
+1. 修改了alarm信号的处理函数（如果之前注册过）
+2. 如果之前调用过alarm，这个sleep1的实现，在第一次调用alarm会抹掉之前设置
+3. 有竞争条件，如果系统繁忙，在alarm后pause之前时间到期，则pause会一直等待。</p>
+
+<ul>
+<li>问题2：涉及到其它信号交互时，会产生新的问题，这里的代码产生的问题是回提前终止其它信号的处理程序</li>
+</ul>
+
+
+<p>使用setjmp和longjmp函数来优化上面的sleep1的实现，主要解决第三个问题，也就是竞争条件的问题。</p>
+
+<p>第三个问题，主要是在alarm和pause之间，出现竞争条件。使用setjmp和longjmp，可以绕过这个问题：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>#include &lt;signal.h&gt;
+</span><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>#include &lt;sys/signal.h&gt;
+</span><span class='line'>#include &lt;setjmp.h&gt;
+</span><span class='line'>
+</span><span class='line'>void sig_alarm(int signo);
+</span><span class='line'>static jmp_buf env_alrm;
+</span><span class='line'>int sleep2(int);
+</span><span class='line'>int main(int argc, char **argv)
+</span><span class='line'>{
+</span><span class='line'>  sleep2(2);
+</span><span class='line'>  exit(0);
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>int sleep2(int sec)
+</span><span class='line'>{
+</span><span class='line'>
+</span><span class='line'>  if(signal(SIGALRM, sig_alarm) == SIG_ERR)
+</span><span class='line'>  {
+</span><span class='line'>      printf("sigalarm err!\n");
+</span><span class='line'>      return sec;
+</span><span class='line'>  }
+</span><span class='line'>  if(setjmp(env_alrm) == 0)
+</span><span class='line'>  {
+</span><span class='line'>      alarm(sec);
+</span><span class='line'>      pause();
+</span><span class='line'>  }
+</span><span class='line'>  return (alarm(0));
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>void sig_alarm(int signo)
+</span><span class='line'>{
+</span><span class='line'>  longjmp(env_alrm, 1);
+</span><span class='line'>}
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这个实现，有个很难察觉到的问题，涉及到其它信号处理程序：如果alarm处理函数中断了正在执行的其它信号处理程序，则调用longjmp导致其它信号处理程序提早终止了（longjmp跳到sleep2的setjmp地方，而不是继续原来的步骤）。</p>
+
+<h2>除了实现sleep，还可以实现对于可能阻塞的操作设置时间上限</h2>
+
+<p>下面例子，简单使用alarm和pause，模拟实现了一个可以超时的read函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>#include &lt;setjmp.h&gt;
+</span><span class='line'>#include &lt;signal.h&gt;
+</span><span class='line'>#include &lt;sys/signal.h&gt;
+</span><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int read_timeout(int fd, void *buf, size_t size, int timeout);
+</span><span class='line'>
+</span><span class='line'>static jmp_buf env_alarm;
+</span><span class='line'>void sig_alarm(int signo);
+</span><span class='line'>int main(int argc, char **argv)
+</span><span class='line'>{
+</span><span class='line'>  char line[100];
+</span><span class='line'>  int n;
+</span><span class='line'>  n = read_timeout(STDIN_FILENO, line, 100, 3);
+</span><span class='line'>  if(n &lt; 0)
+</span><span class='line'>  {
+</span><span class='line'>      printf("read timeout\n");
+</span><span class='line'>  } else {
+</span><span class='line'>      printf("read len %d.\n", n);
+</span><span class='line'>  }
+</span><span class='line'>  exit(0);
+</span><span class='line'>}
+</span><span class='line'>int read_timeout(int fd, void *buf, size_t size, int timeout)
+</span><span class='line'>{
+</span><span class='line'>  int n = 0;
+</span><span class='line'>  if(signal(SIGALRM, sig_alarm) == SIG_ERR)
+</span><span class='line'>  {
+</span><span class='line'>      printf("sig alarm err\n");
+</span><span class='line'>      return -1;
+</span><span class='line'>  }
+</span><span class='line'>  if(setjmp(env_alarm) == 0)
+</span><span class='line'>  {
+</span><span class='line'>      alarm(timeout);
+</span><span class='line'>      if((n=read(fd, buf, size)) &lt; 0)
+</span><span class='line'>      {
+</span><span class='line'>          printf("read err!\n");
+</span><span class='line'>          return n;
+</span><span class='line'>      }
+</span><span class='line'>      alarm(0);
+</span><span class='line'>      return n;
+</span><span class='line'>  }
+</span><span class='line'>  return -1;
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>void sig_alarm(int signo)
+</span><span class='line'>{
+</span><span class='line'>      longjmp(env_alarm, 1);
+</span><span class='line'>}
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>执行结果：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>user@usertekiMacBook-Pro unix_test$ ./read_timeout
+</span><span class='line'>read timeout
+</span><span class='line'>user@usertekiMacBook-Pro unix_test$
+</span><span class='line'>user@usertekiMacBook-Pro unix_test$ ./read_timeout
+</span><span class='line'>dd
+</span><span class='line'>read len 3.</span></code></pre></td></tr></table></div></figure>
+
+
+<p>注意：同样，上面这个简单程序，涉及到其它信号时，也会出现提前中断其它信号处理函数的问题。</p>
+
+<h1>信号集</h1>
+
+<p>可以使用sigset_t 数据结构代表信号集，并定义了下列五个处理信号集的函数</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;signal.h&gt;
+</span><span class='line'>
+</span><span class='line'>int sigempty(sigset_t *set);
+</span><span class='line'>int sigfillset(sigset_t *set);
+</span><span class='line'>int sigaddset(sigset_t *set, int signo);
+</span><span class='line'>int sigdelset(sigset_t *set, int signo);
+</span><span class='line'>  // 四个函数返回值：成功，返回0，失败返回-1
+</span><span class='line'>int sigismember(const sigset_t *set, int signo);
+</span><span class='line'>  // 若真，返回1，假，返回0，出错，返回-1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>sigpromask函数</h1>
+
+<p>调用sigprocmask函数，可以检测或修改其信号屏蔽字或者一个步骤同时执行测试和修改两个动作。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;signal.h&gt;
+</span><span class='line'>
+</span><span class='line'>int sigprocmask(int how, const sigset_t *restrict set, sigset_t *restrict oset);  // 成功，返回0，失败返回-1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>oset非空，则进程当前信号屏蔽字通过oset返回</li>
+<li>set非空，则根据第一个参数how指示如何修改当前信号屏蔽字</li>
+<li>set为空，不改变</li>
+</ul>
+
+
+<p>how的值：</p>
+
+<ul>
+<li>SIG_BLOCK: 新屏蔽字是当前信号屏蔽字+set的并集</li>
+<li>SIG_UNBLOCK: 新屏蔽字是当前信号屏蔽字+set的交集</li>
+<li>SIT_SETMASK: 被set指向的值替代</li>
+</ul>
+
+
+<h1>sigpending函数</h1>
+
+<p>sigpending函数返回信号集，其中的各个信号对于调用进程是阻塞的，因此不能diliver，因此是未决的。简单说就是返回未决的信号集。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;signal.h&gt;
+</span><span class='line'>
+</span><span class='line'>int sigpending(sigset_t *set);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>注意：信号处理函数设置为捕捉函数和默认动作，信号是阻塞的。这是发生的信号都是未决的。被block的信号都会等待，知道解除阻塞信号。</p>
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>#include &lt;signal.h&gt;
+</span><span class='line'>#include &lt;sys/signal.h&gt;
+</span><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>void sig_quit(int);
+</span><span class='line'>
+</span><span class='line'>int main(int argc, char **argv)
+</span><span class='line'>{
+</span><span class='line'>  sigset_t oldset, newset, quitset;
+</span><span class='line'>  sigemptyset(&quitset);
+</span><span class='line'>  sigaddset(&quitset, SIGINT);
+</span><span class='line'>
+</span><span class='line'>  // ************这段程序，注释掉，则采用默认值，不注释掉，则采用设置的捕捉函数，可以观察到，信号是如何pending，并在解除后如果递送的。
+</span><span class='line'>  if (signal(SIGINT, sig_quit) == SIG_ERR)
+</span><span class='line'>  {
+</span><span class='line'>      printf("sig err\n");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  } 
+</span><span class='line'>  // ************
+</span><span class='line'>
+</span><span class='line'>  if (sigprocmask(SIG_BLOCK, &quitset, &oldset) == -1)
+</span><span class='line'>  {
+</span><span class='line'>      printf("mask sig err!\n");
+</span><span class='line'>      exit(0);
+</span><span class='line'>  }
+</span><span class='line'>  // sleep 5 seconds
+</span><span class='line'>  sleep(5);
+</span><span class='line'>  if (sigpending(&newset) == -1)
+</span><span class='line'>  {
+</span><span class='line'>      printf("pending err \n");
+</span><span class='line'>      exit(0);
+</span><span class='line'>  }
+</span><span class='line'>  if (sigismember(&newset, SIGINT))
+</span><span class='line'>      printf("sigquit is block\n");
+</span><span class='line'>
+</span><span class='line'>  if (sigprocmask(SIG_SETMASK, &oldset, NULL) == -1)
+</span><span class='line'>  {
+</span><span class='line'>      printf("mask ret sig err!\n");
+</span><span class='line'>      exit(0);
+</span><span class='line'>  }
+</span><span class='line'>  printf("sig int unblock\n");
+</span><span class='line'>  sleep(5);
+</span><span class='line'>  return 0;
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>void sig_quit(int signo)
+</span><span class='line'>{
+</span><span class='line'>  printf("sigquit catch\n");
+</span><span class='line'>
+</span><span class='line'>  if (signal(SIGINT, sig_quit) == SIG_ERR)
+</span><span class='line'>  {
+</span><span class='line'>      printf("sig err\n");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>sigaction函数</h1>
+
+<p>sigaction函数的功能是<em>检查</em>或<em>修改</em>与指定信号相关联的处理动作（或同时执行）。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;signal.h&gt;
+</span><span class='line'>
+</span><span class='line'>int sigaction(int signo, const struct sigaction *restrict act, struct sigaction *restrict oact);
+</span><span class='line'>// 成功，返回0，出错返回-1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对于参数：</p>
+
+<ul>
+<li>signo是信号</li>
+<li>act非空，则修改信号动作</li>
+<li>oact非空，则由oact返回上一个动作</li>
+</ul>
+
+
+<p>结构体struct sigaction的定义：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>struct sigaction {
+</span><span class='line'>  void (*sa_handler)(int); // 信号处理函数的地址，或者SIG_IGN或SIG_DFL
+</span><span class='line'>  sigset_t sa_mask; // 额外需要阻塞的信号集
+</span><span class='line'>  int sa_flags;  // 信号选项，可以设置这个选项来控制处理函数行为
+</span><span class='line'>
+</span><span class='line'>  /*替换的处理程序，当指定sa_flags为SA_SIGINFO时，采用这个处理函数，提供了额外的一些信息*/
+</span><span class='line'>  void (*sa_sigaction)(int, siginfo_t *, void *);
+</span><span class='line'>}
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>若更改信号处理函数，则：
+* sa_handler指定处理函数的地址
+* sa_mask则是信号集，在调用该信号处理函数之前，会先把这个信号集指定的信号加到进程的信号屏蔽字中。信号处理函数返回时，再复原。在信号处理程序被调用时，操作系统建立的新信号屏蔽字也包括正在被递送的信号，这会保证在当前信号处理时，这个信号再次发生，会一直阻塞，直到处理函数完成。
+* sa_flags字段指定对信号处理的各个选项:</p>
+
+<blockquote><ul>
+<li>SA_RESTART:由此信号中断的系统调用自动重新启动</li>
+<li>SA_INTERRUPT: 由此信号中断的系统调用不会自动重启</li>
+<li>SA_SIGINFO: 有此选项对信号，会调用sa_sigaction函数，此函数会给额外提供了附加信息：1）指向siginfo结构的指针；2）指向进程上下文标识符的指针</li>
+</ul>
+</blockquote>
+
+<p>注意：</p>
+
+<blockquote><p>除了那些为了兼容而继续保留原始的signal函数的语义的系统外，大部分系统都是用sigaction来实现signal函数的。</p></blockquote>
+
+<h1>sigsetjmp和siglongjmp函数</h1>
+
+<p>在捕捉到一个信号时，会进入信号捕捉函数，此时会发生：</p>
+
+<ul>
+<li>进入信号处理函数时，当前信号会被自动加到进程的信号屏蔽字中。这阻止了后来产生的这种信号中断该信号处理程序</li>
+<li>当正常从信号处理函数中返回时，会自动恢复当前信号为非屏蔽</li>
+</ul>
+
+
+<p>但是，当在信号处理函数内，调用了longjmp函数，那么是否恢复这个被屏蔽的当前信号？</p>
+
+<p>FreeBSD 5.2.1 和Mac OS X10.3中，setjmp和longjmp保持和恢复信号屏蔽字</p>
+
+<p>Linux2.4.22和Solaris9 并不执行这种操作。FreeBSD 5.2.1 和Mac OS X10.3提供函数<em>setjmp和</em>longjmp，他们不保存和恢复信号屏蔽字</p>
+
+<p>为了允许两种形式的行为存在， POSIX.1并没有说明setjmp和longjmp对屏蔽字的作用，而是定义了两个新函数sigsetjmp和siglongjmp。在信号处理程序中进行非局部跳转是，使用这两个。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;setjmp.h&gt; // 与setjmp和longjmp一个头
+</span><span class='line'>
+</span><span class='line'>int sigsetjmp(sigjmp_buf env, int savemask); // 直接调用，返回0，若从siglongjmp调用返回，则返回非0值
+</span><span class='line'>
+</span><span class='line'>void siglongjmp(sigjmp_buf env, int val);
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>若savemask非零，则env保存进程的当前屏蔽字。并在siglongjmp调用时，恢复由env保存进程的当前屏蔽字。</p>
+
+<p>涉及到信号时，使用sigsetjmp和siglongjmp的典型使用模板是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>static sigjmp_buf;
+</span><span class='line'>static volatile sig_atomic_t canjump;
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>....
+</span><span class='line'>
+</span><span class='line'>// 在主函数中
+</span><span class='line'>if (sigsetjmp(jmpbuf, 1)) {
+</span><span class='line'>  ....
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>canjump = 1; // 调用sigsetjmp后才设置canjump为非零
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>// 然后，在信号处理程序中，这样：
+</span><span class='line'>void sig_handler(int) {}
+</span><span class='line'>
+</span><span class='line'>if (canjmp == 0) // 只有非零时，才调用siglongjmp
+</span><span class='line'>  return
+</span><span class='line'>
+</span><span class='line'>....
+</span><span class='line'>
+</span><span class='line'>siglongjmp(jmpbuf, 1);
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>} </span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>原因：
+之所以使用canjump，主要是保护机制，防止当jmpbuf还没有被sigsetjmp初始化时，就调用了信号处理程序。
+在非信号环境下没有问题，但在信号环境下，信号是随时发生的，因此需要保护</p></blockquote>
+
+<h1>sigsuspend函数</h1>
+
+<p>屏蔽进程的信号，使用这种技术，可以保护不希望由信号中断的代码临界区。然后在临界区之后等待以前的信号发生。</p>
+
+<p>但是下面的实现方式有问题：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sigprocmask(SIG_BLOCK, &newmask, &oldmask);
+</span><span class='line'>
+</span><span class='line'>// .....临界区代码
+</span><span class='line'>
+</span><span class='line'>1) sigprocmask(SIG_BLOCK, &oldmask, NULL);
+</span><span class='line'>2) pause(); // 等待之前阻塞的信号发生
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面代码，1）和2）代码出有问题，会有竞争条件，在sigprocmask和pause之间有可能信号会发生，这会导致pause无法返回，永远阻塞。</p>
+
+<p>解决这个竞争条件的办法就是让这两个操作合并成一个原子操作。这就是sigsuspend函数的由来。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;signal.h&gt;
+</span><span class='line'>
+</span><span class='line'>int sigsuspend(const sigset_t * sigmask);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用sigsuspend实现临界区代码，可以这样：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>#include &lt;signal.h&gt;
+</span><span class='line'>#include &lt;sys/signal.h&gt;
+</span><span class='line'>
+</span><span class='line'>void sig_int(int signo);
+</span><span class='line'>
+</span><span class='line'>int main(int argc, char **argv)
+</span><span class='line'>{
+</span><span class='line'>
+</span><span class='line'>  sigset_t newsigset, oldsigset, waitsigset;
+</span><span class='line'>  sigemptyset(&newsigset);
+</span><span class='line'>  sigaddset(&waitsigset, SIGUSR1);
+</span><span class='line'>  struct sigaction act;
+</span><span class='line'>  act.sa_handler = sig_int;
+</span><span class='line'>
+</span><span class='line'>  if(sigaction(SIGINT, &act, NULL) &lt; 0)
+</span><span class='line'>  {
+</span><span class='line'>      printf("siganction err.\n");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  }
+</span><span class='line'>  if(sigprocmask(SIG_BLOCK, &newsigset, &oldsigset) &lt; 0)
+</span><span class='line'>  {
+</span><span class='line'>      printf("sigprocmask err\n");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  }
+</span><span class='line'>  // code procted
+</span><span class='line'>  printf("this is procted code!\n");
+</span><span class='line'>
+</span><span class='line'>  if(sigsuspend(&waitsigset) != -1)
+</span><span class='line'>  {
+</span><span class='line'>      printf("sigsuspend err\n");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  }
+</span><span class='line'>  printf("after sigsuspend\n");
+</span><span class='line'>  if(sigprocmask(SIG_SETMASK, &oldsigset, NULL) &lt; 0)
+</span><span class='line'>  {
+</span><span class='line'>      printf("revert old sig mask err\n");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  }
+</span><span class='line'>
+</span><span class='line'>  return 0;
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>void sig_int(int signo)
+</span><span class='line'>{
+</span><span class='line'>  printf("catch signo %d\n", signo);
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>注意sigsuspend函数实现的巧妙之处：</p>
+
+<ul>
+<li>为了实现解除屏蔽（sigprocmask）和等待（pause），sigsuspend把进程的屏蔽信号设置为参数信号，并在返回后设置为调用sigsuspend之前的屏蔽信号值。</li>
+</ul>
+
+
+<p>sigsuspend函数还有两种经典应用：</p>
+
+<ol>
+<li>等待一个信号处理程序设置一个全局变量</li>
+<li>父子进程实现同步</li>
+</ol>
+
+
+<p>注意：在实现父子进程通讯，可以使用kill给对象发信号，并使用sigsuspend等待某种条件</p>
+
+<h1>abort函数</h1>
+
+<p>abort函数使异常程序终止。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>
+</span><span class='line'>void abort(void);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这个函数将SIGABRT信号发送给调用进程。</p>
+
+<p>ISO C规定 abort的实现须向主机环境递送一个成功的通知，一般是通过raise(SITABRT)或kill(gitpid(), SIGABRT)实现，这个规定，允许程序做清理工作。</p>
+
+<p>一般系统的abort实现，都会冲洗输出流以及是否要删除临时文件。</p>
+
+<p>可以看一下abort的函数实现示例，通过这个示例，学会：</p>
+
+<ul>
+<li>sigaction函数的使用</li>
+<li>kill函数的使用：kill函数可以给其它进程发送信号。若发给本进程，并且此信号是不被阻塞的，那么kill返回之前，该信号（或某个未决、未阻塞的信号）就被传送给了该进程。这样，kill返回了，就知道该进程一定捕捉到该信号。</li>
+</ul>
+
+
+<h1>system函数</h1>
+
+<p>ISO C定义了system函数，这个函数可以执行系统命令，这个函数的实现也牵扯到信号问题。若不处理，会有问题。</p>
+
+<p>这里通过system的实现，注意信号程序开发的各种问题。</p>
+
+<p>看下面调用过程：
+<img src="http://baren.github.io/images/assets/Figure10-1.png" title="time-function" alt="alt text" /></p>
+
+<p>若没有处理信号，问题有：</p>
+
+<ul>
+<li>若进程（a.out）捕获SIGCHID信号，当system创建的子进程结束，系统会向父进程（a.out）发送SIGCHID信号，父进程会捕捉。<em>但这阻止了system函数获取它自己创建子进程的状态</em></li>
+<li>若system系统没有屏蔽中断和退出信号，则如果想给shell调用程序发送中断信号时，系统会同时向负责进程发送信号（因为都属于前台进程组）</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[apue(进程关系)]]></title>
+    <link href="http://baren.github.io/blog/2014/05/04/process-relate/"/>
+    <updated>2014-05-04T20:00:26+08:00</updated>
+    <id>http://baren.github.io/blog/2014/05/04/process-relate</id>
+    <content type="html"><![CDATA[<h1>终端登录</h1>
+
+<p>由终端登录至unix，这个过程是类似的，而与所使用的终端无关，终端可以是基于字符的终端、仿真简单的基于字符终端的图形终端，或者是运行窗口系统的图形终端。</p>
+
+<p>终端登录步骤：</p>
+
+<ol>
+<li>系统自举时，创建进程ID为1的init进程。使系统进入多用户状态。</li>
+<li>init进程读取文件/etc/ttys，对每一个允许登录的终端设备，init进程调用一次fork，fork后的子进程执行getty程序（exec getty程序）</li>
+<li>getty程序会调用open函数，以读写方式打开终端，一旦打开设备，则文件描述符0、1、2设置到该设备，输出login:之类的信息</li>
+<li>gettty调用login函数（<code>execle("/bin/login", "login", "-p", username, (char *) 0, envp);</code>）</li>
+<li>login执行多个工作
+
+<blockquote><p>验证用户、密码正确性，连续几次不对，则退出；父进程init知道子进程终止后，会再次调用fork，执行getty，重复上述动作。登录成功后：
+将当前工作目录改为该用户的起始目录（home目录）
+chown改变该终端的所有权，使登录用户成为它的所有者
+对该终端设备的访问权限改为用户读写
+调用setgid及initgroups设置进程的组id
+用login所得到的所有信息初始化环境
+调用该登录用户的登录shell</p></blockquote></li>
+</ol>
+
+
+<h1>网络登录</h1>
+
+<p>在网络登录情况下，所有的登录都是通过内核的网络接口驱动程序（以太网驱动程序），事情并不知道会有多少这样的登录。必须等待一个网络连接请求的到达。</p>
+
+<p>网络登录，一个特点是：1）既能处理终端登录；2）处理网络登录。为了实现，系统采用<em>伪终端</em>（pseudo terminal）的软件驱动程序。</p>
+
+<p>伪终端仿真：</p>
+
+<ul>
+<li>串行终端的运行行为，</li>
+<li>并将终端操作映射为网络操作，反之亦然</li>
+</ul>
+
+
+<h2>BSD网络登录</h2>
+
+<p>在BSD中，inetd进程负责等待大多数的网络连接。</p>
+
+<p>启动inetd进程的步骤：</p>
+
+<ol>
+<li>init进程调用shell，使shell程序执行/etc/rc脚本，</li>
+<li>这个脚本启动守护进程inetd，然后shell脚本结束，inetd的父进程变成init。</li>
+<li>inetd进程等待TCP/IP连接，当一个连接请求到达时，执行一次fork，生成子进程执行适当的程序。</li>
+</ol>
+
+
+<p>以telnet网络登录为例。</p>
+
+<p>hostname启动的程序被称为telnet服务进程（称为telnetd）。</p>
+
+<p>客户端进行网络登录命令：telnet hostname，这样客户端和hostname以telnet应用协议通过tcp连接交换数据。</p>
+
+<p>然后，</p>
+
+<p>服务端telnetd打开一个伪终端设备，并用fork分成两个进程。</p>
+
+<ul>
+<li>父进程处理网络连接的通信</li>
+<li>子进程执行login程序</li>
+<li>父子进程通过伪终端程序相连接</li>
+</ul>
+
+
+<p>login登录成功，则进行上一节同样的步骤：更改当前工作目录为起始目录，设置登录用户的组ID合用户ID，以及登录用户的初始环境。
+然后login调用exec将其自身替换为登录用户的登录shell。</p>
+
+<p>注意：
+linux的因特网守护进程是xinetd。</p>
+
+<h1>进程组</h1>
+
+<p>进程组是一个或多个进程的集合。一般进程组与同一个作业相关联（比如shell中，多个命令用管道合起来，这几个命令分别是一个进程，合起来组成一个进程组）。可以接收同一终端的各种信号。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>// 返回调用进程的进程组id
+</span><span class='line'>pid_t getpgrp(void);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sigle UNIX Specification将getpgid函数定义为XSI扩展，模仿了此种运行行为：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>pid_t getpgid(pid_t pid);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>若参数pid为0，则返回调用进程的进程组id，这时：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>getpgid(0) == getpgrp()</span></code></pre></td></tr></table></div></figure>
+
+
+<p>进程组可以有一个组长进程。条件是：</p>
+
+<ul>
+<li>组长进程的ID等于组的ID</li>
+</ul>
+
+
+<p>组长进程的权限：</p>
+
+<ul>
+<li>创建一个进程组</li>
+<li>创建该组中的进程</li>
+</ul>
+
+
+<p>进程组中，只要有一个进程存在，进程组就存在，这与组长进程的存在与否无关。</p>
+
+<p>进程组的生存期是：进程组创建到最后一个进程终止，最后一个进程可以终止，也可以转移到另一个进程组。</p>
+
+<p>加入一个进程组或者创建进程组：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int setpgid(pid_t pid, pid_t pgid);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>setpgid函数将pid进程的进程组ID设置为pgid。</p>
+
+<ul>
+<li>如果这两个参数相等，则由pid指定的进程变成进程组组长，</li>
+<li>如果pid是0，则使用调用者的进程ID。</li>
+<li>如果pgid为0，则由pid指定的进程ID将用作进程组ID</li>
+</ul>
+
+
+<p>调用条件：</p>
+
+<ul>
+<li>一个进程只能为它自己或者它的子进程设置进程组ID，</li>
+<li>在它的子进程调用了exec函数之一后，它就不能再改变该子进程的进程组ID</li>
+</ul>
+
+
+<p>在大多数的作业控制shell中，在fork之后调用此函数，使父进程设置其子进程的进程组ID，并使子进程设置其自己的进程组ID。</p>
+
+<h1>会话</h1>
+
+<p>会话是一个或多个进程组的集合。</p>
+
+<p>例如下面程序：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>proc1  | proc2 &
+</span><span class='line'>proc3 | proc 4 | proc5
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>会产生如下会话，包括三个进程组：
+1. 登录shell
+2. proc1和proc2属于一个进程组
+3. proc3和proc4和proc5属于一个进程组</p>
+
+<p>可以使用setsid函数建立新会话：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>pid_t setsid(void);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果调用这个函数的进程不是一个进程组的组长，则此函数就会创建一个新会话，结果将发生下面三件事：</p>
+
+<ol>
+<li>该进程会变成新会话的首进程（session leader）（会话首进程是创建该会话的进程），此时该进程是新会话中的唯一进程</li>
+<li>该进程成为一个新进程组的组长进程，新进程组ID是该调用进程的进程ID</li>
+<li>该进程没有控制终端。如果在调用setsid之前该进程有一个控制终端，那么这种联系也会中断。</li>
+</ol>
+
+
+<p>如果该进程已经是一个进程组的组长，则函数返回出错。为了防止这种情况，一般先fork再调用。</p>
+
+<h1>控制终端</h1>
+
+<ul>
+<li>一个会话可以有一个控制终端，通常是登录到其上的终端设备或者伪终端设备。</li>
+<li>建立与控制终端的会话首进程被称为控制进程</li>
+<li>一个会话中得几个进程组可被分成<em>一个</em>前台进程组以及一个或者多个后台进程组</li>
+<li>如果一个会话有一个控制终端，则它有一个前台进程组，会话中的其它进程组为后台进程组</li>
+<li>无论何时键入终端的中断键（ctrl+c），就会将中断信号发送给前台进程组的所有进程</li>
+<li>无论何时键入终端的退出键（ctrl+\），将会将退出信号发送给前台进程组中所有进程</li>
+<li>如果终端接口检测到调制解释器或网络已经断开连接，则将挂断信号发送给控制进程（会话首进程）</li>
+</ul>
+
+
+<h1>作业控制</h1>
+
+<p>略</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[apue(进程控制)]]></title>
+    <link href="http://baren.github.io/blog/2014/05/04/process-control/"/>
+    <updated>2014-05-04T20:00:02+08:00</updated>
+    <id>http://baren.github.io/blog/2014/05/04/process-control</id>
+    <content type="html"><![CDATA[<h1>进程标识符</h1>
+
+<p>进程都有一个非负整数代表唯一的进程ID。</p>
+
+<p>当进程终止后，进程ID可以重用，为了防止将新进程视为使用同一个进程ID的旧的进程，系统采用了<em>延迟重用</em>算法来重用进程ID。</p>
+
+<p>系统启动后有一些专用进程：</p>
+
+<ul>
+<li>ID为0的进程——调度进程，也称为交换进程（swapper），这个进程是内核的一部分，不执行磁盘上的程序，被称为系统进程。</li>
+<li>ID为1的进程——init进程，自举结束时由内核调用；早期的进程文件是/etc/init，现在都是/sbin/init。init通常读取系统的配置文件来初始化系统（/etc/rc*或/etc/initab, /etc/init.d）。init进程不会终止，虽然是普通进程，但是以超级用户权限运行，还接收孤儿进程，是所有孤儿进程（子进程还活着，父进程终止了，称为孤儿进程）父进程。</li>
+</ul>
+
+
+<p>下面函数返回与进程相关的其他标识符：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>pid_t getpid(void);
+</span><span class='line'>
+</span><span class='line'>pid_t getppid(void);
+</span><span class='line'>
+</span><span class='line'>uid_t getuid(void);  // 实际用户id
+</span><span class='line'>
+</span><span class='line'>uid_t geteuid(void);  // 有效用户id
+</span><span class='line'>
+</span><span class='line'>gid_t getgid(void);  // 实际组id
+</span><span class='line'>
+</span><span class='line'>gid_t getegid(void);  // 有效组id
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>fork函数</h1>
+
+<p>可以调用<code>fork</code>函数创建一个新进程。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>pid_t fork(void);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>fork创建的新进程被称为子进程。fork调用一次返回两次：</p>
+
+<ul>
+<li>子进程返回0.</li>
+<li>父进程返回子进程的ID，如果返回-1，表示创建进程出错</li>
+</ul>
+
+
+<p>返回后，父进程和子进程继续执行调用fork之后的指令。</p>
+
+<p>fork后，子进程是父进程的副本。比如子进程获得父进程的数据空间，堆和栈的副本。父子进程不共享这些，只是共享正文段。</p>
+
+<p>一般fork后都执行exec函数，因此现在的系统在fork的实现上，并不立即完全复制父进程的数据段、堆栈的完全复制，而是采用copy-on-write的技术，只有在父或子进程写的时候才进行复制，复制也是仅仅复制写的那块区域，一般就是存储系统中的一页。</p>
+
+<p>在fork后，是先返回父进程还是子进程，是不确定的，取决于系统的调度算法的实现。</p>
+
+<p>如果fork后没有调用exec，子进程与父进程执行同一代码，则需要注意调用fork之前的IO流缓冲问题。</p>
+
+<ul>
+<li>如果之前有IO流缓冲，则可能会被子进程和父进程各调用一次，伪代码：</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>printf("。。。");  // 如果标准输出被重定向到一个文件，则是全缓冲的。
+</span><span class='line'>
+</span><span class='line'>pid = fork()
+</span><span class='line'>if(pid == 0){
+</span><span class='line'>  exit()
+</span><span class='line'>} else if (pid == -1) {
+</span><span class='line'>  printf('error')
+</span><span class='line'>} else {
+</span><span class='line'>  exit()
+</span><span class='line'>}
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面代码，如果printf的标准输出重定向到文件，则是全缓冲的，因此调用printf的时候，有可能把数据存放到缓冲中。</p>
+
+<p>这样，fork后，父子进程各有一个缓冲，因此exit后，printf各被flush，因此父子进程都会打印printf的输出。</p>
+
+<blockquote><p>注意：
+strlen() 和sizeof()的区别。strlen是返回不包含null终止符的字符串的长度。sizeof返回包含null终止符的缓冲区的大小。
+strlen() 是一次函数调用。而sizeof在编译时期就知道大小。</p></blockquote>
+
+<h2>文件共享</h2>
+
+<p>fork的一个特征是文件进程所有打开文件的描述符都被复制到子进程。</p>
+
+<p>这样父子进程每个相同的打开描述符共享一个文件表项（内核为每个打开的文件维持文件表，若两个进程打开同一个文件，每个进程都有自己的文件表项。但是fork后，两个进程就会共享同一个文件表项，也就是共享偏移量。）</p>
+
+<p>如图：</p>
+
+<p>如果两个进程打开同一个文件，每个进程都有自己的文件偏移量：
+<img src="http://baren.github.io/images/assets/Figure8-1.png" title="time-function" alt="alt text" /></p>
+
+<p>如果fork后，父进程和子进程则共享一个文件表项，共享文件偏移量：
+<img src="http://baren.github.io/images/assets/Figure8-2.png" title="time-function" alt="alt text" /></p>
+
+<p>fork后处理文件描述符的两种情况：</p>
+
+<ol>
+<li>父进程等子进程完成，在这种情况下，父进程无需对描述符进行任何处理，当子进程结束后，父进程的偏移量也已经被更新。</li>
+<li>父子进程各自执行不同的程序段，fork，父子进程各自关闭不需要的文件描述符，这样不会干扰对方使用的文件描述符。网络服务进程常用这种方式。</li>
+</ol>
+
+
+<p>除了文件，许多其它属性也被子进程继承：</p>
+
+<ul>
+<li>实际用户（组）ID，有效用户（组）ID</li>
+<li>会话ID</li>
+<li>环境</li>
+</ul>
+
+
+<p>注意：
+ 父进程的文件锁不会被继承</p>
+
+<p> fork的两种用法：</p>
+
+<ol>
+<li>父进程希望复制自己，是父子进程执行不同的代码段（比如网络服务）</li>
+<li>子进程执行一个不同的程序，比如shell</li>
+</ol>
+
+
+<h1>vfork函数</h1>
+
+<p>vfork的目的是创建一个新进程，而该进程的目的是exec一个新进程。</p>
+
+<p>vfork与fork调用相同，有两点不同：</p>
+
+<ul>
+<li>vfork不会复制父进程的地址空间，在子进程调用exec或exit之前，子进程在父进程的地址空间中执行（意味着会修改父进程的变量等）</li>
+<li>vfork函数保证子进程先执行，在它调用exec或exit之后，父进程才被调度运行</li>
+</ul>
+
+
+<h1>exit函数</h1>
+
+<p>5种正常终止进程的方式：</p>
+
+<ul>
+<li>main函数中return返回，等效于调用exit函数</li>
+<li>调用exit函数。ISO C定义的函数，操作包括1）调用终止处理程序（atexit注册的函数）；2）关闭所有标准IO流描述符</li>
+<li>调用<em>exit或</em>Exit函数。ISO C定义_Exit函数。这两个函数的目的是提供一种无需运行终止处理程序（atexit注册的函数）或信号处理程序而终止的方法；这两个函数一般都不对标准IO流进行冲洗。</li>
+<li>进程最后一个线程在启动例程中执行返回语句，进程终止状态为0</li>
+<li>进程最后一个线程调用pthread_exit函数，进程终止状态为0</li>
+</ul>
+
+
+<p>3种异常终止程序：</p>
+
+<ul>
+<li>调用abort</li>
+<li>进程收到某些信号，这个信号可以由其它进程、自己或内核发起。</li>
+<li>最后一个线程对“取消”做出响应。</li>
+</ul>
+
+
+<blockquote><p>注意：
+不管是正常终止或者是异常终止，内核都会在进程结束后执行一段代码，工作是：
+1. 关闭打开的描述符
+2. 释放使用的存储器</p></blockquote>
+
+<h2>子进程如何通知父进程它的终止状态</h2>
+
+<ol>
+<li>对于三个终止函数（exit, <em>exit, </em>Exit）退出的进程，若通知父进程其退出状态，需要把状态作为参数传递给这三个函数。其它两种正常退出，终止状态为0.</li>
+<li>异常终止，内核产生一个指示其异常终止原因的终止状态。</li>
+</ol>
+
+
+<blockquote><p>注意：
+不管哪种情况，父进程都可以通过wait和waitpit函数获取其终止状态。</p></blockquote>
+
+<h2>进程领养与僵死进程</h2>
+
+<p>父子进行结束的两种情况：</p>
+
+<ol>
+<li>父进程先于子进程终止。</li>
+</ol>
+
+
+<p>对于父进程已经终止的子进程，其父进程改变为init进程（ID为1）。每当一个进程终止时，内核会挨个检查所有活动的进程，判断是否是已终止进程的子进程。是，则将其父进程修改为init进程。</p>
+
+<p>这个步骤称为<em>进程的领养</em>。</p>
+
+<ol>
+<li>子进程先于父进程终止。</li>
+</ol>
+
+
+<p>为了让父进程获取其子进程的终止状态，内核为每个终止的子进程保存了一定量的信息。因此当父进程调用wait或waitpid函数时，可以获取子进程的终止状态。</p>
+
+<p>内核为终止的子进程保存的信息有：</p>
+
+<ul>
+<li>进程ID</li>
+<li>终止状态</li>
+<li>进程使用CPU时间总量</li>
+</ul>
+
+
+<blockquote><p>注意：
+由于进程终止时，内核释放了其占用的存储空间和关闭了打开的文件描述符，引起，进程占用的大部分资源都已经释放掉了。</p></blockquote>
+
+<p><em>僵死进程（zombie）</em> ：一个已终止，而父进程没有终止，并且父进程还没有对其进行善后处理（获取子进程的终止信息，也就是还没有经过wait调用）的进程，被称为僵死进程，状态为Z。</p>
+
+<blockquote><p>注意：
+由init进程领养的子进程终止时，不会称为僵死进程。因为init的实现，只要有子进程终止，就会调用wait函数获取其终止状态。</p></blockquote>
+
+<h1>父进程获取子进程终止状态（wait和waitpid函数）</h1>
+
+<p>当进程的子进程终止时，内核会立即向其父进程发送SIGCHLD信号。因此父进程可以提供一个信号处理程序处理这个信号。</p>
+
+<p>对于这个信号，父进程可以有两种处理方式：</p>
+
+<ul>
+<li>编写一个处理这个信号的处理程序（然后调用wait函数获取其终止子进程的终止状态）</li>
+<li>忽略掉（系统默认）</li>
+</ul>
+
+
+<p>除了信号方式外，若父进程在程序内调用wait或者waitpid函数，则可能会发生以下：</p>
+
+<ul>
+<li>若所有子进程都在运行，阻塞</li>
+<li>若一个子进程已经终止，正等待父进程获取其终止状态，则会立刻返回</li>
+<li>若没有任何子进程，立即出错返回</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/wait.h&gt;
+</span><span class='line'>
+</span><span class='line'>pid_t wait(int *statloc);
+</span><span class='line'>
+</span><span class='line'>pid_t waitpid(pid_t pid, int *statloc, int options);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>wait和waitpid函数的区别：</p>
+
+<ul>
+<li>在一个子进程终止前，wait函数会使其调用至阻塞，而waitpid有一个选项，可使调用者不阻塞（比如：<code>waitpid(-1, &amp;statloc, WNOHANG)</code>）</li>
+<li>waitpid可以不用等待其调用后的第一个终止的子进程，可以指定它等待的进程（参数pid > 0时）</li>
+</ul>
+
+
+<p>参数statloc是一个整型指针，子进程的终止状态存放于此，若不关心终止状态，可以传空指针。而判断子进程的终止状态，可以使用wait.h定义的宏：</p>
+
+<table>
+<thead>
+<tr>
+<th>宏        </th>
+<th style="text-align:center;"> 描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>WIFEXITED       </td>
+<td style="text-align:center;"> 若正常终止的子进程，则为真。此时，可以调用WEXITSTATUS(status)获取子进程传送给exit <em>exit </em>Exit参数的低8位</td>
+</tr>
+<tr>
+<td>WIFSIGNALED     </td>
+<td style="text-align:center;"> 若为异常终止的子进程返回的状态，则为真。可以使用WTERMSIG(status)获取子进程终止的信号编号。</td>
+</tr>
+<tr>
+<td>WIFSTOPPED      </td>
+<td style="text-align:center;"> 若为当前暂停子进程的返回状态，则为真。可使用WSTOPSIG(status)获取进程暂停信号编号</td>
+</tr>
+<tr>
+<td>WIFCONTINUED    </td>
+<td style="text-align:center;"> 若作业控制暂停后已经继续的子进程返回了状态，则为真。</td>
+</tr>
+</tbody>
+</table>
+
+
+<h2>waitpid</h2>
+
+<p>waitpid函数功能多于wait函数，其中，pid参数的意义：</p>
+
+<ul>
+<li>pid == -1 ，等待任一子进程，此时与wait等效</li>
+<li>pid > 0，等待进程Id等于PID的进程</li>
+<li>pid == 0，等待其组ID等于调用进程组ID的任意一子进程</li>
+<li>pid &lt; -1，等待其组ID等于pid绝对值的任一子进程</li>
+</ul>
+
+
+<p>而waitpid的options参数进一步控制了waitpid的操作：</p>
+
+<ul>
+<li>WNOHANG : 不阻塞</li>
+<li>WCONTINUED : 作业控制相关</li>
+<li>WUNTEACED: 作业控制相关</li>
+</ul>
+
+
+<p>依据这两个参数，waitpid提供了wait不具有的三个功能：</p>
+
+<ul>
+<li>可等待特定的进程</li>
+<li>提供了wait的非阻塞版本</li>
+<li>支持作业控制</li>
+</ul>
+
+
+<h1>关于僵死进程补充</h1>
+
+<h2>僵死进程的危害</h2>
+
+<p>若父进程一直存在，但不调用wait回收终止子进程的终止状态，则：</p>
+
+<ul>
+<li>内核保留了僵死进程的一定量信息，资源浪费</li>
+<li>进程号一直没有释放，也就得不到重用</li>
+</ul>
+
+
+<h2>避免僵死进程的方法</h2>
+
+<ul>
+<li>通过信号机制</li>
+<li>wait/waitpid函数调用</li>
+<li>fork两次，由init来回收</li>
+</ul>
+
+
+<h2>如何查看僵死进程</h2>
+
+<p>命令</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ps -A -o stat, ppid, pid, cmd | grep -e '^[zZ]'
+</span><span class='line'>
+</span><span class='line'>* -A 列出所有进程
+</span><span class='line'>* -o 自定义输出字段，stat表示进程状态，Z/z表示僵死进程
+</span><span class='line'>
+</span><span class='line'># 竞争条件
+</span><span class='line'>
+</span><span class='line'>当多个进程都企图对共享数据进行某种处理，而最后的结果又取决于进程运行的顺序时，则认为发生了*竞争条件（race condition）*
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>exec函数</h1>
+
+<p>在fork后，如果调用exec函数，则该进程执行的程序完全替换成新程序，并且从新程序的main函数开始执行。exec并不创建新进程，因此调用exec前后并不改变进程ID。exec只是用全新的程序替换了当前进程的正文数据堆和栈等段。</p>
+
+<p>unix系统提供了6个exec函数，unix对进程的控制：</p>
+
+<ul>
+<li>fork</li>
+<li>exit</li>
+<li>wait</li>
+<li>exec</li>
+</ul>
+
+
+<p>这几个函数使得unix进程控制原语更加完善。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>// 下面四个函数，执行程序是路径
+</span><span class='line'>int execl(const char *pathname, const char *arg0, ... /* (char *)0 */)  // 参数是列表，以空指针结束
+</span><span class='line'>
+</span><span class='line'>int execv(const char *pathname, char *const argv[]) // 参数列表是一个数组
+</span><span class='line'>
+</span><span class='line'>int execle(const char *pathname, const char *arg0, ... /* (char *)0, char *const envp[] */) // 可以传递一个环境表，这个环境表是个指针数组，每个元素是指向字符的指针
+</span><span class='line'>
+</span><span class='line'>int execve(const char *pathname, char *const argv[], char *const envp[]) // 传递环境表
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>// 执行程序是文件名，如果文件名以“/”开头，则认为是路径，否则从PATH变量中搜寻执行文件
+</span><span class='line'>int execlp(const char *filename, const char *arg0, ... /* (char *)0 */)
+</span><span class='line'>
+</span><span class='line'>int execvp(const char *filename, char *const argv[])
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这六个函数的几种区别是：</p>
+
+<ol>
+<li>前四个函数已路径名作为参数，而后两个使用文件名作为参数，如果是文件名作为参数，则：
+
+<ul>
+<li>如果filename是包含“/”，则认为是路径</li>
+<li>否则就按PATH环境变量，在它所指定的各目录中搜寻可执行文件（如果找到的可执行文件不是链接器生成的机器可执行文件，则认为是shell脚本，就会调用/bin/sh，并以filename作为shell的输入）</li>
+</ul>
+</li>
+</ol>
+
+
+<blockquote><p>说明：
+环境表：每个程序都会接收一张环境表，这个环境表是一个字符指针数组，全局变量environ指向这个数组。
+      环境表包含的环境变量，比如PATH=:/bin:/usr/bin:、USER=sar、等</p>
+
+<p>环境变量（环境表中的每个数组元素），可以通过getenv获取环境变量。通过putenv、setenv等设置环境变量，一般使用这两个
+函数访问设置环境变量，而不推荐直接访问environ全局变量。</p>
+
+<p>POSIX.1 XSI等预定义了很多环境变量，其中PATH环境变量表示“搜索可执行文件的路径前缀列表”</p></blockquote>
+
+<ol>
+<li><p>第二个区别是参数表的传递不同。l表示list，v表示vector。execl、execle、execlp的每个命令行参数都说明为一个单独的参数，最后以空指针结尾。而execv、execve、execvp的命令行参数是以数组提供。</p></li>
+<li><p>最后一个区别，传递的环境表有关。已e结尾的两个函数execle和execve，可以传递一个指向环境字符串指针数组的指针，其它几个函数则使用调用进程中的environ变量为新程序复制现有的环境。</p></li>
+</ol>
+
+
+<p>注意几点：</p>
+
+<ol>
+<li>对打开的文件的处理</li>
+</ol>
+
+
+<p>这与执行时关闭close-on-exec设置有关</p>
+
+<p>进程中每个打开描述符都有一个执行时关闭标志。若设置此标志，则在执行exec时关闭该描述符，否则该描述符仍然打开。除非特地用fcntl设置了该标志，否则系统默认的操作是在执行exec后仍保持这种描述符的打开。</p>
+
+<blockquote><p>fcntl函数可以：
+* 复制一个现有描述符
+* 设置/获得文件描述符标记（文件描述符标志，当前只定义了一个，就是FD_CLOEXEC）
+* 获得/设置文件状态标志
+* 等。</p></blockquote>
+
+<p>posix.1明确要求在执行exec时关闭打开的目录流，这通常是opendir来实现的。它调用fcntl函数为对应于打开目录流的描述符设置执行时关闭标志。</p>
+
+<blockquote><p>疑问：
+设置close-on-exec的场景是什么？？</p></blockquote>
+
+<ol>
+<li>有效用户问题</li>
+</ol>
+
+
+<p>exec后，实际用户id和实际组id不变，而有效id是否改变，则取决于程序文件的设置用户id和设置组id是否设置。</p>
+
+<p>很多unix实现中，只有execve是系统调用，其它函数是库函数。</p>
+
+<h1>更改用户ID和组ID</h1>
+
+<p>unix系统中，特权是基于用户和组ID的。</p>
+
+<p>可以调用setuid函数设置实际用户id和有效用户id。setgid函数设置实际组id和有效组id。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int setuid(uid_t uid);
+</span><span class='line'>
+</span><span class='line'>int setgid(gid_t gid);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对于修改ID有以下规则：</p>
+
+<ul>
+<li>若进程具有超级用户特权，则setuid函数将实际用户ID、有效用户ID以及保存的设置用户ID设置为参数uid</li>
+<li>若进程没有超级用户特权，但是参数uid等于实际用户ID<strong>或者</strong>保存的设置用户ID，则setuid只将有效用户ID设置为uid，不改变实际用户ID<strong>和</strong>保存的设置用户ID</li>
+<li>若上面两个条件都不满足，则将errno设置为EPERM，并返回-1.</li>
+</ul>
+
+
+<p>关于内核维护的三个用户ID，注意：</p>
+
+<ol>
+<li>只有超级用户进程可以更改实际用户ID。通常实际用户ID是在用户登录时，有login程序设置的，而且拥有不会改变他。</li>
+<li>仅当对程序文件设置了设置用户ID位时，exec函数才会设置有效用户ID。如果设置用户位没有设置，则exec函数不会改变有效用户ID，而将其维持为原先的值。任何时候都可以调用setuid，将有效用户ID设置为实际用户ID。</li>
+<li>保存的设置用户id是由exec复制有效用户ID而得来的。如果设置了文件的设置用户ID位（执行位显示为s），则exec根据文件的用户ID设置了进程的有效用户ID以后，就将这个副本保存起来。</li>
+</ol>
+
+
+<table>
+<thead>
+<tr>
+<th>ID    </th>
+<th style="text-align:center;"> exec(设置用户ID位关闭) </th>
+<th style="text-align:center;"> exec（设置用户ID位开启）</th>
+<th style="text-align:center;"> setuid（超级用户） </th>
+<th style="text-align:center;"> setuid（非特权用户）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>实际用户ID     </td>
+<td style="text-align:center;"> 不变    </td>
+<td style="text-align:center;"> 不变    </td>
+<td style="text-align:center;"> 设置为uid  </td>
+<td style="text-align:center;">不变</td>
+</tr>
+<tr>
+<td>有效用户id     </td>
+<td style="text-align:center;"> 不变    </td>
+<td style="text-align:center;"> 设置为程序文件的用户ID  </td>
+<td style="text-align:center;"> 设置为uid  </td>
+<td style="text-align:center;">设置为uid</td>
+</tr>
+<tr>
+<td>保存的设置用户ID</td>
+<td style="text-align:center;"> 从有效用户ID复制   </td>
+<td style="text-align:center;"> 从有效用户ID复制</td>
+<td style="text-align:center;">设置为uid </td>
+<td style="text-align:center;"> 不变</td>
+</tr>
+</tbody>
+</table>
+
+
+<h2>su 和sudo和setuid的关系</h2>
+
+<p>su命令可以切换用户，而sudo可以以超级用户权限运行命令。查看这两个文件状态：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ ll /usr/bin/su
+</span><span class='line'>-rwsr-xr-x  1 root  wheel  21472  3 13  2013 /usr/bin/su
+</span><span class='line'>$ ll /usr/bin/sudo
+</span><span class='line'>-r-s--x--x  1 root  wheel  164496  3 13  2013 /usr/bin/sudo
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>su和sudo的用户执行位都是s，表示setuid为开启。当用户运行这个程序时，</p>
+
+<p>会设置程序的有效用户ID为文件所有者，就会以这个文件的所有者（这里是root）权限运行。</p>
+
+<p>因此，sudo命令可以以root权限执行命令。</p>
+
+<p>当su命令执行时，设置进程的有效用户ID为root。</p>
+
+<h1>解释器文件</h1>
+
+<p>解释器文件，是文本文件，起始行的形式是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#! pathname [optional-argument]
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>感叹号和pathname之间的空格是可选的。最常见的解释器是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#! /bin/sh</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>pathname通常是绝对路径，对它不进行特殊处理（既不视屏PATH进行路径搜索），对这种文件识别，是由内核作为exec系统调用处理的一部分完成的。</li>
+<li>内核调用exec函数实际上执行的并不是解释器文件，而是解释器文件中第一行pathname指定的文件</li>
+<li>注意区别解释器文件（文本文件，以#!开头）和解释器之间区别（解释器文件第一行pathname指定）</li>
+</ul>
+
+
+<h2>解释器例子</h2>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>#include &lt;sys/wait.h&gt;
+</span><span class='line'>
+</span><span class='line'>int main(int argc, char *argv[])
+</span><span class='line'>{
+</span><span class='line'>  pid_t pid;
+</span><span class='line'>  if((pid = fork()) == -1)
+</span><span class='line'>  {
+</span><span class='line'>      printf("fork error\n");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  }
+</span><span class='line'>  if(pid == 0)
+</span><span class='line'>  {
+</span><span class='line'>      printf("child process\n");
+</span><span class='line'>      if(execl("/Users/user/work/cproj/testinterp", "testinterp", "myarg1", "My arg2", (char *) 0) &lt; 0)
+</span><span class='line'>      {
+</span><span class='line'>          printf("error execl\n");
+</span><span class='line'>          exit(-1);
+</span><span class='line'>      }
+</span><span class='line'>      exit(0);
+</span><span class='line'>  }
+</span><span class='line'>  if(waitpid(pid, NULL, 0) &lt; 0)
+</span><span class='line'>  {
+</span><span class='line'>      printf("error waitpid");
+</span><span class='line'>      exit(-1);
+</span><span class='line'>  }
+</span><span class='line'>  exit(0);
+</span><span class='line'>
+</span><span class='line'>}
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>解释器文件testinterp很简单，只有一行：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#! /Users/user/work/cproj/echoarg foo</span></code></pre></td></tr></table></div></figure>
+
+
+<p>而echoarg程序仅仅是打印参数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>
+</span><span class='line'>int main(int argc, char *argv[])
+</span><span class='line'>{
+</span><span class='line'>  int i;
+</span><span class='line'>  for (i = 0; i &lt; argc; i++)
+</span><span class='line'>  {
+</span><span class='line'>      printf("ARGV[%d]:%s\n", i, *(argv+i));
+</span><span class='line'>  }
+</span><span class='line'>  exit(0);
+</span><span class='line'>}
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>结果如下：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ser@usertekiMacBook-Pro cproj$ ./execinterp
+</span><span class='line'>child process
+</span><span class='line'>ARGV[0]:/Users/user/work/cproj/echoarg
+</span><span class='line'>ARGV[1]:foo
+</span><span class='line'>ARGV[2]:/Users/user/work/cproj/testinterp
+</span><span class='line'>ARGV[3]:myarg1
+</span><span class='line'>ARGV[4]:My arg2
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对程序结果的解释：</p>
+
+<ul>
+<li>当exec调用解释器（/Users/user/work/cproj/echoarg）时，argv[0]是该解释器的pathname（）。</li>
+<li>argv[1]是解释器文件中的可选参数（foo）</li>
+<li>其余参数是pathname（/Users/user/work/cproj/testinterp）</li>
+<li>以及第二、三个参数（myarg1和My arg2）</li>
+<li>注意，第一个参数（testinterp），是没有用的</li>
+</ul>
+
+
+<h2>解释器文件可选参数例子</h2>
+
+<p>解释器pathname后可跟随可选参数，比如awk支持-f选项：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>awk -f myfile</span></code></pre></td></tr></table></div></figure>
+
+
+<p>它告诉awk从文件myfile中读awk程序。</p>
+
+<p>如果在解释器文件中使用-f选项，则解释器文件可以这么写：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#! /bin/awk -f
+</span><span class='line'>
+</span><span class='line'>后面跟着awk程序</span></code></pre></td></tr></table></div></figure>
+
+
+<p>比如解释器文件/usr/local/bin/awkexample的内容是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#!/bin/awk -f 
+</span><span class='line'>BEGIN {
+</span><span class='line'>  for (i = 0; i &lt; ARGC; i++)
+</span><span class='line'>      printf "ARGV[%d] = %s\n", i, ARGV[i]
+</span><span class='line'>  exit 
+</span><span class='line'>}
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>调用：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ awkexample file1 FILENAME2 f3 ARGV[0] = awk
+</span><span class='line'>ARGV[1] = file1
+</span><span class='line'>ARGV[2] = FILENAME2
+</span><span class='line'>ARGV[3] = f3</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果执行这个文件时，实际上，是这么调用的：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/bin/awk -f /usr/local/bin/awkexample file1 FILENAME2 f3</span></code></pre></td></tr></table></div></figure>
+
+
+<ol>
+<li>解释器文件的路径名/usr/local/bin/awkexample给传给解释器，因为不知道解释器是不是会从搜索路径中搜索该文件，因此传全路径文件名</li>
+<li>awk读取解释器文件，第一行是#，注释，因此忽略第一行，执行后续程序</li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[python杂记]]></title>
+    <link href="http://baren.github.io/blog/2014/04/22/python-note/"/>
+    <updated>2014-04-22T11:15:07+08:00</updated>
+    <id>http://baren.github.io/blog/2014/04/22/python-note</id>
+    <content type="html"><![CDATA[<ul>
+<li><p>实际上，每一个python函数都有返回值，如果有return，则返回return指定的值；没有就返回None。</p></li>
+<li><p>python的搜索路径是在sys.path中搜索，sys.path是一个list，可以修改这个list的值。</p></li>
+<li><p>python中，所有都是对象（函数是对象，模块是对象等），意思是所有都可以赋值给变量，或者作为参数传递给函数。所有都是对象，有些可能不具有方法和属性，有些不能被继承，但是都可以赋值和传参。</p></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[apue(进程环境)]]></title>
+    <link href="http://baren.github.io/blog/2014/04/09/process-environment/"/>
+    <updated>2014-04-09T20:00:58+08:00</updated>
+    <id>http://baren.github.io/blog/2014/04/09/process-environment</id>
+    <content type="html"><![CDATA[<h1>main函数</h1>
+
+<p>c程序的起始运行函数是</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>int main(int argc, char *argv[]);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>argc是命令行参数数目，argv是指针数组，指向每一个参数。</p>
+
+<p>内核执行C程序是调用exec函数，在调用main函数之前，会先调用一个特殊的启动例程，可执行程序文件指定这个例程作为程序的启动地址。这是由链接编辑器设置的。链接编辑器由编译器调用。</p>
+
+<p>启动例程会从内核取得命令行参数和环境变量值。</p>
+
+<h1>进程终止</h1>
+
+<p>有八种终止进程的方式，其中5种方式为正常终止，为：</p>
+
+<ol>
+<li>从main函数返回</li>
+<li>调用exit函数</li>
+<li>调用<em>exit或</em>Exit</li>
+<li>最后一个线程从其启动例程返回</li>
+<li>最后一个线程调用pthread_exit</li>
+</ol>
+
+
+<p>异常终止的三种方式：</p>
+
+<ol>
+<li>调用abort</li>
+<li>接到一个信号并终止</li>
+<li>最后一个线程对取消请求做出响应</li>
+</ol>
+
+
+<p>程序启动例程，在main函数返回后，会立即调用exit函数。其类似过程是这样的：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>exit(main(argc, argv));</span></code></pre></td></tr></table></div></figure>
+
+
+<p>实际上，并不是这样（过程是一样的），启动例程一般是用汇编编写。</p>
+
+<h2>exit函数</h2>
+
+<p>三个用于正常终止程序的函数中，<em>exit和</em>Exit函数立即进入内核。</p>
+
+<p>exit函数则先执行一些清理处理（调用终止处理程序，关闭所有标识I/O流），然后进入内核。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>void exit(int status);
+</span><span class='line'>void _Exit(int status);
+</span><span class='line'>
+</span><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>void _exit(int status);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>exit的清理操作，执行一个标准的I/O库的清理关闭操作，为所有打开流调用fclose函数（怎么实现的？）</p>
+
+<blockquote><p>注意
+exit和<em>Exit函数是ISO C标准定义的，而</em>exit则是POSIX说明的，因此使用的头不一样。</p></blockquote>
+
+<p>由于标准库有buffer，因此怎样退出程序很重要。</p>
+
+<p>若使用fopen函数打开文件，并没用fclost关闭它，影响是什么呢？</p>
+
+<p>若使用exit函数或正常从main函数返回，两种方式都会调用exit函数。因此，exit函数会为你处理：</p>
+
+<ul>
+<li>flush输出流</li>
+<li>关闭文件</li>
+<li>进程拥有的其它资源也会被释放</li>
+</ul>
+
+
+<p>如果非正常退出，或调用<em>exit或</em>Exit函数，则</p>
+
+<ul>
+<li>系统会关闭打开的文件</li>
+<li>释放资源</li>
+<li>buffer并不会被flush</li>
+</ul>
+
+
+<p>三个exit函数都有一个整型参数，称之为终止状态（或退出状态，exit status），shell可用$?查看上一条命令的返回值。</p>
+
+<p>若：</p>
+
+<ul>
+<li>调用这些函数不带终止符</li>
+<li>main执行了一个无返回值的return语句</li>
+<li>main没有生命返回类型为整型</li>
+</ul>
+
+
+<p>则：</p>
+
+<p>进程状态为未定义的。</p>
+
+<p>但：</p>
+
+<p>若main生命为int返回类型，并执行到最后一条语句时返回（隐式返回），</p>
+
+<p>则：</p>
+
+<p>进程终止状态为0</p>
+
+<p>在main函数返回一整型值与用该值调用exit函数是等价的</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>exit(0) == return 0;</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>atexit函数</h2>
+
+<p>可以注册终止处理函数，这批函数在exit自动调用，ISO C规定，可注册函数多达32个，注册这些函数使用atexit函数</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>
+</span><span class='line'>int atexit(void (*func)(void));
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>注：
+1. exit调用这些函数顺序与他们登记的顺序相近
+2. 同一个函数若登记多次，则会调用多次</p></blockquote>
+
+<p><img src="http://baren.github.io/images/assets/Figure7-1.png" title="time-function" alt="alt text" /></p>
+
+<h1>命令行参数</h1>
+
+<p>比较简单，记录一点。</p>
+
+<p>argv[argc]是一个空指针，这样，可以在循环获取参数时，这样：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>for(i=0; garv[i] != NULL; i++)
+</span><span class='line'>{
+</span><span class='line'>  // 代码
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>环境表</h1>
+
+<p>每个程序，都会收到一张环境表，环境表是字符指针数组，每个指针指向的字符以null结束。</p>
+
+<p><strong>全局变量</strong><code>environ</code>包含了该指针数组的地址：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>extern char ** environ;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>称environ为环境指针，指针数组为环境表，环境表每个表项由name=value组成。</p>
+
+<h1>C程序的存储空间</h1>
+
+<p>C程序由以下几部分组成</p>
+
+<ul>
+<li>正文段：是由CPU执行的机器指令部分，正文段是共享的，而且是只读的。</li>
+<li>初始化数据段：常称为数据段，它包含了程序中须明确的赋初始值的变量。比如
+在C程序中出现在任何函数之外的声明：</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>int maxcount = 99;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>非初始化数据段：常称为bss段，在程序开始执行之前，内核将此段中的数据初始化为0或空指针，出现在任何函数外的C声明：</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>long sum[1000];
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>栈：自动变量，函数调用时所需要保存的信息，都存放到栈中，这种实现方式允许递归调用。</li>
+<li>堆：一般在堆中进行动态存储分配。堆位于非初始化数据段和栈之间。</li>
+</ul>
+
+
+<p>示意图：</p>
+
+<p><img src="http://baren.github.io/images/assets/Figure7-2.png" title="time-function" alt="" /></p>
+
+<p>linux的size命令可以报告正文段、数据段和bss段的长度。</p>
+
+<h1>共享库</h1>
+
+<p>共享库使得可执行文件中不再需要包含共用库的例程。</p>
+
+<p>只需要在所有进程都可引用的存储区中维护这种库例程的一个副本，在例程<strong>第一次</strong>执行或在第一次调用某个库函数时，用<strong>动态链接</strong>方法，将程序与共享库函数相链接。</p>
+
+<p>好处：</p>
+
+<ul>
+<li>减少了执行文件长度</li>
+<li>方便替换使用的库函数的版本而不需要重新链接。</li>
+</ul>
+
+
+<p>坏处：
+* 增加了首次的运行时间</p>
+
+<blockquote><p>GCC编译器，默认引用动态库，动态库是以.so结尾；而静态库是以.a为扩展名。引用一个程序库，可以使用-l<em>NAME</em>选项。</p></blockquote>
+
+<h1>存储器分配</h1>
+
+<ol>
+<li>malloc 分配指定大小（字节数）的存储区，初始值不确定</li>
+<li>calloc 为指定数量且指定长度的对象分配存储空间，初始化值为0</li>
+<li>realloc 更改以前分配区的长度（增加或减少）</li>
+</ol>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'># include &lt;stdlib.h&gt;
+</span><span class='line'>
+</span><span class='line'>void *malloc(size_t size);
+</span><span class='line'>void *calloc(size_t nobj, size_t size);
+</span><span class='line'>void *realloc(void *ptr, size_t newsize);
+</span><span class='line'>
+</span><span class='line'>void free(void *ptr);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>三个函数返回的指针一定是适当对齐的（原理基本上是已对齐单位的倍数的方式多分配内存）。</p>
+
+<p>三个函数返回void *指针，因此可以将其赋值给任何指针而不需要强制转换。</p>
+
+<p>free可以释放由上面三个函数分配的内存。</p>
+
+<p>这些分配函数通常调用sbrk系统调用实现。</p>
+
+<p>sbrk可增大和减少进程的存储空间，但malloc和free一般都不减少存储空间，以便分配并保持在malloc池中不返回内核。</p>
+
+<h1>环境变量</h1>
+
+<p>环境变量字符串的形式为<code>name=value</code>，unix不会查看此字符串，完全由程序解释。</p>
+
+<p>ISO C定义了一个函数getenv，根据name获取其value。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>
+</span><span class='line'>char *getenv(const char *name);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>除了获取环境变量，还可以设置环境变量：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>
+</span><span class='line'>int putenv(char *str);
+</span><span class='line'>
+</span><span class='line'>int setenv(const char *name, const char *value, int rewrite);
+</span><span class='line'>
+</span><span class='line'>int unsetenv(const char *name);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>putenv，参数为name=value字符串，若name存在，则先删除</p>
+
+<p>setenv，参数name的值设为value，如果name存在，则根据rewrite参数决定是重写还是不删除。</p>
+
+<p>unsetenv，删除name的定义</p>
+
+<blockquote><p>注意：
+1. putenv的实现，linux直接将字符串地址作为参数放入环境表中，如果参数是存放在栈中，则会发生错误。
+2. 由于环境变量存放在程序空间的最上面，大小是有边界的，因此，如果设置的环境变量超出了存储空间大小，则需要由malloc在堆上分配空间来存储。</p></blockquote>
+
+<h1>setjmp和longjmp函数</h1>
+
+<p>c语言中，goto语句不能跨函数，如果要跨函数，则需要setjmp和longjmp函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;setjmp.h&gt;
+</span><span class='line'>
+</span><span class='line'>int setjmp(jmp_buf env);
+</span><span class='line'>void longjmp(jmp_buf env, int val);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>调用这两个函数，遇到的问题是：</p>
+
+<ol>
+<li>调用longjmp后，自动变量和寄存器变量的状态如何？这些值能回滚到调用setjmp的状态码？</li>
+</ol>
+
+
+<p>答：不确定，跟实现有关系。大多数实现并不回滚这些自动变量和寄存器变量的值，而所有标准则说他们的值是不确定的。如果有一个自动变量，而又不想使其回滚，则可以定义具有volatile属性。声明为全局或静态变量的值在执行longjmp时保持不变。</p>
+
+<ol>
+<li>自动变量的问题：若在函数内部声明指针，并返回了这个指针，则会出问题。</li>
+</ol>
+
+
+<h1>进程资源</h1>
+
+<h2>进程资源使用</h2>
+
+<p>getrusage()系统调用返回调用进程或者其所有子进程运行所使用的各种系统资源。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/resource.h&gt;
+</span><span class='line'>
+</span><span class='line'>int getrusage(int who, struct rusage *res_usage);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>参数who指定了进程中谁的资源使用信息将会被获取。有下面几个值：</p>
+
+<ul>
+<li>RUSAGE_SELF 返回调用进程的资源</li>
+<li>RUSAGE_CHILDREN 返回调用进程的所有子进程的资源。子进程是停止的和wait的。</li>
+<li>RUSAGE_THREAD 返回调用线程的资源（Linux 2.6.26）</li>
+</ul>
+
+
+<p>res_usage参数是一个指针，指向结构为rusage的对象。</p>
+
+<h2>进程资源限制</h2>
+
+<p>每个进程都消耗系统资源，OS对每个进程都有一些资源限制。在shell中，可以使用ulimit命令设置进程的资源限制。所有通过shell启动的进程都会继承ulimit设置的限制。</p>
+
+<p><em>getrlimit()</em> 和 <em>setrlimit()</em> 两个函数可以获取和设置进程的资源限制。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/resource.h&gt;
+</span><span class='line'>int getrlimit(int resource, struct rlimit *rlim);
+</span><span class='line'>int setrlimit(int resource, const struct rlimit *rlim);
+</span><span class='line'>// Both return 0 on success, or –1 on error
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><em>resource</em>参数代表了需要获取或设置的资源标记符。rlimit是一个结构体，用来描述资源限制的值。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>struct rlimit {
+</span><span class='line'>rlim_t rlim_cur; /* Soft limit (actual process limit) */ 
+</span><span class='line'>rlim_t rlim_max; /* Hard limit (ceiling for rlim_cur) */
+</span><span class='line'>};</span></code></pre></td></tr></table></div></figure>
+
+
+<p>关于结构体<code>struct rlimit</code>解释如下：</p>
+
+<p>既有软限制（rlim_cur），又有硬限制（rlim_max）。软限制表示进程可以消耗的最大资源设置。一个进程可以调整软限制，调整范围是[0-硬限制]。进程可以调整其硬限制。没有权限的进程，只能降硬限制调小（但不小于软限制），对于大多数进程，硬限制只是说明进程的可消耗的资源的最大值。</p>
+
+<p>有权限的进程（CAP_SYS_RESOURCE）可以调整硬限制大小，既可往大得方向调整，也可以往小的方向调整。</p>
+
+<p>如果rlim_cur和rlim_max的值是RLIM_INFINITY，表示没有限制。</p>
+
+<p>虽然设置进程的资源限制是针对单个进程的。但进程可消耗的资源除了与这个设置有关系外，还需要依赖同一个用户id的进程所消耗的资源之和。</p>
+
+<p>比如RLIMIT_NPROC资源，表示可创建的进程数限制，就是一个很好的例子。但是如果根据进程的子进程数来检查这个限制，将会失效，因为子进程也会创建新的进程。实际上，这个资源限制是针对所有的用户id都相同的进程设置的。但是，即使是具有同样的用户id，如果其他进程并没有针对这个资源进行限制，或者有限制，但是限制数跟其他不一样，则这个限制资源检查则是根据这个进程的相应设置来进行相应检查的。</p>
+
+<p>下表是参数<em>resource</em>的取值表：</p>
+
+<table>
+<thead>
+<tr>
+<th>resource        </th>
+<th style="text-align:center;"> Limit on</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RLIMIT_AS      </td>
+<td style="text-align:center;"> 进程的虚拟内存大小（byte）</td>
+</tr>
+<tr>
+<td>RLIMIT_CORE    </td>
+<td style="text-align:center;"> Core 文件大小（byte）</td>
+</tr>
+<tr>
+<td>RLIMIT_CPU     </td>
+<td style="text-align:center;"> 进程的cpu时间(seconds)</td>
+</tr>
+<tr>
+<td>RLIMIT_DATA    </td>
+<td style="text-align:center;"> 进程的数据段大小（byte）</td>
+</tr>
+<tr>
+<td>RLIMIT_FSIZE   </td>
+<td style="text-align:center;"> 文件大小（byte）</td>
+</tr>
+<tr>
+<td>RLIMIT_MEMLOCK </td>
+<td style="text-align:center;"> 锁定的内存大小（byte）</td>
+</tr>
+<tr>
+<td>RLIMIT_MSGQUEUE </td>
+<td style="text-align:center;"> 为实际用户id分配的POSIX的消息队列的大小(since Linux 2.6.8)</td>
+</tr>
+<tr>
+<td>RLIMIT_NICE    </td>
+<td style="text-align:center;"> nice的值(since Linux 2.6.12)</td>
+</tr>
+<tr>
+<td>RLIMIT_NOFILE  </td>
+<td style="text-align:center;"> 最大的文件描述符个数</td>
+</tr>
+<tr>
+<td>RLIMIT_NPROC   </td>
+<td style="text-align:center;"> 一个实际用户id可创建的进程数</td>
+</tr>
+<tr>
+<td>RLIMIT_RSS     </td>
+<td style="text-align:center;"> Resident set size (bytes; not implemented)</td>
+</tr>
+</tbody>
+</table>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[apue(系统数据文件和信息)]]></title>
+    <link href="http://baren.github.io/blog/2014/03/29/system-data-file-and-info/"/>
+    <updated>2014-03-29T08:06:39+08:00</updated>
+    <id>http://baren.github.io/blog/2014/03/29/system-data-file-and-info</id>
+    <content type="html"><![CDATA[<h1>时间和日期</h1>
+
+<p>unix内核提供的<em>基本时间服务</em>是计算自国际标准时间公元1970年1月1日00:00:00以来经过的秒数。</p>
+
+<p>这种秒数是以数据类型time_t表示的。称之为<strong>日历时间</strong>，日历时间包括日期和时间。</p>
+
+<p>time函数返回当前的时间和日期：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;time.h&gt;
+</span><span class='line'>
+</span><span class='line'>time_t time(time_t *calptr);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>时间值总是作为函数值返回。如果参数不为空，则时间也存放在由calptr执行的内存中。</p>
+
+<p>gettimeofday函数提供了更高分辨率（最高为微妙级）。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/time.h&gt;  ## 这里就是sys/time.h头文件了
+</span><span class='line'>
+</span><span class='line'>int gettimeofday(struct timeval *restrict tp, void *restrict tzp);
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>该函数作为XSI扩展定于在Single UNIX Specification中，tzp唯一合法的值是NULL，其它值则将产生不确定的结果。</p>
+
+<p>gettimeofday函数把当前时间放在tp指向的timeval结构中，该结构存储秒和微妙。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>struct timeval {
+</span><span class='line'>  time_t tv_sec;  /*秒*/
+</span><span class='line'>  long tv_usec;  /*微妙，注意是微妙，不是毫秒*/
+</span><span class='line'>
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>取到time_t后，可以调用其它函数来转成成可读的日期和时间。</p>
+
+<p><img src="http://baren.github.io/images/assets/Figure6-1.png" title="time-function" alt="alt text" /></p>
+
+<p>localtime和gmtime将日历时间转换成以年、月、日、时、分、秒、周日表示的时间，并将这些存放在tm结构中：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;time.h&gt;
+</span><span class='line'>
+</span><span class='line'># 将日历时间转换成国际标准时间的年、月、日、时、分、秒、周日。
+</span><span class='line'>struct tm *gmtime(const time_t *calptr);
+</span><span class='line'># 将日历时间转换成本地时间（考虑本地时区和夏令时）
+</span><span class='line'>struct tm *localtime(const time_t *calptr);
+</span><span class='line'>
+</span><span class='line'>struct tm{
+</span><span class='line'>  int time_sec; /*秒 [0-60]*/
+</span><span class='line'>  int time_min; /*分 [0-59]*/
+</span><span class='line'>  int tm_hour; /*时 [0-23]*/
+</span><span class='line'>  int time_mday; /*日 [0-31]*/
+</span><span class='line'>  int tm_mon; /*月 [0-11]*/
+</span><span class='line'>  int tm_year; /*年 [1900年开始]*/
+</span><span class='line'>  int tm_wday; /*从周日开始的天 [0-6]*/
+</span><span class='line'>  int tm_yday; /*从一月开始的天数 [0-365]*/
+</span><span class='line'>  int tm_isdst; /*daylight(夏令时)保存时间标记，&lt;0, 0, &gt;0*/
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>秒可以超过59的原因是可以闰秒。如果夏令时生效，夏令时标志值为正；如果非夏令时制时间，标志位0；不可用，则为负。</p>
+
+<p>mktime函数把年月日等作为参数，转换成time_t的值：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;time.h&gt;
+</span><span class='line'>
+</span><span class='line'>time_t mktime(struct tm *tmptr);
+</span><span class='line'>
+</span><span class='line'># 下面两个函数把时间转换成date命令的系统默认输出形式。只是参数不一样
+</span><span class='line'>char *asctime(const struct tm *tmptr);
+</span><span class='line'>char *ctime(const time_t *calptr);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>strftime函数是格式化时间：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;time.h&gt;
+</span><span class='line'>
+</span><span class='line'>size_t strftime(char *restrict buf, size_t masxize, const char *restrict format, const struct tm *restrict tmptr);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>最后一个参数是要格式化的时间值，tm结构指针传递。格式化结果存放在一个长度为maxsize的buf数组中，如果buf长度可以存放格式化结果和一个null终止符，则该函数返回在buf中存放的字符数，否则该函数返回0.</p>
+
+<p>format是格式化字符串。</p>
+
+<p>转换符略。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[apue(标准I/O库)]]></title>

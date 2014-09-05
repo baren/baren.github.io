@@ -3,6 +3,48 @@
   
   
   <url>
+    <loc>http://baren.github.io/blog/2014/08/28/pthread/</loc>
+    <lastmod>2014-08-28T20:00:53+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/06/24/signal/</loc>
+    <lastmod>2014-06-24T20:00:20+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/05/04/process-relate/</loc>
+    <lastmod>2014-05-04T20:00:26+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/05/04/process-control/</loc>
+    <lastmod>2014-05-04T20:00:02+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/04/22/python-note/</loc>
+    <lastmod>2014-04-22T11:15:07+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/04/09/process-environment/</loc>
+    <lastmod>2014-04-09T20:00:58+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/03/29/system-data-file-and-info/</loc>
+    <lastmod>2014-03-29T08:06:39+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://baren.github.io/blog/2014/03/22/standard-io/</loc>
     <lastmod>2014-03-22T20:06:00+08:00</lastmod>
     <priority>0.8</priority>
@@ -59,14 +101,14 @@
   
   <url>
     <loc>http://baren.github.io/blog/archives/</loc>
-    <lastmod>2014-09-05T15:37:08+08:00</lastmod>
+    <lastmod>2014-09-05T16:02:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://baren.github.io/</loc>
-    <lastmod>2014-09-05T15:37:08+08:00</lastmod>
+    <lastmod>2014-09-05T16:02:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>

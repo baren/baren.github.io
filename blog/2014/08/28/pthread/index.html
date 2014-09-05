@@ -1,0 +1,582 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>apue(线程) - Baren Blog</title>
+  <meta name="author" content="Your Name">
+
+  
+  <meta name="description" content="线程概念 主要是POSIX线程，也就是pthread。 正常情况下，unix的进程包括一个单一的线程执行，从main开始。有了线程后，一个进程可以有多个线程同时执行。 判断系统是否支持pthread，可以使用宏POSIX_THREADS进行测试， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://baren.github.io/blog/2014/08/28/pthread/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Baren Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Baren Blog</a></h1>
+  
+    <h2>A blogging for baren.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:baren.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Apue(线程)</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-28T20:00:53+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h1>线程概念</h1>
+
+<p>主要是POSIX线程，也就是pthread。</p>
+
+<p>正常情况下，unix的进程包括一个单一的线程执行，从main开始。有了线程后，一个进程可以有多个线程同时执行。</p>
+
+<p>判断系统是否支持pthread，可以使用宏<em>POSIX_THREADS进行测试，还可以把</em>SC_THREADS传递给sysconf函数来运行时判断。</p>
+
+<p>线程可以有多种好处，按照传统的多进程的实现方式，一般是在网络服务器环境下使用，多进程可以同时支持多个客户端的请求。但也有一些限制：</p>
+
+<ul>
+<li>进程之间共享数据非常困难</li>
+<li>使用fork创建一个进程是耗资源的。即使使用了copy-on-write技术，复制各种进程的属性（page表和fd表等）也意味着是耗时间的。</li>
+</ul>
+
+
+<p>使用线程，解决这上面这些问题：</p>
+
+<ul>
+<li>线程之间共享信息是容易和迅速的。仅仅拷贝数据到共享内存（global或heap）的消耗。</li>
+<li>线程创建比进程创建迅速多了。大约有10倍。linux创建线程使用clone系统调用，也还是比进程快。</li>
+</ul>
+
+
+<p>除了共享全局内存，线程还共享一些其他属性，包括</p>
+
+<ul>
+<li>进程id和父进程id</li>
+<li>进程组合session id</li>
+<li>控制终端</li>
+<li>进程凭证（用户和组id）</li>
+<li>打开的文件描述符（比较重要）</li>
+<li>信号处理</li>
+<li>文件系统相关信息：umask、当前工作目录和根目录</li>
+<li>等</li>
+</ul>
+
+
+<p>下面是各个线程不同的属性：</p>
+
+<ul>
+<li>线程id</li>
+<li>信号mask</li>
+<li>线程私有数据</li>
+<li>errno变量</li>
+<li>等</li>
+</ul>
+
+
+<h2>线程和errno</h2>
+
+<p>进程环境下，errno是一个全局整型变量。在线程环境下，为了防止出现竞争条件（每个线程都去更新这个变量），每个线程都有自己的errno。</p>
+
+<p>这样既避免了errno的条件竞争，又兼容了一些使用errno的函数。</p>
+
+<p>注：</p>
+
+<blockquote><p>在线程中，使用函数的返回错误码更为清晰整洁。</p></blockquote>
+
+<h2>线程ID</h2>
+
+<p>进程的编号id是整个系统唯一的。线程的编号是进程内唯一的。进程的编号，使用<code>pid_t</code>来表示；线程的ID，使用<code>pthread_t</code>类型来表示。</p>
+
+<p>为了可移植性，一般调用函数对线程ID进行处理，而不是把它转换成整型（linux使用无符号整数来实现的）。</p>
+
+<p>下面是处理线程ID的函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>// 比较两个线程ID
+</span><span class='line'>int pthread_equal(pthread_t tid1; pthread_t tid2);  // 相等则返回非零值
+</span><span class='line'>
+</span><span class='line'>// 获取线程的ID
+</span><span class='line'>pthread_t pthread_self(void);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>线程创建</h1>
+
+<p>使用pthread_create函数创建线程：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>
+</span><span class='line'>int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
+</span><span class='line'>void *(*start)(void *), void *arg);
+</span><span class='line'>
+</span><span class='line'>// 成功返回0
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这个函数的参数意义是：</p>
+
+<ul>
+<li>thread——线程创建成功后，将线程的ID写入这个指针指向的内存中</li>
+<li>attr——创建线程的属性</li>
+<li>start——线程执行的函数指针。这个函数接收一个无类型指针参数，如果函数接收的参数是多个，可以定义一个结构体，并作为参数arg传递给此函数</li>
+<li>arg——无类型指针参数，作为线程执行函数的参数传入</li>
+</ul>
+
+
+<h1>线程终止</h1>
+
+<ul>
+<li><p>进程终止会导致线程终止：</p>
+
+<ul>
+<li>任一线程调用了exit，<em>Exit或</em>exit函数，整个进程终止</li>
+<li>若信号的默认动作是终止进程，则把信号发送到线程会终止进程</li>
+</ul>
+</li>
+<li><p>单个进程有三种方式退出，在不终止整个进程的情况下停止线程自己的控制流。</p>
+
+<ul>
+<li>线程只是从启动程序中返回，返回值是线程的退出码（也就是pthread_create函数的第三个参数start函数的返回值）</li>
+<li>线程可以被同一进程中的其它线程取消（pthread_cancel）</li>
+<li>线程调用pthread_exit函数退出</li>
+</ul>
+</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>void pthread_exit(void *retval);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>pthread_exit接收的参数，就是线程的返回值。</p>
+
+<p>其它线程可以通过pthread_join获取这个值。</p>
+
+<p>注意：</p>
+
+<blockquote><p>pthread_exit的效果等同于在线程执行函数中通过return返回。不同之处是pthread_exit函数可以在任意被线程执行函数调用的函数中使用
+pthread_exit的参数不能是线程栈的数据，因为一旦线程结束，栈就被回收，导致返回值被覆盖。</p></blockquote>
+
+<h2>pthread_join函数</h2>
+
+<p>pthread_join函数会等待终止线程。有两种情况：1）如果线程已经终止，则join函数立即返回；2）如果线程还没有终止，则阻塞，直到线程终止。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>include &lt;pthread.h&gt;
+</span><span class='line'>int pthread_join(pthread_t thread, void **retval); // 成功，返回0
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果retval是个非空指针，则会获取一份线程终止的返回值的拷贝。这个线程返回值或者通过return返回，或者通过调用pthread_exit。</p>
+
+<p>注意：</p>
+
+<blockquote><p>如果join一个已经被join过的线程，则结果是未定义的。比如有可能会join一个刚刚创建的新线程（重用了之前的线程ID）。</p></blockquote>
+
+<p>如果一个线程是非分离状态，则必须对这个线程进行pthread_join操作，如果不这样，则：
+* 线程会变成与僵尸进程类似的状态，除了消耗资源外，如果足够多的这种线程存在，我们将不能再创建新线程</p>
+
+<p>还要注意：
+* 线程是平级的：意思是同一个进程内的线程，可以pthread_join任意的其他线程。这与进程不一样，进程只能是父进程wait子进程。
+* 线程没有pthread_jion任意线程操作。进程可以通过waitpid(–1, &amp;status, options)); 等待任意进程，线程没有这个操作。</p>
+
+<h2>pthread_detach函数</h2>
+
+<p>默认情况下，线程是可<em>结合的（joinable）</em>，可结合的意思，一旦线程终止，任何其它线程都可以通过pthread_join获取其终止状态。</p>
+
+<p>某些情况下，我们不想获取线程的终止状态，希望系统在线程终止时，自动回收线程资源，可以使用pthread_detach函数设置线程是<em>分离的（detached）</em>。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>int pthread_detach(pthread_t thread);
+</span><span class='line'>// 成功返回0
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>注意：
+1. 一旦设置线程为可分离的，则不能使用pthread_join获取其返回状态了
+2. 设置线程为可分离的，则不能再将其设置为可结合的。</p>
+
+<h1>线程参数传递和返回值</h1>
+
+<p>在创建线程时，可能需要传递参数给线程，并可能在线程结束时获取线程返回状态。</p>
+
+<ul>
+<li>在调用pthread_create函数创建线程时，可以使用第四个参数传递参数给线程的执行函数</li>
+<li>当线程结束时，可以传递返回结果给调用pthread_join的线程，通过：
+
+<blockquote><ul>
+<li>在线程执行函数返回一个指针</li>
+<li>调用pthread_exit()，把返回值指针作为pthread_exit的参数</li>
+</ul>
+</blockquote></li>
+</ul>
+
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
+</span><span class='line'>#include &lt;stdio.h&gt;
+</span><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>#include &lt;errno.h&gt;
+</span><span class='line'>#include &lt;string.h&gt;
+</span><span class='line'>
+</span><span class='line'>/* **************************************************************************/
+</span><span class='line'>/*  our macro for errors checking                                           */
+</span><span class='line'>/* **************************************************************************/
+</span><span class='line'>#define COND_CHECK(func, cond, retv, errv) \
+</span><span class='line'>if ( (cond) ) \
+</span><span class='line'> { \
+</span><span class='line'>    fprintf(stderr, "\n[CHECK FAILED at %s:%d]\n| %s(...)=%d (%s)\n\n",\
+</span><span class='line'>                __FILE__,__LINE__,func,retv,strerror(errv)); \
+</span><span class='line'>                   exit(EXIT_FAILURE); \
+</span><span class='line'> }
+</span><span class='line'>
+</span><span class='line'>#define ErrnoCheck(func,cond,retv)  COND_CHECK(func, cond, retv, errno)
+</span><span class='line'>#define PthreadCheck(func,rc) COND_CHECK(func,(rc!=0), rc, rc)
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>void *th_func1(void *arg);
+</span><span class='line'>void *th_func2(void *arg);
+</span><span class='line'>void test_thread_ret();
+</span><span class='line'>
+</span><span class='line'>int main(int argc, char *argv[])
+</span><span class='line'>{
+</span><span class='line'>  test_thread_ret();
+</span><span class='line'>  return 0;
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>void test_thread_ret()
+</span><span class='line'>{
+</span><span class='line'>  int t_ret;
+</span><span class='line'>  // pthread ret
+</span><span class='line'>  pthread_t t1, t2;
+</span><span class='line'>  void *tret;
+</span><span class='line'>  t_ret = pthread_create(&t1, NULL, th_func1, NULL);
+</span><span class='line'>  PthreadCheck("pthread_create", t_ret);
+</span><span class='line'>  t_ret = pthread_create(&t2, NULL, th_func2, (void *)2);
+</span><span class='line'>  PthreadCheck("pthread_create", t_ret);
+</span><span class='line'>
+</span><span class='line'>  printf("join t1\n");
+</span><span class='line'>  t_ret = pthread_join(t1, &tret);
+</span><span class='line'>  PthreadCheck("pthread_join", t_ret);
+</span><span class='line'>  printf("ret of thread 1 is %d.\n", (int) tret);
+</span><span class='line'>
+</span><span class='line'>  printf("join t2\n");
+</span><span class='line'>  t_ret = pthread_join(t2, &tret);
+</span><span class='line'>  PthreadCheck("pthread_join", t_ret);
+</span><span class='line'>  printf("ret of thread 2 is %d.\n", (int) tret);
+</span><span class='line'>
+</span><span class='line'>}
+</span><span class='line'>void *th_func1(void *arg)
+</span><span class='line'>{
+</span><span class='line'>  printf("thread 1 runing\n");
+</span><span class='line'>  return (void *)1;
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>void *th_func2(void *arg)
+</span><span class='line'>{
+</span><span class='line'>  int * a;
+</span><span class='line'>  a = (int *)arg;
+</span><span class='line'>  printf("thread 2 arg is %d.\n", (int) a);
+</span><span class='line'>  pthread_exit((void *) 2);
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>取消线程</h1>
+
+<p>线程可以调用pthread_cancel函数<em>请求</em>取消同一进程中的其它线程。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;pthread.h&gt;
+</span><span class='line'>
+</span><span class='line'>int pthread_cancel(pthread_t tid);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>pthread_cancel并不等待线程终止仅仅提出请求。</p>
+
+<p>线程在取消请求发出后还继续运行，直到线程打到某个<em>取消点</em>。取消点是线程检查是否被取消并按照请求进行动作的一个位置。</p>
+
+<h1>线程同步</h1>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Your Name</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-28T20:00:53+08:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/linux/'>linux</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2014/08/28/pthread/" data-via="" data-counturl="http://baren.github.io/blog/2014/08/28/pthread/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/06/24/signal/" title="Previous Post: apue(信号)">&laquo; apue(信号)</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/08/28/pthread/">apue(线程)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/24/signal/">apue(信号)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/process-relate/">apue(进程关系)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/process-control/">apue(进程控制)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/04/22/python-note/">python杂记</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Your Name -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
+  <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

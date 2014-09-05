@@ -4,7 +4,7 @@
   <title><![CDATA[Category: python | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-05T15:37:08+08:00</updated>
+  <updated>2014-09-05T16:02:19+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[Your Name]]></name>
@@ -12,6 +12,20 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[python杂记]]></title>
+    <link href="http://baren.github.io/blog/2014/04/22/python-note/"/>
+    <updated>2014-04-22T11:15:07+08:00</updated>
+    <id>http://baren.github.io/blog/2014/04/22/python-note</id>
+    <content type="html"><![CDATA[<ul>
+<li><p>实际上，每一个python函数都有返回值，如果有return，则返回return指定的值；没有就返回None。</p></li>
+<li><p>python的搜索路径是在sys.path中搜索，sys.path是一个list，可以修改这个list的值。</p></li>
+<li><p>python中，所有都是对象（函数是对象，模块是对象等），意思是所有都可以赋值给变量，或者作为参数传递给函数。所有都是对象，有些可能不具有方法和属性，有些不能被继承，但是都可以赋值和传参。</p></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[类型和对象(PER4 chapter 3)]]></title>

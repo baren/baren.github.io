@@ -1,0 +1,428 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>apue(进程关系) - Baren Blog</title>
+  <meta name="author" content="Your Name">
+
+  
+  <meta name="description" content="终端登录 由终端登录至unix，这个过程是类似的，而与所使用的终端无关，终端可以是基于字符的终端、仿真简单的基于字符终端的图形终端，或者是运行窗口系统的图形终端。 终端登录步骤： 系统自举时，创建进程ID为1的init进程。使系统进入多用户状态。
+init进程读取文件/etc/ttys， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://baren.github.io/blog/2014/05/04/process-relate/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Baren Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Baren Blog</a></h1>
+  
+    <h2>A blogging for baren.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:baren.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Apue(进程关系)</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-04T20:00:26+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h1>终端登录</h1>
+
+<p>由终端登录至unix，这个过程是类似的，而与所使用的终端无关，终端可以是基于字符的终端、仿真简单的基于字符终端的图形终端，或者是运行窗口系统的图形终端。</p>
+
+<p>终端登录步骤：</p>
+
+<ol>
+<li>系统自举时，创建进程ID为1的init进程。使系统进入多用户状态。</li>
+<li>init进程读取文件/etc/ttys，对每一个允许登录的终端设备，init进程调用一次fork，fork后的子进程执行getty程序（exec getty程序）</li>
+<li>getty程序会调用open函数，以读写方式打开终端，一旦打开设备，则文件描述符0、1、2设置到该设备，输出login:之类的信息</li>
+<li>gettty调用login函数（<code>execle("/bin/login", "login", "-p", username, (char *) 0, envp);</code>）</li>
+<li>login执行多个工作
+
+<blockquote><p>验证用户、密码正确性，连续几次不对，则退出；父进程init知道子进程终止后，会再次调用fork，执行getty，重复上述动作。登录成功后：
+将当前工作目录改为该用户的起始目录（home目录）
+chown改变该终端的所有权，使登录用户成为它的所有者
+对该终端设备的访问权限改为用户读写
+调用setgid及initgroups设置进程的组id
+用login所得到的所有信息初始化环境
+调用该登录用户的登录shell</p></blockquote></li>
+</ol>
+
+
+<h1>网络登录</h1>
+
+<p>在网络登录情况下，所有的登录都是通过内核的网络接口驱动程序（以太网驱动程序），事情并不知道会有多少这样的登录。必须等待一个网络连接请求的到达。</p>
+
+<p>网络登录，一个特点是：1）既能处理终端登录；2）处理网络登录。为了实现，系统采用<em>伪终端</em>（pseudo terminal）的软件驱动程序。</p>
+
+<p>伪终端仿真：</p>
+
+<ul>
+<li>串行终端的运行行为，</li>
+<li>并将终端操作映射为网络操作，反之亦然</li>
+</ul>
+
+
+<h2>BSD网络登录</h2>
+
+<p>在BSD中，inetd进程负责等待大多数的网络连接。</p>
+
+<p>启动inetd进程的步骤：</p>
+
+<ol>
+<li>init进程调用shell，使shell程序执行/etc/rc脚本，</li>
+<li>这个脚本启动守护进程inetd，然后shell脚本结束，inetd的父进程变成init。</li>
+<li>inetd进程等待TCP/IP连接，当一个连接请求到达时，执行一次fork，生成子进程执行适当的程序。</li>
+</ol>
+
+
+<p>以telnet网络登录为例。</p>
+
+<p>hostname启动的程序被称为telnet服务进程（称为telnetd）。</p>
+
+<p>客户端进行网络登录命令：telnet hostname，这样客户端和hostname以telnet应用协议通过tcp连接交换数据。</p>
+
+<p>然后，</p>
+
+<p>服务端telnetd打开一个伪终端设备，并用fork分成两个进程。</p>
+
+<ul>
+<li>父进程处理网络连接的通信</li>
+<li>子进程执行login程序</li>
+<li>父子进程通过伪终端程序相连接</li>
+</ul>
+
+
+<p>login登录成功，则进行上一节同样的步骤：更改当前工作目录为起始目录，设置登录用户的组ID合用户ID，以及登录用户的初始环境。
+然后login调用exec将其自身替换为登录用户的登录shell。</p>
+
+<p>注意：
+linux的因特网守护进程是xinetd。</p>
+
+<h1>进程组</h1>
+
+<p>进程组是一个或多个进程的集合。一般进程组与同一个作业相关联（比如shell中，多个命令用管道合起来，这几个命令分别是一个进程，合起来组成一个进程组）。可以接收同一终端的各种信号。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>// 返回调用进程的进程组id
+</span><span class='line'>pid_t getpgrp(void);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Sigle UNIX Specification将getpgid函数定义为XSI扩展，模仿了此种运行行为：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>pid_t getpgid(pid_t pid);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>若参数pid为0，则返回调用进程的进程组id，这时：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>getpgid(0) == getpgrp()</span></code></pre></td></tr></table></div></figure>
+
+
+<p>进程组可以有一个组长进程。条件是：</p>
+
+<ul>
+<li>组长进程的ID等于组的ID</li>
+</ul>
+
+
+<p>组长进程的权限：</p>
+
+<ul>
+<li>创建一个进程组</li>
+<li>创建该组中的进程</li>
+</ul>
+
+
+<p>进程组中，只要有一个进程存在，进程组就存在，这与组长进程的存在与否无关。</p>
+
+<p>进程组的生存期是：进程组创建到最后一个进程终止，最后一个进程可以终止，也可以转移到另一个进程组。</p>
+
+<p>加入一个进程组或者创建进程组：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int setpgid(pid_t pid, pid_t pgid);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>setpgid函数将pid进程的进程组ID设置为pgid。</p>
+
+<ul>
+<li>如果这两个参数相等，则由pid指定的进程变成进程组组长，</li>
+<li>如果pid是0，则使用调用者的进程ID。</li>
+<li>如果pgid为0，则由pid指定的进程ID将用作进程组ID</li>
+</ul>
+
+
+<p>调用条件：</p>
+
+<ul>
+<li>一个进程只能为它自己或者它的子进程设置进程组ID，</li>
+<li>在它的子进程调用了exec函数之一后，它就不能再改变该子进程的进程组ID</li>
+</ul>
+
+
+<p>在大多数的作业控制shell中，在fork之后调用此函数，使父进程设置其子进程的进程组ID，并使子进程设置其自己的进程组ID。</p>
+
+<h1>会话</h1>
+
+<p>会话是一个或多个进程组的集合。</p>
+
+<p>例如下面程序：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>proc1  | proc2 &
+</span><span class='line'>proc3 | proc 4 | proc5
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>会产生如下会话，包括三个进程组：
+1. 登录shell
+2. proc1和proc2属于一个进程组
+3. proc3和proc4和proc5属于一个进程组</p>
+
+<p>可以使用setsid函数建立新会话：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>pid_t setsid(void);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果调用这个函数的进程不是一个进程组的组长，则此函数就会创建一个新会话，结果将发生下面三件事：</p>
+
+<ol>
+<li>该进程会变成新会话的首进程（session leader）（会话首进程是创建该会话的进程），此时该进程是新会话中的唯一进程</li>
+<li>该进程成为一个新进程组的组长进程，新进程组ID是该调用进程的进程ID</li>
+<li>该进程没有控制终端。如果在调用setsid之前该进程有一个控制终端，那么这种联系也会中断。</li>
+</ol>
+
+
+<p>如果该进程已经是一个进程组的组长，则函数返回出错。为了防止这种情况，一般先fork再调用。</p>
+
+<h1>控制终端</h1>
+
+<ul>
+<li>一个会话可以有一个控制终端，通常是登录到其上的终端设备或者伪终端设备。</li>
+<li>建立与控制终端的会话首进程被称为控制进程</li>
+<li>一个会话中得几个进程组可被分成<em>一个</em>前台进程组以及一个或者多个后台进程组</li>
+<li>如果一个会话有一个控制终端，则它有一个前台进程组，会话中的其它进程组为后台进程组</li>
+<li>无论何时键入终端的中断键（ctrl+c），就会将中断信号发送给前台进程组的所有进程</li>
+<li>无论何时键入终端的退出键（ctrl+\），将会将退出信号发送给前台进程组中所有进程</li>
+<li>如果终端接口检测到调制解释器或网络已经断开连接，则将挂断信号发送给控制进程（会话首进程）</li>
+</ul>
+
+
+<h1>作业控制</h1>
+
+<p>略</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Your Name</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-04T20:00:26+08:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/linux/'>linux</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2014/05/04/process-relate/" data-via="" data-counturl="http://baren.github.io/blog/2014/05/04/process-relate/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/05/04/process-control/" title="Previous Post: apue(进程控制)">&laquo; apue(进程控制)</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/06/24/signal/" title="Next Post: apue(信号)">apue(信号) &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/08/28/pthread/">apue(线程)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/24/signal/">apue(信号)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/process-relate/">apue(进程关系)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/process-control/">apue(进程控制)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/04/22/python-note/">python杂记</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Your Name -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
+  <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

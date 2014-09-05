@@ -1,0 +1,353 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>apue(系统数据文件和信息) - Baren Blog</title>
+  <meta name="author" content="Your Name">
+
+  
+  <meta name="description" content="时间和日期 unix内核提供的基本时间服务是计算自国际标准时间公元1970年1月1日00:00:00以来经过的秒数。 这种秒数是以数据类型time_t表示的。称之为日历时间，日历时间包括日期和时间。 time函数返回当前的时间和日期： 1
+2
+3
+4 #include &lt;time.h&gt &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://baren.github.io/blog/2014/03/29/system-data-file-and-info/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Baren Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Baren Blog</a></h1>
+  
+    <h2>A blogging for baren.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:baren.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Apue(系统数据文件和信息)</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-29T08:06:39+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h1>时间和日期</h1>
+
+<p>unix内核提供的<em>基本时间服务</em>是计算自国际标准时间公元1970年1月1日00:00:00以来经过的秒数。</p>
+
+<p>这种秒数是以数据类型time_t表示的。称之为<strong>日历时间</strong>，日历时间包括日期和时间。</p>
+
+<p>time函数返回当前的时间和日期：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;time.h&gt;
+</span><span class='line'>
+</span><span class='line'>time_t time(time_t *calptr);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>时间值总是作为函数值返回。如果参数不为空，则时间也存放在由calptr执行的内存中。</p>
+
+<p>gettimeofday函数提供了更高分辨率（最高为微妙级）。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/time.h&gt;  ## 这里就是sys/time.h头文件了
+</span><span class='line'>
+</span><span class='line'>int gettimeofday(struct timeval *restrict tp, void *restrict tzp);
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>该函数作为XSI扩展定于在Single UNIX Specification中，tzp唯一合法的值是NULL，其它值则将产生不确定的结果。</p>
+
+<p>gettimeofday函数把当前时间放在tp指向的timeval结构中，该结构存储秒和微妙。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>struct timeval {
+</span><span class='line'>  time_t tv_sec;  /*秒*/
+</span><span class='line'>  long tv_usec;  /*微妙，注意是微妙，不是毫秒*/
+</span><span class='line'>
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>取到time_t后，可以调用其它函数来转成成可读的日期和时间。</p>
+
+<p><img src="/images/assets/Figure6-1.png" title="time-function" alt="alt text" /></p>
+
+<p>localtime和gmtime将日历时间转换成以年、月、日、时、分、秒、周日表示的时间，并将这些存放在tm结构中：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;time.h&gt;
+</span><span class='line'>
+</span><span class='line'># 将日历时间转换成国际标准时间的年、月、日、时、分、秒、周日。
+</span><span class='line'>struct tm *gmtime(const time_t *calptr);
+</span><span class='line'># 将日历时间转换成本地时间（考虑本地时区和夏令时）
+</span><span class='line'>struct tm *localtime(const time_t *calptr);
+</span><span class='line'>
+</span><span class='line'>struct tm{
+</span><span class='line'>  int time_sec; /*秒 [0-60]*/
+</span><span class='line'>  int time_min; /*分 [0-59]*/
+</span><span class='line'>  int tm_hour; /*时 [0-23]*/
+</span><span class='line'>  int time_mday; /*日 [0-31]*/
+</span><span class='line'>  int tm_mon; /*月 [0-11]*/
+</span><span class='line'>  int tm_year; /*年 [1900年开始]*/
+</span><span class='line'>  int tm_wday; /*从周日开始的天 [0-6]*/
+</span><span class='line'>  int tm_yday; /*从一月开始的天数 [0-365]*/
+</span><span class='line'>  int tm_isdst; /*daylight(夏令时)保存时间标记，&lt;0, 0, &gt;0*/
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>秒可以超过59的原因是可以闰秒。如果夏令时生效，夏令时标志值为正；如果非夏令时制时间，标志位0；不可用，则为负。</p>
+
+<p>mktime函数把年月日等作为参数，转换成time_t的值：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;time.h&gt;
+</span><span class='line'>
+</span><span class='line'>time_t mktime(struct tm *tmptr);
+</span><span class='line'>
+</span><span class='line'># 下面两个函数把时间转换成date命令的系统默认输出形式。只是参数不一样
+</span><span class='line'>char *asctime(const struct tm *tmptr);
+</span><span class='line'>char *ctime(const time_t *calptr);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>strftime函数是格式化时间：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;time.h&gt;
+</span><span class='line'>
+</span><span class='line'>size_t strftime(char *restrict buf, size_t masxize, const char *restrict format, const struct tm *restrict tmptr);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>最后一个参数是要格式化的时间值，tm结构指针传递。格式化结果存放在一个长度为maxsize的buf数组中，如果buf长度可以存放格式化结果和一个null终止符，则该函数返回在buf中存放的字符数，否则该函数返回0.</p>
+
+<p>format是格式化字符串。</p>
+
+<p>转换符略。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Your Name</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-29T08:06:39+08:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/linux/'>linux</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2014/03/29/system-data-file-and-info/" data-via="" data-counturl="http://baren.github.io/blog/2014/03/29/system-data-file-and-info/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/03/22/standard-io/" title="Previous Post: apue(标准I/O库)">&laquo; apue(标准I/O库)</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/04/09/process-environment/" title="Next Post: apue(进程环境)">apue(进程环境) &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/08/28/pthread/">apue(线程)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/24/signal/">apue(信号)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/process-relate/">apue(进程关系)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/process-control/">apue(进程控制)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/04/22/python-note/">python杂记</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Your Name -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
+  <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

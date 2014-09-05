@@ -1,0 +1,1613 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Baren Blog</title>
+  <meta name="author" content="Your Name">
+
+  
+  <meta name="description" content="对象身份和类型 内置函数 id() 以整数的方式返回对象的身份。这个整数通常指的是内存的位置，但并不保证，这依赖于实现。 is 操作符用来比较两个对象的身份的。 type() 返回对象的类型。 使用例子： 1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12 # Compare two &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://baren.github.io/posts/2/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Baren Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Baren Blog</a></h1>
+  
+    <h2>A blogging for baren.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:baren.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/02/10/per4-chapter3-type-and-object/">类型和对象(PER4 Chapter 3)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-10T19:33:16+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>对象身份和类型</h1>
+
+<p>内置函数 <em>id()</em> 以整数的方式返回对象的身份。这个整数通常指的是内存的位置，但并不保证，这依赖于实现。</p>
+
+<p><em>is</em> 操作符用来比较两个对象的<em>身份</em>的。</p>
+
+<p><em>type()</em> 返回对象的类型。</p>
+
+<p>使用例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'># Compare two objects 
+</span><span class='line'>def compare(a,b):
+</span><span class='line'>    if a is b:
+</span><span class='line'>        # a和b是同样的对象，也就是身份相同 
+</span><span class='line'>        statements
+</span><span class='line'>    if a == b:
+</span><span class='line'>        # a和b具有同样的值，身份可以不一样，只要值一样 
+</span><span class='line'>        statements
+</span><span class='line'>  if type(a) is type(b):
+</span><span class='line'>      # a和b具有同样的类型 
+</span><span class='line'>      statements
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对象的类型：</p>
+
+<p>对象的类型本身就是一个对象。这个类型对象被称为对象的类。这个类型对象是被唯一定义的，并且给定类型的所有实例的类型都是一样的。因此类型对象之间进行比较，可以使用操作符 <em>is</em> 进行比较。</p>
+
+<p>所有的类型对象都赋予一个名字，可以用来进行类型检查。大多数这种名字都是内置的，比如list、dict等。例如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>if type(s) is list: 
+</span><span class='line'>  s.append(item)
+</span><span class='line'>if type(d) is dict: 
+</span><span class='line'>  d.update(t)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>一个比较好的判断类型的方式是使用内置的<code>isinstance(object, type)</code>函数，因为这个函数是可以识别继承的。比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>if isinstance(s,list): 
+</span><span class='line'>  s.append(item)
+</span><span class='line'>if isinstance(d,dict): 
+</span><span class='line'>  d.update(t)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>引用计数和垃圾回收</h1>
+
+<p>所有的对象都是引用计数的。</p>
+
+<p>只要把对象赋给一个新名字，或者存放在容器中（list、dict等），都会使引用数增加。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>a = 37 # Creates an object with value 37 
+</span><span class='line'>b = a # Increases reference count on 37 
+</span><span class='line'>c = []
+</span><span class='line'>c.append(b) # Increases reference count on 37
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当a赋值给b的时候，值为37的对象的引用数加1；当b存放在容器c中，值为37的对象的引用数加1.</p>
+
+<p>整个例子中，只有一个对象保存了37的值，其它的操作仅仅是创建了一个新的指向这个对象的引用。</p>
+
+<p>这就是引用计数的概念。在考虑引用计数，一定要记住，所有都是对象。</p>
+
+<p>还可以通过操作来减少引用，比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>del a # Decrease reference count of 37 
+</span><span class='line'>b = 42 # Decrease reference count of 37 
+</span><span class='line'>c[0] = 2.0 # Decrease reference count of 37</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以通过函数来查看对象的引用情况：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt;
+</span><span class='line'>&gt;&gt;&gt; a = 37
+</span><span class='line'>&gt;&gt;&gt; import sys
+</span><span class='line'>&gt;&gt;&gt; sys.getrefcount(a)
+</span><span class='line'>7
+</span><span class='line'>&gt;&gt;&gt; sys.getrefcount(37)
+</span><span class='line'>9</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当对象的引用计数到0的时候，就会被垃圾回收。</p>
+
+<p>对于循环引用，其引用计数不为零，但是已经不被使用的对象，解释器会定期执行循环引用检查。发现就会回收。</p>
+
+<h1>引用和拷贝</h1>
+
+<p>拷贝分浅拷贝和深拷贝。</p>
+
+<p>copy模块提供了浅拷贝和深拷贝操作</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>copy.copy(x)
+</span><span class='line'>  Return a shallow copy of x.
+</span><span class='line'>
+</span><span class='line'>copy.deepcopy(x)
+</span><span class='line'>  Return a deep copy of x.</span></code></pre></td></tr></table></div></figure>
+
+
+<p>浅拷贝和深拷贝的区别只与组合对象相关（包含其它对象的对象，比如list等）</p>
+
+<ul>
+<li>浅拷贝构建了一个新的组合对象，然后把从原对象中发现的引用插入到新组合对象中</li>
+<li>深拷贝构建了一个新的组合对象，然后递归的把原对象的拷贝插入到新对象中</li>
+</ul>
+
+
+<p>浅拷贝创建一个引用，包含的元素是原对象包含的元素的引用。比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; a = [1,2,[3,4]]
+</span><span class='line'>&gt;&gt;&gt; b = list(a)
+</span><span class='line'>&gt;&gt;&gt; b is a
+</span><span class='line'>False
+</span><span class='line'>&gt;&gt;&gt; b.append(100)
+</span><span class='line'>&gt;&gt;&gt; b
+</span><span class='line'>[1, 2, [3, 4], 100]
+</span><span class='line'>&gt;&gt;&gt; a
+</span><span class='line'>[1, 2, [3, 4]]
+</span><span class='line'>&gt;&gt;&gt; b[2][0] = -100
+</span><span class='line'>&gt;&gt;&gt; b
+</span><span class='line'>[1, 2, [-100, 4], 100]
+</span><span class='line'>&gt;&gt;&gt; a
+</span><span class='line'>[1, 2, [-100, 4]]
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对dict的浅拷贝，可以使用 dict.copy()，对于list的浅拷贝，可以使用<code>copied_list = original_list[:]</code></p>
+
+<p>深拷贝可以使用copy模块下的deepcopy函数实现：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; import copy
+</span><span class='line'>&gt;&gt;&gt; a = [1, 2, [3, 4]]
+</span><span class='line'>&gt;&gt;&gt; b = copy.deepcopy(a)
+</span><span class='line'>&gt;&gt;&gt; b[2][0] = -100
+</span><span class='line'>&gt;&gt;&gt; b
+</span><span class='line'>[1, 2, [-100, 4]]
+</span><span class='line'>&gt;&gt;&gt; a # Notice that a is unchanged [1, 2, [3, 4]]
+</span><span class='line'>&gt;&gt;&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果一个类想定义自己的浅拷贝和深拷贝实现，可以实现特殊方法<code>__copy__() and __deepcopy__()</code>。前者是在浅拷贝的时候调用（copy.copy(x)）。后者是在深拷贝的时候调用(copy.deepcopy(x))。</p>
+
+<h1>第一类对象</h1>
+
+<p>第一类对象是指可以在执行期创造并作为参数传递给其他函数或存入一个变量的实体。一般第一类对象具有的特征是：</p>
+
+<ul>
+<li>可以被存入变量或其他结构</li>
+<li>可以被作为参数传递给其他函数</li>
+<li>可以被作为函数的返回值</li>
+<li>以在执行期创造，而无需完全在设计期全部写出</li>
+</ul>
+
+
+<p>在python中，所有的对象都是第一类对象。</p>
+
+<p>所有对象都是第一类对象的好处是可以写出很紧凑简洁的代码。</p>
+
+<h1>表示数据的内置类型</h1>
+
+<p>略</p>
+
+<h1>表示程序结构的内置类型</h1>
+
+<h2>可调用类型</h2>
+
+<p>可调用类型表示对象支持函数调用操作。包括用户定义函数，内置函数、实例方法和<strong>类</strong>。</p>
+
+<h3>用户定义函数</h3>
+
+<p>在模块级别创建的，通过def或者lambda操作符创建的用户定义的函数，是可调用的对象。</p>
+
+<p>比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>def foo(x, y):
+</span><span class='line'>  return x + y
+</span><span class='line'>
+</span><span class='line'>foo = lambda x,y: x + y
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用户定义函数的属性包括：</p>
+
+<table>
+<thead>
+<tr>
+<th>描述        </th>
+<th style="text-align:center;"> 描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f.<em> </em>dict_ _ </td>
+<td style="text-align:center;"> 包含函数属性的dict</td>
+</tr>
+<tr>
+<td>f.<em> </em>defaults_ _ </td>
+<td style="text-align:center;"> 包含默认参数的元组</td>
+</tr>
+</tbody>
+</table>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; def foo(x=1, y=1):
+</span><span class='line'>...     return x + y
+</span><span class='line'>...
+</span><span class='line'>&gt;&gt;&gt; foo.__defaults__
+</span><span class='line'>(1, 1)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用户定义的函数的类型是<code>types.FunctionType</code></p>
+
+<p>比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>&gt;&gt;&gt; def foo(x=1, y=1):
+</span><span class='line'>...     return x + y
+</span><span class='line'>...
+</span><span class='line'>
+</span><span class='line'>&gt;&gt;&gt; import types
+</span><span class='line'>&gt;&gt;&gt; type(foo) is types.FunctionType
+</span><span class='line'>True
+</span><span class='line'>&gt;&gt;&gt; type(foo) is types.MethodType
+</span><span class='line'>False</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>方法</h3>
+
+<p>方法是定义在类内部的函数。有三种方法：</p>
+
+<ul>
+<li>实例方法——对对象实例上操作的函数</li>
+<li>类方法——类本身作为一个对象，类方法是在类本身操作的函数</li>
+<li>静态方法——仅仅是个函数，不接收类本身或类的实例作为参数</li>
+</ul>
+
+
+<p>比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>class Foo(object):
+</span><span class='line'>  # 实例方法，第一个参数self
+</span><span class='line'>  def instance_method(self, arg):
+</span><span class='line'>      statements 
+</span><span class='line'>
+</span><span class='line'>  # 类方法， 第一个参数cls
+</span><span class='line'>  @classmethod
+</span><span class='line'>  def class_method(cls, arg): 
+</span><span class='line'>      statements
+</span><span class='line'>
+</span><span class='line'>  # 静态方法，没有self或cls的参数
+</span><span class='line'>  @staticmethod
+</span><span class='line'>  def static_method(arg):
+</span><span class='line'>      statements</span></code></pre></td></tr></table></div></figure>
+
+
+<p>实例方法和类方法都由types.MethodType来表示。</p>
+
+<p>详细了解对象查询属性操作（.）是如何工作的，对理解这种特殊类型是有好处的。</p>
+
+<p>在一个对象上查询什么（.）与函数调用总是分开的，当调用方法时，两个操作都会发生，只是步骤差别。</p>
+
+<ol>
+<li>在实例上查询</li>
+</ol>
+
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>f = Foo() # 创建一个实例
+</span><span class='line'>
+</span><span class='line'>meth = f.instance_method # 查询方法，注意，后面没有括号"()"
+</span><span class='line'>
+</span><span class='line'>meth(37) # 现在调用函数</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面例子中，meth被称为<strong>绑定方法</strong>。绑定函数是一个可调用对象，它包括了函数（method）和相关的实例。</p>
+
+<p>当调用绑定函数时，相关实例会作为第一个参数传递给函数（self）。</p>
+
+<ol>
+<li>在类上查询</li>
+</ol>
+
+
+<p>接上面例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>umeth = Foo.instance_method # 在Foo上查询instance_method
+</span><span class='line'>
+</span><span class='line'>umeth(f,37) # 明确提供self，并且调用
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在这个例子中，umeth被称为未绑定方法。未绑定方法只包含了方法函数，但是需要明确传递正确类型的实例对象作为第一个参数。</p>
+
+<p>在这个例子中，传了Foo的实例f作为第一个参数。</p>
+
+<p>对用户定义的类，绑定方法和未绑定方法都是作为types.MethodType的对象。</p>
+
+<p>下面是方法对象的属性</p>
+
+<table>
+<thead>
+<tr>
+<th>描述        </th>
+<th style="text-align:center;"> 描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>m.<strong>class</strong> </td>
+<td style="text-align:center;"> 函数定义的类</td>
+</tr>
+<tr>
+<td>m.<strong>func</strong> </td>
+<td style="text-align:center;"> 实现方法的函数对象</td>
+</tr>
+<tr>
+<td>m.<strong>self</strong> </td>
+<td style="text-align:center;"> 与方法相关的实例，如果没有，返回None</td>
+</tr>
+</tbody>
+</table>
+
+
+<h3>内置函数和方法</h3>
+
+<p>对象types.BuiltinFunctionType用来描述用c或c++实现的函数和方法。属性和上面类似。</p>
+
+<h3>类和实例作为可调用对象</h3>
+
+<p>类对象和实例也可以作为可调用对象。一个类对象被<code>class</code>创建，可以作为一个函数来调用，用来创建类的实例。这种情况下，传递的参数会传递给<strong>init</strong>方法中，用来初始化实例对象。</p>
+
+<p>如果一个实例实现了<strong>call</strong>方法，那么这个实例也可以模拟函数调用。如果对象x定义了<strong>call</strong>函数，那么x(args)会调用x.<strong>call</strong>(args)。</p>
+
+<h2>类、类型和实例</h2>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax/">python词法约定和语法(PER4 Chapter 2)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-08T10:33:00+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>行结构和缩进</h1>
+
+<p>python中，每一行用换行符来结束，如果一行太长，可以使用<em>行继续操作符“\”</em>来分割，比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>a = math.cos(3 * (x - n)) + \ 
+</span><span class='line'>  math.sin(3 * (y - n))</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在(&hellip;), [&hellip;], {&hellip;}, &ldquo;&rdquo;&ldquo;&hellip;&rdquo;&ldquo;&#8221;和&#8217;&lsquo;&rsquo;&hellip;&lsquo;&rsquo;&lsquo;之间的代码，如果跨越多行，可以不用这个操作符。</p>
+
+<p>如果函数、条件、循环或者类的代码体只有一行语句，可以放在同一行中，比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>if a:    statement1
+</span><span class='line'>else: statement2</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果多个语句放在一行，可以使用&#8221;;&ldquo;来分割。</p>
+
+<h1>标识符</h1>
+
+<ul>
+<li>以下划线开头的标识符是不会被导入语句<code>from module import *</code>导入的。</li>
+<li>前后有两个下划线的标识符（比如<code>__init__</code>），是为特殊方法保留的。</li>
+<li>前面有两个下划线的标识符（比如<code>__bar</code>），为了实现私有的类成员。</li>
+</ul>
+
+
+<h1>数字字面量</h1>
+
+<p>有四种数字类型：</p>
+
+<ul>
+<li>布尔</li>
+<li>整数</li>
+<li>浮点数</li>
+<li>复数</li>
+</ul>
+
+
+<p>作为布尔值的True和False被解释成1和0.</p>
+
+<p>除了十进制，还可以把整数指定为八进制、十六进制和二进制，分别用前缀0、0x和0b（比如：0644, 0x100fea8, or 0b11101010）</p>
+
+<p>python的整数没有限制，可以任意写。</p>
+
+<h1>字符串字面量</h1>
+
+<p>字符串字面常量使用单引号（&#8217;）、双引号（&#8221;）或者三个引号（&#8217;&lsquo;&#8217;或者&#8221;&ldquo;&#8221;）括起来。</p>
+
+<p>在字面常量内，反斜线（\）字符可以被用来特殊字符比如换行，反斜线自己，引号和不能打印的字符。如果转义字符不能识别，则保留原样。</p>
+
+<p>除了\r \n等常用的转移字符外，几个不常用的列到下：</p>
+
+<ul>
+<li>\OOO              八进制值，后面三个数字。（\000 到 \377，\377的十进制值是255）</li>
+<li>\uxxxx            Unicode字符，x是十六进制字符（\u0000到\uffff）</li>
+<li>\Uxxxxxxxx        Unicode字符（\U00000000到\Uffffffff）</li>
+<li>\xhh              十六进制值（\x00到\xff，\xff的值是255）</li>
+</ul>
+
+
+<p>\OOO和\xhh的用法是在字符串内嵌入不能够容易的打出的字符（控制字符，不能打印字符，符号和国际化字符等）。比如：</p>
+
+<p>如果写字符串“Jalapeño”，可以&#8221;Jalape\xf1o&#8221; \xf1就是字符ñ。</p>
+
+<p>在python 2中，字符串字面量对应的是8-bit的字符或者说面向字节的数据。为了能够使用国际化字符集，需要在字符串前面前缀一个字符“u”</p>
+
+<p>不管使用哪种字符串，可以使用\u或者\U来嵌入一个国际化字符到字符串中。</p>
+
+<p>原始字符串，在字符串前缀一个“r”字符。原始字符串中，所有的反斜线字符串都不转义，原样保存。这种字符串，多用在正则表达式中。</p>
+
+<p>如果一个字符串前缀既有u又有r，则r必须在u之后。比如<code>ur"\\u1234"</code></p>
+
+<p>注意：</p>
+
+<blockquote><p>当使用utf-8和utf-16对字符串字面量进行编码时，不能够使用原始的byte的数据，比如直接写一个utf-8编码的字符串字面量&#8217;Jalape\xc3\xb1o&#8217;，以为简单的表示9个字符。
+但是实际上可能不是想的那样。因为在utf-8编码中，多个byte序列\xc3\xb1表示单一字符U+00F1。而不是这两个字符U+00C3 和 U+00B1。
+为了能让这样的字符串进行编码，需要在字符串前面前缀一个字符“b”，比如：b&#8221;Jalape\xc3\xb1o&#8221;。</p>
+
+<p>正常情况下，很少用到这种（byte literals）字符串字面常量</p></blockquote>
+
+<h1>文档字符串</h1>
+
+<p>模块、类和函数的第一行语句是个字符串，那这个字符串变成这个对象的文档字符串。比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>def fact(n):
+</span><span class='line'>  "This function computes a factorial" 
+</span><span class='line'>  if (n &lt;= 1): return 1
+</span><span class='line'>  else: return n * fact(n - 1)</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; print fact.__doc__
+</span><span class='line'>This function computes a factorial 
+</span><span class='line'>&gt;&gt;&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>源代码编码</h1>
+
+<p>为了让python的源代码以不同的编码方式编码，需要在源代码的前面两行包含：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#!/usr/bin/env python 
+</span><span class='line'># -*- coding: UTF-8 -*-
+</span><span class='line'>s = "Jalapeño" # String in quotes is directly encoded in UTF-8.</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当这样指定后，注释、字符串字面量，可以直接在识别unicode的编辑器中输入。但是其它的，包括标识符，都必须是ascii的字符。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/01/26/chapter-9-linux-programming-interface/">进程凭据(chapter 9 Linux Programming Interface)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-26T10:33:32+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>每一个进程，都有一组与之关联的数字的用户ID和组ID。有时候这些ID被成为进程凭据（process credentials），这些ID包含：</p>
+
+<ul>
+<li>实际用户ID和实际组ID</li>
+<li>有效用户ID和有效组ID</li>
+<li>保存的设置用户ID和保存的设置组ID</li>
+<li>文件系统用户ID和组ID（linux特定的）</li>
+<li>补充组ID（supplementary group IDs）</li>
+</ul>
+
+
+<h2>实际用户ID和实际组ID</h2>
+
+<p>实际用户和组ID标记了进程属于哪个用户或者组ID。其值是登陆用户的id和组id。作为登陆进程的一部分，shell读取登陆口令中的用户ID和组ID。同时在shell执行的程序会继承这个实际用户ID和组ID。</p>
+
+<h2>有效用户ID和有效组ID</h2>
+
+<p>在大多数的Unix实现中，当进程执行这种操作时，有效用户id和有效组id加上补充的组id（supplementary group IDs）联合起来决定进程所具有的权限（linux稍微不同）。</p>
+
+<ul>
+<li>如果进程有效用户ID是0（root的id），拥有所有超级用户权限。这种进程被称为特权进程，许多系统进程只能被特权进程调用</li>
+<li>正常情况下，进程有效用户id和有效组id与实际用户id和实际组id是一样的。</li>
+</ul>
+
+
+<p>有两种方式可以修改进程的有效用户（组）id：</p>
+
+<ul>
+<li>通过系统调用。</li>
+<li>执行set-user-ID和set-group-ID的程序。</li>
+</ul>
+
+
+<h2>set-user-ID和set-group-ID的程序</h2>
+
+<p>通过把进程的有效用户id和有效组id设置为可执行文件的用户id和组id，可以使进程拥有正常情况下没有的权限。</p>
+
+<p>一般文件，除了表示文件拥有关系的用户id和组id外，还有两个特殊的权限位：<em>set-user-ID</em> 和 <em>set-group-ID</em>。可以通过chmod来修改这两个位：</p>
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'># ls -l prog
+</span><span class='line'>-rwxr-xr-x 1 root root 
+</span><span class='line'># chmod u+s prog  打开set-user-ID权限位
+</span><span class='line'># chmod g+s prog  打开set-group-ID权限位
+</span><span class='line'># ls -l prog
+</span><span class='line'>-rwsr-sr-x 1 root root 302585 Jun 26 15:05 prog</span></code></pre></td></tr></table></div></figure>
+
+
+<p>修改密码程序passwd，mount和Unmount等都设置色set-user-id权限位。</p>
+
+<h2>保存的Set-User-ID和保存的Set-Group-ID</h2>
+
+<p>保存的Set-User-ID和保存的Set-Group-ID被设计成让设置了Set-User-ID和Set-Group-ID的程序用的。执行步骤：
+1. 如果执行文件的Set-User-ID和Set-Group-ID权限位被设置了。则进程有效用户id和有效组id改成改文件的用户id和组id。如果这个权限位没有设置，则没有任何改变。
+2. 保存的Set-Group-ID和保存的Set-User-ID值，拷贝自进程的有效用户id和有效组id。不管Set-User-ID和Set-Group-ID权限位设不设置，拷贝过程都会执行。</p>
+
+<p>如果一个进程的实际用户id、有效用户id和保存的设置用户id都是1000.当它执行了一个root拥有的set-user-ID的程序，执行后，进程的实际、有效和保存的设置用户id分别是：</p>
+
+<p>1000、0、0</p>
+
+<p>许多系统调用允许set-user-ID的程序在实际用户id和保存用户id之间进行切换。这时，程序可以临时性的获取或者抛弃与可执行文件相关联的用户id的特殊权限。这是一种安全的编程实践。</p>
+
+<h2>文件系统用户id和文件系统组id</h2>
+
+<p>在linux系统上，操作文件的权限，不是根据进程的有效用户（组）id来确定的，而是根据文件系统的用户（组）id判断，其它操作，仍然用有效用户（组）id来进行权限判断。</p>
+
+<p>正常情况下，文件系统用户（组）id与进程的有效用户（组）id是一样的。当进程的有效用户（组）id被修改时，不管是通过系统调用或者是通过执行set-user（group）-ID的程序，文件系统的用户（组）id也会跟着修改成同样的值。这意味着，linux与其它unix的实现，在行为上市一致的，除了在明确调用setfsuid() and setfsgid()两个系统调用的时候。</p>
+
+<p>由于在表现上，文件系统用户（组）id与进程有效的用户id和组id是一样的，因此虽然在底层，操作文件时，linux是用文件系统的用户（组）id来判断权限的，我们只关心进程的有效用户（组）id即可。</p>
+
+<h2>补充的组ids（Supplementary Group IDs）</h2>
+
+<p>补充的组ids是一个额外的进程所属于的组的集合。</p>
+
+<p>新进程会从父进程中继承这些组ids。一个登录shell进程从系统组文件（system group file）获取其补充组ids。这些ids与有效用户（组）id来检查进程的操作权限。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/30/fileio-further-details/">Linux文件io进一步描述</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-30T13:15:19+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>原子性和条件竞争</h2>
+
+<p>所有系统调用都是原子执行的。原子执行避免了条件竞争。所谓条件竞争，指的是两个进程，在共享资源上操作，产生的结果依赖于两个进程的执行顺序。</p>
+
+<h3>排他性创建文件</h3>
+
+<p>在调用open系统调用函数时，如果文件存在，则如果指定O_EXCL和O_CREAT会导致open失败。这就为进程提供了一种确保是他创建了文件的方式。
+如果没有这个选项，则一般是先检查文件存在不存在，如果不存在，就创建一个文件。由于是check-if-absent方式，产生条件竞争。</p>
+
+<h3>追加文件内容</h3>
+
+<p>如果多个进程往一个文件中追加数据（比如一个全局日志文件），通常的做法是lseek到文件末尾，然后write，比如：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">lseek</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">SEEK_END</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;lseek&quot;</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">write</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">len</span><span class="p">)</span> <span class="o">!=</span> <span class="n">len</span><span class="p">)</span> 
+        <span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Partial/failed write&quot;</span><span class="p">);</span></code></pre></div>
+
+
+<p>这也产生了条件竞争。</p>
+
+<p>解决这个问题的方法，就是使用open函数的O_APPEND设置。</p>
+
+<h2>fcntl()文件控制操作</h2>
+
+<p>函数定义：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &lt;fcntl.h&gt;</span>
+    <span class="kt">int</span> <span class="nf">fcntl</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cmd</span><span class="p">,</span> <span class="p">...);</span></code></pre></div>
+
+
+<h3>获得打开文件的状态标记（flag）</h3>
+
+<p>open函数的定义是：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">open</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">path</span><span class="p">,</span> <span class="kt">int</span> <span class="n">oflag</span><span class="p">,</span> <span class="p">...</span> <span class="p">);</span></code></pre></div>
+
+
+<p>使用fcntl系统调用，可以获取文件或者修改文件的状态标记（标记的值是在open时由参数设置的）。</p>
+
+<p>比如下面代码：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="n">flags</span><span class="p">,</span> <span class="n">accessMode</span><span class="p">;</span>
+<span class="n">flags</span> <span class="o">=</span> <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_GETFL</span><span class="p">);</span> <span class="cm">/* Third argument is not required */</span> 
+<span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span></code></pre></div>
+
+
+<p>获得flags后，可以检查是否具有某种标记：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">O_SYNC</span><span class="p">)</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;writes are synchronized</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span></code></pre></div>
+
+
+<p>但是，对于O_RDONLY (0), O_WRONLY (1), and O_RDWR (2)，使用上面这种方式判断就不行（O_RDONLY的值是0，怎么&amp;，都是0；写功能，两个值wronly和rdwr都具有写功能，读功能，rdonly和rdwr都具有读功能）。</p>
+
+<p>为了判断，可以使用O_ACCMODE(3),比如下面代码：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">accessMode</span> <span class="o">=</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">O_ACCMODE</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">accessMode</span> <span class="o">==</span> <span class="n">O_WRONLY</span> <span class="o">||</span> <span class="n">accessMode</span> <span class="o">==</span> <span class="n">O_RDWR</span><span class="p">)</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;file is writable</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span></code></pre></div>
+
+
+<p>还可以使用F_SETFL来修改已打开文件的标记。可修改的标记为：O_APPEND, O_NONBLOCK, O_NOATIME, O_ASYNC, and O_DIRECT，试图修改其它会被忽略。</p>
+
+<p>设置标记的办法是先获取标记，再设置，比如：</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
+<span class="n">flags</span> <span class="o">=</span> <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_GETFL</span><span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span>
+<span class="n">flags</span> <span class="o">|=</span> <span class="n">O_APPEND</span><span class="p">;</span>
+<span class="k">if</span> <span class="p">(</span><span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_SETFL</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span></code></pre></div>
+
+
+<h2>文件描述符和打开文件的关系</h2>
+
+<p>内核维护的三个数据结构：</p>
+
+<ul>
+<li>一个进程一个文件描述符表(<a href="http://en.wikipedia.org/wiki/Array_data_structure">Array data type</a>)</li>
+<li>系统级别的打开的文件描述符的表</li>
+<li>文件系统的i-node表</li>
+</ul>
+
+
+<p>对于每一个进程，内核都维护了这个进程打开的文件描述符表。每一个表项包含的信息是：</p>
+
+<ul>
+<li>控制操作文件描述符的标记集。其实就是一个标记close-on-exec</li>
+<li>一个指向打开的文件描述符（存储在open file table中的记录，也就是系统级别的打开的文件描述符的表项）的引用。</li>
+</ul>
+
+
+<p>内核维护了一个系统级别的所有的打开文件描述符（通常叫做<em>open file table</em>，其表项一般被称做open file handles）的表。
+一个打开文件描述符存储了关于打开文件的所有信息，包括：</p>
+
+<ul>
+<li>当前文件的偏移（read()和write()会更新这个值，或者通过lseek()指定）</li>
+<li>当打开文件指定的状态标记（比如open()函数的flags参数）</li>
+<li>文件访问模式（read-only，write-only或者read-write）</li>
+<li>一个指向这个文件的i-node对象的引用</li>
+</ul>
+
+
+<blockquote><p> #include &lt;sys/stat.h></p>
+
+<p> #include &lt;fcntl.h></p>
+
+<p> int open(const char <em>pathname, int flags, &hellip; /</em> mode_t mode */);</p>
+
+<table>
+<thead>
+<tr>
+<th>Access mode </th>
+<th style="text-align:center;"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O_RDONLY    </td>
+<td style="text-align:center;"> Open the file for reading only</td>
+</tr>
+<tr>
+<td>O_WRONLY    </td>
+<td style="text-align:center;"> Open the file for writing only</td>
+</tr>
+<tr>
+<td>O_RDWR      </td>
+<td style="text-align:center;"> Open the file for both reading and writing</td>
+</tr>
+</tbody>
+</table>
+
+
+<table>
+<thead>
+<tr>
+<th>File creation flags </th>
+<th style="text-align:center;"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O_CLOEXEC    </td>
+<td style="text-align:center;"> Set the close-on-exec flag (since Linux 2.6.23)</td>
+</tr>
+<tr>
+<td>O_CREAT      </td>
+<td style="text-align:center;"> Create file if it doesn’t already exist </td>
+</tr>
+<tr>
+<td>O_DIRECT     </td>
+<td style="text-align:center;"> File I/O bypasses buffer cache</td>
+</tr>
+<tr>
+<td>O_DIRECTORY  </td>
+<td style="text-align:center;"> Fail if pathname is not a directory </td>
+</tr>
+<tr>
+<td>O_EXCL       </td>
+<td style="text-align:center;"> With O_CREAT: create file exclusively </td>
+</tr>
+<tr>
+<td>O_LARGEFILE  </td>
+<td style="text-align:center;"> Used on 32-bit systems to open large files </td>
+</tr>
+<tr>
+<td>O_NOATIME    </td>
+<td style="text-align:center;"> Don’t update file last access time on read() (since Linux 2.6.8) </td>
+</tr>
+<tr>
+<td>O_NOCTTY     </td>
+<td style="text-align:center;"> Don’t let pathname become the controlling terminal </td>
+</tr>
+<tr>
+<td>O_NOFOLLOW   </td>
+<td style="text-align:center;"> Don’t dereference symbolic links </td>
+</tr>
+<tr>
+<td>O_TRUNC      </td>
+<td style="text-align:center;"> Truncate existing file to zero length </td>
+</tr>
+</tbody>
+</table>
+
+
+<table>
+<thead>
+<tr>
+<th> file status flags </th>
+<th style="text-align:center;"> Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O_APPEND    </td>
+<td style="text-align:center;"> Writes are always appended to end of file</td>
+</tr>
+<tr>
+<td>O_ASYNC    </td>
+<td style="text-align:center;"> Generate a signal when I/O is possible</td>
+</tr>
+<tr>
+<td>O_DSYNC     </td>
+<td style="text-align:center;"> Provide synchronized I/O data integrity (since Linux 2.6.33)</td>
+</tr>
+<tr>
+<td>O_NONBLOCK      </td>
+<td style="text-align:center;"> Open in nonblocking mode</td>
+</tr>
+<tr>
+<td>O_SYNC      </td>
+<td style="text-align:center;"> Make file writes synchronous</td>
+</tr>
+</tbody>
+</table>
+</blockquote>
+
+<p>每一个文件的i-node包含的信息有：</p>
+
+<ul>
+<li>文件类型（正常文件、socket或者FIFO）和文件权限</li>
+<li>一个指向加在这个文件上的锁列表的指针</li>
+<li>各种文件属性，包括文件大小，和不同操作相关的时间。</li>
+</ul>
+
+
+<blockquote><p>i-node在磁盘上的描述和在内存中的描述不一样。如果在磁盘上，则记录了一个文件的持久化属性。比如类型、大小和权限等。
+i-node在内存的描述，记录了打开的文件描述符指向这个i-node节点的数目、这个i-node所在的磁盘的主要（major）和次要（minor）的ID，还记录的一些短暂的属性，比如加在文件上的锁等。</p></blockquote>
+
+<p>如图：
+<img src="/images/assets/Figure5-2.png" title="Relationship between file descriptors, open file descriptions, and i-nodes" alt="alt text" /></p>
+
+<p>根据上面描述，得出下面几个隐含的意思来：</p>
+
+<ul>
+<li>两个不同的文件描述符引用同一个文件，则他们共享同一个文件偏移量。</li>
+<li>同样规则也适用于使用fcntl()函数获取或者修改文件状态标记（上面表格中的file status flags,比如O_APPEND, O_NONBLOCK, O_ASYNC）</li>
+<li>文件描述符标记（close-on-exec）则是私有的，修改它不会影响到其他的。</li>
+</ul>
+
+
+<h2>dup文件描述符</h2>
+
+<p>使用shell的I/O重定向语法 <em>2>&amp;1</em> 时，会通知shell，我们想要标准错误输出，输出到与标准输出到同一个地方。shell是从左到右计算I/O导向的。因此，下面的shell：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ ./myscript &gt; results.log 2&gt;&1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>会将标准输出输出到与标准输出同一个位置，也即results.log。</p>
+
+<p>为了实现这个效果，使用dup和dup2两个函数。</p>
+
+<blockquote><p>如果不使用这两个函数，简单的打开results.log两次，一次使用文件描述符1，一次使用文件描述符2.这是不够的。因为从上面图可以看出，打开两次文件，这两个文件描述符并不共享同一个文件的offset，因此两个会相互覆盖。另一个原因是打开文件不一定是磁盘文件，比如$ ./myscript  2>&amp;1 | less</p></blockquote>
+
+<p>下面是dup的声明：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int dup(int oldfd);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>dup函数接收一个已经打开的文件描述符oldfd，返回一个指向同一个文件的新的文件描述符。如果失败，则返回-1.返回的新的文件描述符保证使用最小的未使用的文件描述符。</p>
+
+<p>为了实现上面shell的命令，可以这样：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/*前提是文件描述符0已经被使用*/
+</span><span class='line'>close(2);
+</span><span class='line'>int newfd = dup(1)
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>为了方便实现这个功能，还有个dup2函数：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>int dup2(int oldfd, int newfd);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>dup2函数使用给定的newfd来复制已经打开的旧的文件描述符oldfd。返回的是新的文件描述符。</p>
+
+<p>还可以使用fcntl函数来完成dup命令，保证使用的新文件描述符大于等于指定的文件描述符：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>newfd = fcntl(oldfd, F_DUPFD, startfd);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这在保证在特定范围内dup文件描述符是有用的。</p>
+
+<h2>pread()和pwrite()在指定offset进行I/O操作</h2>
+
+<p>使用pread和pwrite，可以在指定的offset完成读和写操作，而不会影响文件的原始offset的值。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>/*返回读得字节数，如果到EOF，为0；如果错误，返回-1*/
+</span><span class='line'>ssize_t pread(int fd, void *buf, size_t count, off_t offset);
+</span><span class='line'>
+</span><span class='line'>/*返回写入的字节数，-1表示错误*/
+</span><span class='line'>ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>使用pread和pwrite函数，传入的文件描述符必须是可seek的。</p>
+
+<p>注意：
+使用pread和pwrite在多线程环境下，可以避免条件竞争。如果使用lseek、write这种方式写文件，会产生条件竞争。使用pwrite，则多个线程会避免条件竞争。</p></blockquote>
+
+<h2>Scatter-Gather I/O: readv() 和 writev()</h2>
+
+<p>readv和writev函数定义：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/uio.h&gt;
+</span><span class='line'>
+</span><span class='line'>ssize_t readv(int fd, const struct iovec *iov, int iovcnt);
+</span><span class='line'>
+</span><span class='line'>ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>与read只读取数据到一个buffer不同，readv可以一次性把读取的数据分散（scatter）到多个buffer中。iov是一个数组，数组的每个元素是一个结构，结构类型是struct iovec。buffer的个数有iovcnt指定。</p>
+
+<p>struct iovec的定义是：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>struct iovec {
+</span><span class='line'>  void *iov_base; /* 缓存的起始地址 */
+</span><span class='line'>  size_t iov_len; /* Number of bytes to transfer to/from buffer */
+</span><span class='line'>};
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>下图描述了iov参数和iovcnt参数的关系：
+<img src="/images/assets/Figure5-3.png" title="Relationship between readv iov and iovcnt parameter" alt="alt text" /></p>
+
+<h3>分散输入（scatter input）</h3>
+
+<p>readv系统调用完成了<em>scatter input</em>，读取由fd指定的文件的持续的字节序列，然后顺序的把这些数据写入到由iov参数指定的buffer中。所有的这些buffer，从iov[0]开始，会被完全的写满之后，才会继续写入下一个buffer。</p>
+
+<p>注意：
+一个readv的重要的属性是，这些都是完全自动的。从调用者角度，内核会把一连续的字节序列写入到buffer中。意味着，如果从一个文件中读取数据时，能够确保读入的数据是连续的，即使在这其间，有其它线程试图修改同一个文件的offset，也不会影响。</p>
+
+<p>readv返回读取的数据的字节数。调用者需要自己检查一下。</p>
+
+<h3>聚集输出（gather output）</h3>
+
+<p>writev系统调用完成了<em>gather output</em>。参数意义与readv类似。</p>
+
+<p>与write一样，writev也可能只写入部分，因此需要检查是否请求的数据全部被写入了。</p>
+
+<h3>writev和readv的原因</h3>
+
+<p>主要原因还是</p>
+
+<pre><code>1. 易用性
+2. 性能
+</code></pre>
+
+<p>使用场景，比如：
+    * 如果需要调用一系列的write函数来输出buffer数据时</p>
+
+<h2>截断一个文件truncate()和ftruncate()</h2>
+
+<p>截断一个文件，两个函数定义如下：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>int truncate(const char *pathname, off_t length); 
+</span><span class='line'>
+</span><span class='line'>int ftruncate(int fd, off_t length);</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这两个函数不会对文件的offset有影响。</p>
+
+<h2>非阻塞I/O</h2>
+
+<p>当打开一个文件，指定O_NONBLOCK标记时，主要有两种目的：</p>
+
+<ul>
+<li>如果文件不能立即被打开，open()函数会返回错误，而不是一直阻塞着。</li>
+<li>如果open()打开成功，随后的I/O操作仍然是非阻塞的。</li>
+</ul>
+
+
+<p>非阻塞模式可以用于设备、FIFO（命名管道，用于Linux进程通信）、socket。由于管道和socket的文件描述符
+不能够通过open()获得，因此我们必须使用 fcntl() F_SETFL操作来使这个标记可用。</p>
+
+<p>注意：</p>
+
+<blockquote><p>O_NONBLOCK对于普通文件是忽略的。因此linux的内核的buffer确保了普通文件的I/O是非阻塞的。</p></blockquote>
+
+<h2>I/O大文件</h2>
+
+<p>linux使用off_t数据类型来存储文件的offset，off_t使用有符号的长整型来描述（之所以有符号，是方便用-1表示失败）。
+因此在32位机器上，一个文件的最大限制是2<sup>31</sup>-1 byte。</p>
+
+<p>为了在32位机器上实现大文件操作，厂商提供了Large File Summit (LFS)概念。linux自从2.4开始支持LFS。为了支持大文件，文件系统也需要支持。大部分linux文件系统都支持（微软的VFAT and NFSv2都不支持）</p>
+
+<p>为了在linux操作大文件，有两种方法：</p>
+
+<ul>
+<li>采用支持大文件的替换的API，也就是ransitional LFS API。</li>
+<li>在编译我们代码时，定义宏_FILE_OFFSET_BITS的值为64.这种方式是推荐的方式。</li>
+</ul>
+
+
+<h3>使用LSF API</h3>
+
+<p>采用过渡的LFS API时，在编译时，需要测试_LARGEFILE64_SOURCE的宏（命令行或者源文件）。这组API可以处理64位的文件大小和offset。这组api的函数名字后面都有64.比如：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>fopen64(), open64(), lseek64(), truncate64(), stat64(), mmap64(), and setrlimit64()</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>使用_FILE_OFFSET_BITS</h3>
+
+<p>推荐的方式是定义_FILE_OFFSET_BITS宏的值为64.
+这会自动的替换32位函数和数据类型到64位的函数和数据类型。这意味这，我们可以重新编译以前写好的文件来支持大文件。</p>
+
+<p>只遗留了一个问题，就是打印off_t 的值的时候，需要使用lld%来正确的显示off_t的值。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#define _FILE_OFFSET_BITS 64
+</span><span class='line'>
+</span><span class='line'>off_t offset; /* Will be 64 bits, the size of 'long long' */ 
+</span><span class='line'>
+</span><span class='line'>/* Other code assigning a value to 'offset' */
+</span><span class='line'>printf("offset=%lld\n", (long long) offset);</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>/dev/fd 目录</h2>
+
+<p>对于每一个进程，内核提供了一个虚拟目录/dev/fd ，这个目录包含的文件形式是<em>/dev/fd/n</em>。n对应的进程中的打开的文件描述符。因此使用/dev/fd/n或者fd都可以指向一个文件。</p>
+
+<p>但是在程序内很少使用这种方式，一般只在shell中使用。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/23/the-universal-io-model/">FiFe I/O 通用的I/O模型</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-23T14:36:16+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>总述</h2>
+
+<p>所有完成IO的系统调用，都是使用文件描述符（file descriptor）来引用一个文件。文件描述符用来引用打开的所有类型文件，包括管道、socket、设备等。每个进程都有自己的文件描述符集。</p>
+
+<p>根据惯例，大多数的应用程序都希望打开三个标准的文件描述符（标准输入、输出和错误）。这三个文集描述符，一般是由在程序启动之前启动的shell程序打开的。</p>
+
+<table>
+<thead>
+<tr>
+<th> 文件描述符        </th>
+<th style="text-align:center;"> POSIX 名称（在unistd.h头文件中定义）           </th>
+<th style="text-align:right;"> 描述  </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> 0      </td>
+<td style="text-align:center;"> STDIN_FILENO </td>
+<td style="text-align:right;"> 标准输入 </td>
+</tr>
+<tr>
+<td> 1     </td>
+<td style="text-align:center;"> STDOUT_FILENO      </td>
+<td style="text-align:right;">   标准输出 </td>
+</tr>
+<tr>
+<td> 2 </td>
+<td style="text-align:center;"> STDERR_FILENO     </td>
+<td style="text-align:right;">    标准错误 </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>在程序中，既可以使用数字，也可以使用posix的名称来指向这几个文件描述符。</p>
+
+<p>下面是四个关键的完成IO的系统调用：
+* fd = open(pathname, flags, mode) 。通过制定flags参数，open函数既可以打开文件，也可以创建文件。如果创建文件，mode参数用来指定创建文件的访问权限。如果不是用来创建文件，可以忽略mode这个文件。SUSv3规定，如果open成功，他保证使用这个进程的最小的没有使用的文件描述符。
+* numread = read(fd, buffer, count)。读取fd引用的文件，最多读取count个字节，返回的是实际读取的字节数，如果到了文件末尾，返回0。
+* numwritten = write(fd, buffer, count)。从buffer中，写入count个字节数据到fd所指向的文件中。返回的是实际写入的字节数，有可能小于count。
+* status = close(fd) 。释放文件描述符，以及相关的内核资源</p>
+
+<h2>I/O通用性</h2>
+
+<p>所谓通用性，是指这四个函数可以作用于所有的类型文件，来完成IO操作。这些文件包括管道、设备、socket等。</p>
+
+<p>如果需要使用特定类型文件特有的功能，可以使用ioctl系统调用，它提供了所有通用功能以外的特定功能。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/17/linux-open-max-fd-num/">Linux最大文件描述符设置</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-17T14:36:20+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>在linux中，所有都是文件，也就是说一个连接也是一个文件。每打开一个文件，内核会分配一个文件描述符，因此一个进程可打开的最大文件描述符决定了可支持的最大连接数。这是一个重要的参数。</p>
+
+<p>linux有两个限制：</p>
+
+<pre><code>1、系统级限制。限制了整个系统可打开的最大文件描述符
+
+2、每个进程的限制。一个应用可打开的最大文件描述符
+</code></pre>
+
+<p>对于系统限制，可以通过这个查看：</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>cat /proc/sys/fs/file-max
+131072
+<span class="nv">$ </span>cat /proc/sys/fs/file-nr 
+<span class="m">510</span>     <span class="m">0</span>       131072</code></pre></div>
+
+
+<p>其中，file-nr返回结果意思是：
+    510，已打开的文件句柄
+    0，已分配但是没有用的文件句柄
+    131072，系统支持最大的文件句柄数</p>
+
+<p>其中，系统支持的最大的文件句柄数还可以用</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">cat /proc/sys/fs/file-max（或者sysctl fs.file-max）</code></pre></div>
+
+
+<p>来查看。</p>
+
+<p>修改系统限制，可以这样修改：</p>
+
+<p>修改文件/etc/sysctl.conf 中的</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash">fs.file-max <span class="o">=</span> 100000</code></pre></div>
+
+
+<p>一行，保存后，让用户重新登录一下，即可永久生效；或者执行sysctl -p命令。</p>
+
+<p>对于用户级限制，可以通过下面命令查看：</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span><span class="nb">ulimit</span> -Hn
+65536
+
+<span class="nv">$ </span><span class="nb">ulimit</span> -Sn
+20240</code></pre></div>
+
+
+<p>其中，
+-H是硬限制. -S是软限制。区别是软限制，任何进程都可以修改，但是硬限制，只允许root权限用户修改。</p>
+
+<p>如果要修改默认的用户级限制，可以编辑文件/etc/security/limits.conf
+比如：</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="c"># End of file</span>
+    * soft nproc 20240
+    * hard nproc 16384
+    * soft nofile 20240
+    * hard nofile 65536</code></pre></div>
+
+
+<p>解释如下：
+第一列的意思是设置针对哪些用户生效，* 表示针对所有用户，但是，它不包含root，因此，如果要对root用户有效，需要增加root用户，也就是后面两行。</p>
+
+<p>第二列，要么是soft，要么是hard，hard只允许root修改，soft允许普通用户修改，最大是hard设定的值。</p>
+
+<p>第三列，包含了要被限制的资源的类型。nofile表示打开的文件数，nproc表示进程数。</p>
+
+<p>第四列，表示设置的值。</p>
+
+<p>临时设置：</p>
+
+<p>如果不想永久设置，还可以使用下面命令临时设置：</p>
+
+<div class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">ulimit</span> -n 65536</code></pre></div>
+
+
+<p>这样，只影响当前登录用户，下次重新登录后失效</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+    <a class="next" href="1">Newer &rarr;</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/08/28/pthread/">apue(线程)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/24/signal/">apue(信号)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/process-relate/">apue(进程关系)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/process-control/">apue(进程控制)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/04/22/python-note/">python杂记</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Your Name -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
+  <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
