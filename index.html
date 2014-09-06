@@ -9,10 +9,15 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="代码高亮语法 { % codeblock [lang:language] [title] [url] [link text] % }
-code snippet
-{ % endcodeblock % } 例子： Javascript Array SyntaxMDN Documentation 1
-2 &hellip;">
+  <meta name="description" content="程序结构和执行 python程序被组织为一个语句序列。所有的语言特性，包括变量赋值、函数定义、类定义和模块导入等，都是语句，都是与其他语句具有相同状态。 因此所有语句都可以放置在程序的任何地方。 比如： 1
+2
+3
+4
+5
+6
+7
+8
+if debug: def square(x): if not &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -67,6 +72,78 @@ code snippet
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-06T21:56:14+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>程序结构和执行</h1>
+
+<p>python程序被组织为一个语句序列。所有的语言特性，包括变量赋值、函数定义、类定义和模块导入等，都是语句，都是与其他语句具有相同状态。</p>
+
+<p>因此所有语句都可以放置在程序的任何地方。</p>
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span class='line'>      <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="nb">float</span><span class="p">):</span>
+</span><span class='line'>          <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Expected a float&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
+</span><span class='line'><span class="k">else</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>当加载文件时，python解释器顺序的执行每一条语句，知道不能执行为止。</p>
+
+<p>这种执行方式对于简单的作为主程序执行，或者经过import进行导入是一致的。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -650,64 +727,6 @@ chown改变该终端的所有权，使登录用户成为它的所有者
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/22/standard-io/">apue(标准I/O库)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-22T20:06:00+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>流和FILE对象</h1>
-
-<h2>流介绍</h2>
-
-<p>对于标准I/O库，他们的操作是围绕<em>流</em>进行的。</p>
-
-<p>与JAVA使用Stream类来代表流不一样，标准I/O采用结构体FILE来代表流，由于大多数标准库的函数使用FILE <em>来作为参数，因此也用</em>文件指针*来代称流。</p>
-
-<p>struct FILE结构体在stdio.h中做了声明：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>typedef struct _sFILE{...} FILE;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>数据类型FILE
-    > 代表流对象，FILE对象含有所有的连接文件的内部状态，包括文件位置标记和缓存信息等。
-    > 每一个流海包含error和文件末尾状态标记，可以通过ferror和feof函数进行测试。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/03/22/standard-io/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="2">&larr; Older</a>
@@ -721,6 +740,10 @@ chown改变该终端的所有权，使登录用户成为它的所有者
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/09/06/octopress-syntax/">octopress syntax</a>
@@ -748,10 +771,6 @@ chown改变该终端的所有权，使登录用户成为它的所有者
     
       <li class="post">
         <a href="/blog/2014/04/22/python-note/">python杂记</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/04/09/process-environment/">apue(进程环境)</a>
       </li>
     
   </ul>

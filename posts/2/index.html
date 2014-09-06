@@ -9,13 +9,7 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="stat系列函数 3个stat函数，位于sys/stat.h头文件中，其声明： 1
-2
-3
-4
-5
-#include &lt;sys/stat.h&gt; int stat(const char *restrict path, struct stat *restrict buf);
-int &hellip;">
+  <meta name="description" content="流和FILE对象 流介绍 对于标准I/O库，他们的操作是围绕流进行的。 与JAVA使用Stream类来代表流不一样，标准I/O采用结构体FILE来代表流，由于大多数标准库的函数使用FILE 来作为参数，因此也用文件指针*来代称流。 struct FILE结构体在stdio.h中做了声明： 1 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -70,6 +64,64 @@ int &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/03/22/standard-io/">apue(标准I/O库)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-22T20:06:00+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>流和FILE对象</h1>
+
+<h2>流介绍</h2>
+
+<p>对于标准I/O库，他们的操作是围绕<em>流</em>进行的。</p>
+
+<p>与JAVA使用Stream类来代表流不一样，标准I/O采用结构体FILE来代表流，由于大多数标准库的函数使用FILE <em>来作为参数，因此也用</em>文件指针*来代称流。</p>
+
+<p>struct FILE结构体在stdio.h中做了声明：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>typedef struct _sFILE{...} FILE;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>数据类型FILE
+    > 代表流对象，FILE对象含有所有的连接文件的内部状态，包括文件位置标记和缓存信息等。
+    > 每一个流海包含error和文件末尾状态标记，可以通过ferror和feof函数进行测试。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/03/22/standard-io/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -562,6 +614,10 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/09/06/octopress-syntax/">octopress syntax</a>
       </li>
     
@@ -587,10 +643,6 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     
       <li class="post">
         <a href="/blog/2014/04/22/python-note/">python杂记</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/04/09/process-environment/">apue(进程环境)</a>
       </li>
     
   </ul>
