@@ -4,7 +4,7 @@
   <title><![CDATA[Baren Blog]]></title>
   <link href="http://baren.github.io/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-06T10:21:44+08:00</updated>
+  <updated>2014-09-06T11:33:44+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -12,6 +12,82 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[octopress syntax]]></title>
+    <link href="http://baren.github.io/blog/2014/09/06/octopress-syntax/"/>
+    <updated>2014-09-06T10:53:04+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/06/octopress-syntax</id>
+    <content type="html"><![CDATA[<h1>代码高亮语法</h1>
+
+<blockquote><p>{ % codeblock [lang:language] [title] [url] [link text] % }
+code snippet
+{ % endcodeblock % }</p></blockquote>
+
+<p>例子：</p>
+
+<figure class='code'><figcaption><span>Javascript Array Syntax</span><a href='http://j.mp/pPUUmW'>MDN Documentation </a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">arr1</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">arrayLength</span><span class="p">);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">arr2</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">element0</span><span class="p">,</span> <span class="nx">element1</span><span class="p">,</span> <span class="p">...,</span> <span class="nx">elementN</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>图片语法</h1>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{ % img [class names] /path/to/image [width] [height] [title text [alt text]] %}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{ % img /images/assets/linux.png %}
+</span><span class='line'>{ % img left /images/assets/linux.png Place Kitten #2 %}
+</span><span class='line'>{ % img right /images/assets/linux.png 150 250 Place Kitten #3 %}
+</span><span class='line'>{ % img right /images/assets/linux.png 150 250 'Place Kitten #4' 'An image of a very cute kitten' %}</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>多个分类</h1>
+
+<p>例子</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>categories:
+</span><span class='line'>- CSS3
+</span><span class='line'>- Sass
+</span><span class='line'>- Media Queries
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>显示部分内容</h1>
+
+<p>插入</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;!-- more --&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<p>会让文章下面的部分不显示，并会提示一个按钮，来查看未显示的内容。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[linux performance observability tools]]></title>
+    <link href="http://baren.github.io/blog/2014/09/06/linux-performance-observability-tools/"/>
+    <updated>2014-09-06T10:42:48+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/06/linux-performance-observability-tools</id>
+    <content type="html"><![CDATA[<p><img src="http://baren.github.io/images/assets/linux.png" title="linux" alt="alt text" /></p>
+
+<p>链接：<a href="http://www.brendangregg.com/linuxperf.html">http://www.brendangregg.com/linuxperf.html</a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[apue(线程)]]></title>
@@ -65,6 +141,9 @@
 <li>errno变量</li>
 <li>等</li>
 </ul>
+
+
+<!-- more -->
 
 
 <h2>线程和errno</h2>
@@ -411,6 +490,9 @@ pthread_exit的参数不能是线程栈的数据，因为一旦线程结束，�
 </ul>
 </blockquote></li>
 </ul>
+
+
+<!-- more -->
 
 
 <p>几种处理信号的方式</p>
@@ -1629,6 +1711,9 @@ chown改变该终端的所有权，使登录用户成为它的所有者
 </ol>
 
 
+<!-- more -->
+
+
 <h1>网络登录</h1>
 
 <p>在网络登录情况下，所有的登录都是通过内核的网络接口驱动程序（以太网驱动程序），事情并不知道会有多少这样的登录。必须等待一个网络连接请求的到达。</p>
@@ -1867,6 +1952,11 @@ linux的因特网守护进程是xinetd。</p>
 </span><span class='line'>
 </span><span class='line'>gid_t getegid(void);  // 有效组id
 </span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<!-- more -->
 
 
 <h1>fork函数</h1>
@@ -2682,6 +2772,9 @@ strlen() 是一次函数调用。而sizeof在编译时期就知道大小。</p><
 
 <p>启动例程会从内核取得命令行参数和环境变量值。</p>
 
+<!-- more -->
+
+
 <h1>进程终止</h1>
 
 <p>有八种终止进程的方式，其中5种方式为正常终止，为：</p>
@@ -3158,6 +3251,9 @@ exit和<em>Exit函数是ISO C标准定义的，而</em>exit则是POSIX说明的�
 </span></code></pre></td></tr></table></div></figure>
 
 
+<!-- more -->
+
+
 <p>时间值总是作为函数值返回。如果参数不为空，则时间也存放在由calptr执行的内存中。</p>
 
 <p>gettimeofday函数提供了更高分辨率（最高为微妙级）。</p>
@@ -3296,6 +3392,9 @@ exit和<em>Exit函数是ISO C标准定义的，而</em>exit则是POSIX说明的�
 <p>数据类型FILE
     > 代表流对象，FILE对象含有所有的连接文件的内部状态，包括文件位置标记和缓存信息等。
     > 每一个流海包含error和文件末尾状态标记，可以通过ferror和feof函数进行测试。</p>
+
+<!-- more -->
+
 
 <h2>流的定向</h2>
 
@@ -4070,6 +4169,9 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
 
 <p>结构体struct stat成员类型是基本系统数据类型（定义了某些与实现相关的数据），其中字段的定义位于sys/types.h中。</p>
 
+<!-- more -->
+
+
 <p>一般struct stat的定义是：</p>
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -4680,6 +4782,9 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 </ul>
 
 
+<!-- more -->
+
+
 <h2>设备ID</h2>
 
 <p>每一个设备文件都有一个主ID号和副ID号。主ID号标记设备的一般类型，内核使用这个主ID来寻找这种类型设备对应的驱动。副ID号唯一的标记这个设备类型下得特殊设备了。ls -l可以显示主ID和副ID</p>
@@ -4849,6 +4954,11 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 </span><span class='line'>      <span class="c"># a和b具有同样的类型 </span>
 </span><span class='line'>      <span class="n">statements</span>
 </span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<!-- more -->
 
 
 <p>对象的类型：</p>
@@ -5271,23 +5381,28 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>python中，每一行用换行符来结束，如果一行太长，可以使用<em>行继续操作符“\”</em>来分割，比如：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>a = math.cos(3 * (x - n)) + \ 
-</span><span class='line'>  math.sin(3 * (y - n))</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">n</span><span class="p">))</span> <span class="o">+</span> \
+</span><span class='line'>  <span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">n</span><span class="p">))</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>在(&hellip;), [&hellip;], {&hellip;}, &ldquo;&rdquo;&ldquo;&hellip;&rdquo;&ldquo;&#8221;和&#8217;&lsquo;&rsquo;&hellip;&lsquo;&rsquo;&lsquo;之间的代码，如果跨越多行，可以不用这个操作符。</p>
 
 <p>如果函数、条件、循环或者类的代码体只有一行语句，可以放在同一行中，比如：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>if a:    statement1
-</span><span class='line'>else: statement2</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="n">a</span><span class="p">:</span> <span class="n">statement1</span>
+</span><span class='line'><span class="k">else</span><span class="p">:</span>   <span class="n">statement2</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>如果多个语句放在一行，可以使用&#8221;;&ldquo;来分割。</p>
+
+<!-- more -->
+
 
 <h1>标识符</h1>
 
@@ -5356,36 +5471,39 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>模块、类和函数的第一行语句是个字符串，那这个字符串变成这个对象的文档字符串。比如：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>def fact(n):
-</span><span class='line'>  "This function computes a factorial" 
-</span><span class='line'>  if (n &lt;= 1): return 1
-</span><span class='line'>  else: return n * fact(n - 1)</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">fact</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>  <span class="s">&quot;This function computes a factorial&quot;</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">n</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">):</span> <span class="k">return</span> <span class="mi">1</span>
+</span><span class='line'>  <span class="k">else</span><span class="p">:</span> <span class="k">return</span> <span class="n">n</span> <span class="o">*</span> <span class="n">fact</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; print fact.__doc__
-</span><span class='line'>This function computes a factorial 
-</span><span class='line'>&gt;&gt;&gt;</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span> <span class="n">fact</span><span class="o">.</span><span class="n">__doc__</span>
+</span><span class='line'><span class="n">This</span> <span class="n">function</span> <span class="n">computes</span> <span class="n">a</span> <span class="n">factorial</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <h1>源代码编码</h1>
 
 <p>为了让python的源代码以不同的编码方式编码，需要在源代码的前面两行包含：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#!/usr/bin/env python 
-</span><span class='line'># -*- coding: UTF-8 -*-
-</span><span class='line'>s = "Jalapeño" # String in quotes is directly encoded in UTF-8.</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c">#!/usr/bin/env python </span>
+</span><span class='line'><span class="c"># -*- coding: UTF-8 -*-</span>
+</span><span class='line'><span class="n">s</span> <span class="o">=</span> <span class="s">&quot;Jalapeño&quot;</span> <span class="c"># String in quotes is directly encoded in UTF-8.</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>当这样指定后，注释、字符串字面量，可以直接在识别unicode的编辑器中输入。但是其它的，包括标识符，都必须是ascii的字符。</p>
@@ -5406,6 +5524,9 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 <li>文件系统用户ID和组ID（linux特定的）</li>
 <li>补充组ID（supplementary group IDs）</li>
 </ul>
+
+
+<!-- more -->
 
 
 <h2>实际用户ID和实际组ID</h2>
@@ -5495,6 +5616,9 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>在调用open系统调用函数时，如果文件存在，则如果指定O_EXCL和O_CREAT会导致open失败。这就为进程提供了一种确保是他创建了文件的方式。
 如果没有这个选项，则一般是先检查文件存在不存在，如果不存在，就创建一个文件。由于是check-if-absent方式，产生条件竞争。</p>
+
+<!-- more -->
+
 
 <h3>追加文件内容</h3>
 
@@ -6008,6 +6132,9 @@ i-node在内存的描述，记录了打开的文件描述符指向这个i-node�
 * numwritten = write(fd, buffer, count)。从buffer中，写入count个字节数据到fd所指向的文件中。返回的是实际写入的字节数，有可能小于count。
 * status = close(fd) 。释放文件描述符，以及相关的内核资源</p>
 
+<!-- more -->
+
+
 <h2>I/O通用性</h2>
 
 <p>所谓通用性，是指这四个函数可以作用于所有的类型文件，来完成IO操作。这些文件包括管道、设备、socket等。</p>
@@ -6029,6 +6156,9 @@ i-node在内存的描述，记录了打开的文件描述符指向这个i-node�
 
 2、每个进程的限制。一个应用可打开的最大文件描述符
 </code></pre>
+
+<!-- more -->
+
 
 <p>对于系统限制，可以通过这个查看：</p>
 

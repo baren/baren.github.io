@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: tool | Baren Blog]]></title>
+  <link href="http://baren.github.io/blog/categories/tool/atom.xml" rel="self"/>
+  <link href="http://baren.github.io/"/>
+  <updated>2014-09-06T11:33:44+08:00</updated>
+  <id>http://baren.github.io/</id>
+  <author>
+    <name><![CDATA[enwu]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[linux performance observability tools]]></title>
+    <link href="http://baren.github.io/blog/2014/09/06/linux-performance-observability-tools/"/>
+    <updated>2014-09-06T10:42:48+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/06/linux-performance-observability-tools</id>
+    <content type="html"><![CDATA[<p><img src="/images/assets/linux.png" title="linux" alt="alt text" /></p>
+
+<p>链接：<a href="http://www.brendangregg.com/linuxperf.html">http://www.brendangregg.com/linuxperf.html</a></p>
+]]></content>
+  </entry>
+  
+</feed>

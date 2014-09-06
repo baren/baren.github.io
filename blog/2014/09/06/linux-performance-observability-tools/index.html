@@ -5,11 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>FiFe I/O 通用的I/O模型 - Baren Blog</title>
+  <title>linux performance observability tools - Baren Blog</title>
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="总述 所有完成IO的系统调用，都是使用文件描述符（file descriptor）来引用一个文件。文件描述符用来引用打开的所有类型文件，包括管道、socket、设备等。每个进程都有自己的文件描述符集。 根据惯例，大多数的应用程序都希望打开三个标准的文件描述符（标准输入、输出和错误）。 &hellip;">
+  <meta name="description" content=" 链接：http://www.brendangregg.com/linuxperf.html
+">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://baren.github.io/blog/2013/12/23/the-universal-io-model/">
+  <link rel="canonical" href="http://baren.github.io/blog/2014/09/06/linux-performance-observability-tools/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -67,7 +68,7 @@
   
   <header>
     
-      <h1 class="entry-title">FiFe I/O 通用的I/O模型</h1>
+      <h1 class="entry-title">Linux Performance Observability Tools</h1>
     
     
       <p class="meta">
@@ -83,63 +84,16 @@
   
 
 
-<time datetime="2013-12-23T14:36:16+08:00" pubdate data-updated="true"></time>
+<time datetime="2014-09-06T10:42:48+08:00" pubdate data-updated="true"></time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><h2>总述</h2>
+<div class="entry-content"><p><img src="/images/assets/linux.png" title="linux" alt="alt text" /></p>
 
-<p>所有完成IO的系统调用，都是使用文件描述符（file descriptor）来引用一个文件。文件描述符用来引用打开的所有类型文件，包括管道、socket、设备等。每个进程都有自己的文件描述符集。</p>
-
-<p>根据惯例，大多数的应用程序都希望打开三个标准的文件描述符（标准输入、输出和错误）。这三个文集描述符，一般是由在程序启动之前启动的shell程序打开的。</p>
-
-<table>
-<thead>
-<tr>
-<th> 文件描述符        </th>
-<th style="text-align:center;"> POSIX 名称（在unistd.h头文件中定义）           </th>
-<th style="text-align:right;"> 描述  </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td> 0      </td>
-<td style="text-align:center;"> STDIN_FILENO </td>
-<td style="text-align:right;"> 标准输入 </td>
-</tr>
-<tr>
-<td> 1     </td>
-<td style="text-align:center;"> STDOUT_FILENO      </td>
-<td style="text-align:right;">   标准输出 </td>
-</tr>
-<tr>
-<td> 2 </td>
-<td style="text-align:center;"> STDERR_FILENO     </td>
-<td style="text-align:right;">    标准错误 </td>
-</tr>
-</tbody>
-</table>
-
-
-<p>在程序中，既可以使用数字，也可以使用posix的名称来指向这几个文件描述符。</p>
-
-<p>下面是四个关键的完成IO的系统调用：
-* fd = open(pathname, flags, mode) 。通过制定flags参数，open函数既可以打开文件，也可以创建文件。如果创建文件，mode参数用来指定创建文件的访问权限。如果不是用来创建文件，可以忽略mode这个文件。SUSv3规定，如果open成功，他保证使用这个进程的最小的没有使用的文件描述符。
-* numread = read(fd, buffer, count)。读取fd引用的文件，最多读取count个字节，返回的是实际读取的字节数，如果到了文件末尾，返回0。
-* numwritten = write(fd, buffer, count)。从buffer中，写入count个字节数据到fd所指向的文件中。返回的是实际写入的字节数，有可能小于count。
-* status = close(fd) 。释放文件描述符，以及相关的内核资源</p>
-
-<!-- more -->
-
-
-<h2>I/O通用性</h2>
-
-<p>所谓通用性，是指这四个函数可以作用于所有的类型文件，来完成IO操作。这些文件包括管道、设备、socket等。</p>
-
-<p>如果需要使用特定类型文件特有的功能，可以使用ioctl系统调用，它提供了所有通用功能以外的特定功能。</p>
+<p>链接：<a href="http://www.brendangregg.com/linuxperf.html">http://www.brendangregg.com/linuxperf.html</a></p>
 </div>
 
 
@@ -162,12 +116,12 @@
   
 
 
-<time datetime="2013-12-23T14:36:16+08:00" pubdate data-updated="true"></time>
+<time datetime="2014-09-06T10:42:48+08:00" pubdate data-updated="true"></time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/linux/'>linux</a>
+    <a class='category' href='/blog/categories/tool/'>tool</a>
   
 </span>
 
@@ -176,7 +130,7 @@
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2013/12/23/the-universal-io-model/" data-via="" data-counturl="http://baren.github.io/blog/2013/12/23/the-universal-io-model/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2014/09/06/linux-performance-observability-tools/" data-via="" data-counturl="http://baren.github.io/blog/2014/09/06/linux-performance-observability-tools/" >Tweet</a>
   
   
   
@@ -185,10 +139,10 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/12/17/linux-open-max-fd-num/" title="Previous Post: linux最大文件描述符设置">&laquo; linux最大文件描述符设置</a>
+        <a class="basic-alignment left" href="/blog/2014/08/28/pthread/" title="Previous Post: apue(线程)">&laquo; apue(线程)</a>
       
       
-        <a class="basic-alignment right" href="/blog/2013/12/30/fileio-further-details/" title="Next Post: linux文件io进一步描述">linux文件io进一步描述 &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2014/09/06/octopress-syntax/" title="Next Post: octopress syntax">octopress syntax &raquo;</a>
       
     </p>
   </footer>

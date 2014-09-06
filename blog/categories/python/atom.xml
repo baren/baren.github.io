@@ -4,7 +4,7 @@
   <title><![CDATA[Category: python | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-06T10:21:44+08:00</updated>
+  <updated>2014-09-06T11:33:44+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -56,14 +56,16 @@ def compare(a,b):
         statements
 </code></pre>
 
+<!-- more -->
+
+
 <p>对象的类型：</p>
 
 <p>对象的类型本身就是一个对象。这个类型对象被称为对象的类。这个类型对象是被唯一定义的，并且给定类型的所有实例的类型都是一样的。因此类型对象之间进行比较，可以使用操作符 <em>is</em> 进行比较。</p>
 
 <p>所有的类型对象都赋予一个名字，可以用来进行类型检查。大多数这种名字都是内置的，比如list、dict等。例如：</p>
 
-<pre><code>
-if type(s) is list: 
+<pre><code class="python">if type(s) is list: 
     s.append(item)
 if type(d) is dict: 
     d.update(t)
@@ -71,8 +73,7 @@ if type(d) is dict:
 
 <p>一个比较好的判断类型的方式是使用内置的<code>isinstance(object, type)</code>函数，因为这个函数是可以识别继承的。比如：</p>
 
-<pre><code>
-if isinstance(s,list): 
+<pre><code class="python">if isinstance(s,list): 
     s.append(item)
 if isinstance(d,dict): 
     d.update(t)
@@ -84,7 +85,7 @@ if isinstance(d,dict):
 
 <p>只要把对象赋给一个新名字，或者存放在容器中（list、dict等），都会使引用数增加。</p>
 
-<pre><code>a = 37 # Creates an object with value 37 
+<pre><code class="python">a = 37 # Creates an object with value 37 
 b = a # Increases reference count on 37 
 c = []
 c.append(b) # Increases reference count on 37
@@ -377,7 +378,7 @@ umeth(f,37) # 明确提供self，并且调用
 
 <p>python中，每一行用换行符来结束，如果一行太长，可以使用<em>行继续操作符“\”</em>来分割，比如：</p>
 
-<pre><code>a = math.cos(3 * (x - n)) + \ 
+<pre><code class="python">a = math.cos(3 * (x - n)) + \ 
     math.sin(3 * (y - n))
 </code></pre>
 
@@ -390,6 +391,9 @@ else:   statement2
 </code></pre>
 
 <p>如果多个语句放在一行，可以使用&#8221;;&ldquo;来分割。</p>
+
+<!-- more -->
+
 
 <h1>标识符</h1>
 
@@ -458,7 +462,7 @@ else:   statement2
 
 <p>模块、类和函数的第一行语句是个字符串，那这个字符串变成这个对象的文档字符串。比如：</p>
 
-<pre><code>def fact(n):
+<pre><code class="python">def fact(n):
     "This function computes a factorial" 
     if (n &lt;= 1): return 1
     else: return n * fact(n - 1)
@@ -473,7 +477,7 @@ This function computes a factorial
 
 <p>为了让python的源代码以不同的编码方式编码，需要在源代码的前面两行包含：</p>
 
-<pre><code>#!/usr/bin/env python 
+<pre><code class="python">#!/usr/bin/env python 
 # -*- coding: UTF-8 -*-
 s = "Jalapeño" # String in quotes is directly encoded in UTF-8.
 </code></pre>

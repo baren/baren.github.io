@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: octopress | Baren Blog]]></title>
+  <link href="http://baren.github.io/blog/categories/octopress/atom.xml" rel="self"/>
+  <link href="http://baren.github.io/"/>
+  <updated>2014-09-06T11:33:44+08:00</updated>
+  <id>http://baren.github.io/</id>
+  <author>
+    <name><![CDATA[enwu]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[octopress syntax]]></title>
+    <link href="http://baren.github.io/blog/2014/09/06/octopress-syntax/"/>
+    <updated>2014-09-06T10:53:04+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/06/octopress-syntax</id>
+    <content type="html"><![CDATA[<h1>代码高亮语法</h1>
+
+<blockquote><p>{ % codeblock [lang:language] [title] [url] [link text] % }
+code snippet
+{ % endcodeblock % }</p></blockquote>
+
+<p>例子：</p>
+
+<p><figure class='code'><figcaption><span>Javascript Array Syntax <a href="http://j.mp/pPUUmW">http://j.mp/pPUUmW</a> MDN Documentation </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">arr1</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">arrayLength</span><span class="p">);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">arr2</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">element0</span><span class="p">,</span> <span class="nx">element1</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">hellip</span><span class="p">;,</span> <span class="nx">elementN</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h1>图片语法</h1>
+
+<pre><code>{ % img [class names] /path/to/image [width] [height] [title text [alt text]] %}
+</code></pre>
+
+<p>例子：
+<code>
+{ % img /images/assets/linux.png %}
+{ % img left /images/assets/linux.png Place Kitten #2 %}
+{ % img right /images/assets/linux.png 150 250 Place Kitten #3 %}
+{ % img right /images/assets/linux.png 150 250 'Place Kitten #4' 'An image of a very cute kitten' %}
+</code></p>
+
+<h1>多个分类</h1>
+
+<p>例子</p>
+
+<pre><code>categories:
+- CSS3
+- Sass
+- Media Queries
+</code></pre>
+
+<h1>显示部分内容</h1>
+
+<p>插入</p>
+
+<p>&#8220;`</p>
+
+<!-- more -->
+
+
+<p>&#8220;`
+会让文章下面的部分不显示，并会提示一个按钮，来查看未显示的内容。</p>
+]]></content>
+  </entry>
+  
+</feed>

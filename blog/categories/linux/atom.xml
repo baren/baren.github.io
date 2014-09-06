@@ -4,7 +4,7 @@
   <title><![CDATA[Category: linux | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-06T10:21:44+08:00</updated>
+  <updated>2014-09-06T11:33:44+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -65,6 +65,9 @@
 <li>errno变量</li>
 <li>等</li>
 </ul>
+
+
+<!-- more -->
 
 
 <h2>线程和errno</h2>
@@ -315,6 +318,9 @@ int pthread_cancel(pthread_t tid);
 </ul>
 </blockquote></li>
 </ul>
+
+
+<!-- more -->
 
 
 <p>几种处理信号的方式</p>
@@ -1144,6 +1150,9 @@ chown改变该终端的所有权，使登录用户成为它的所有者
 </ol>
 
 
+<!-- more -->
+
+
 <h1>网络登录</h1>
 
 <p>在网络登录情况下，所有的登录都是通过内核的网络接口驱动程序（以太网驱动程序），事情并不知道会有多少这样的登录。必须等待一个网络连接请求的到达。</p>
@@ -1348,6 +1357,9 @@ gid_t getgid(void);  // 实际组id
 
 gid_t getegid(void);  // 有效组id
 </code></pre>
+
+<!-- more -->
+
 
 <h1>fork函数</h1>
 
@@ -2004,6 +2016,9 @@ ARGV[3] = f3
 <p>内核执行C程序是调用exec函数，在调用main函数之前，会先调用一个特殊的启动例程，可执行程序文件指定这个例程作为程序的启动地址。这是由链接编辑器设置的。链接编辑器由编译器调用。</p>
 
 <p>启动例程会从内核取得命令行参数和环境变量值。</p>
+
+<!-- more -->
+
 
 <h1>进程终止</h1>
 
