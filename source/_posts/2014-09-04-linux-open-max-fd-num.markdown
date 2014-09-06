@@ -14,6 +14,8 @@ linux有两个限制：
 
 	2、每个进程的限制。一个应用可打开的最大文件描述符
 
+<!-- more -->
+
 对于系统限制，可以通过这个查看：
 {% highlight bash %}
 $ cat /proc/sys/fs/file-max

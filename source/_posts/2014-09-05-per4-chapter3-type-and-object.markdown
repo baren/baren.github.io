@@ -34,14 +34,15 @@ def compare(a,b):
 
 ```
 
+<!-- more -->
+
 对象的类型：
 
 对象的类型本身就是一个对象。这个类型对象被称为对象的类。这个类型对象是被唯一定义的，并且给定类型的所有实例的类型都是一样的。因此类型对象之间进行比较，可以使用操作符 *is* 进行比较。
 
 所有的类型对象都赋予一个名字，可以用来进行类型检查。大多数这种名字都是内置的，比如list、dict等。例如：
 
-```
-
+```python
 if type(s) is list: 
 	s.append(item)
 if type(d) is dict: 
@@ -51,8 +52,7 @@ if type(d) is dict:
 
 一个比较好的判断类型的方式是使用内置的```isinstance(object, type)```函数，因为这个函数是可以识别继承的。比如：
 
-```
-
+```python
 if isinstance(s,list): 
 	s.append(item)
 if isinstance(d,dict): 
@@ -66,7 +66,7 @@ if isinstance(d,dict):
 
 只要把对象赋给一个新名字，或者存放在容器中（list、dict等），都会使引用数增加。
 
-```
+```python
 a = 37 # Creates an object with value 37 
 b = a # Increases reference count on 37 
 c = []

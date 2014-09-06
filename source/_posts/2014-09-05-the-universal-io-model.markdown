@@ -6,7 +6,6 @@ comments: true
 categories: linux
 ---
 
-
 ##总述
 所有完成IO的系统调用，都是使用文件描述符（file descriptor）来引用一个文件。文件描述符用来引用打开的所有类型文件，包括管道、socket、设备等。每个进程都有自己的文件描述符集。
 
@@ -26,7 +25,7 @@ categories: linux
 * numread = read(fd, buffer, count)。读取fd引用的文件，最多读取count个字节，返回的是实际读取的字节数，如果到了文件末尾，返回0。
 * numwritten = write(fd, buffer, count)。从buffer中，写入count个字节数据到fd所指向的文件中。返回的是实际写入的字节数，有可能小于count。
 * status = close(fd) 。释放文件描述符，以及相关的内核资源
-
+<!-- more -->
 ##I/O通用性
 所谓通用性，是指这四个函数可以作用于所有的类型文件，来完成IO操作。这些文件包括管道、设备、socket等。
 

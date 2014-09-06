@@ -11,7 +11,7 @@ categories: python
 
 python中，每一行用换行符来结束，如果一行太长，可以使用*行继续操作符“\”*来分割，比如：
 
-```
+```python
 a = math.cos(3 * (x - n)) + \ 
 	math.sin(3 * (y - n))
 ```
@@ -26,6 +26,8 @@ else:	statement2
 ```
 
 如果多个语句放在一行，可以使用";"来分割。
+
+<!-- more -->
 
 # 标识符
 
@@ -83,7 +85,7 @@ python的整数没有限制，可以任意写。
 # 文档字符串
 模块、类和函数的第一行语句是个字符串，那这个字符串变成这个对象的文档字符串。比如：
 
-```
+```python
 def fact(n):
 	"This function computes a factorial" 
 	if (n <= 1): return 1
@@ -100,7 +102,7 @@ This function computes a factorial
 
 为了让python的源代码以不同的编码方式编码，需要在源代码的前面两行包含：
 
-```
+```python
 #!/usr/bin/env python 
 # -*- coding: UTF-8 -*-
 s = "Jalapeño" # String in quotes is directly encoded in UTF-8.

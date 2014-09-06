@@ -24,7 +24,7 @@ time函数返回当前的时间和日期：
 time_t time(time_t *calptr);
 
 ```
-
+<!-- more -->
 时间值总是作为函数值返回。如果参数不为空，则时间也存放在由calptr执行的内存中。
 
 gettimeofday函数提供了更高分辨率（最高为微妙级）。

@@ -15,6 +15,8 @@ categories: linux
 * 文件系统用户ID和组ID（linux特定的）
 * 补充组ID（supplementary group IDs）
 
+<!-- more -->
+
 ## 实际用户ID和实际组ID
 
 实际用户和组ID标记了进程属于哪个用户或者组ID。其值是登陆用户的id和组id。作为登陆进程的一部分，shell读取登陆口令中的用户ID和组ID。同时在shell执行的程序会继承这个实际用户ID和组ID。

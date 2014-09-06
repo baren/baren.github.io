@@ -41,6 +41,8 @@ gid_t getegid(void);  // 有效组id
 
 ```
 
+<!-- more -->
+
 # fork函数
 
 可以调用```fork```函数创建一个新进程。
