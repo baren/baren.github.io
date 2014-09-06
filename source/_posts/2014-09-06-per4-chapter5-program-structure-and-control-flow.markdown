@@ -1,0 +1,245 @@
+---
+layout: post
+title: "程序结构和控制"
+date: 2014-09-06 21:56:14 +0800
+comments: true
+categories: 
+- python
+- python essential reference
+---
+
+# 程序结构和执行
+
+python程序被组织为一个语句序列。所有的语言特性，包括变量赋值、函数定义、类定义和模块导入等，都是语句，都是与其他语句具有相同状态。
+
+因此所有语句都可以放置在程序的任何地方。
+
+比如：
+
+```python
+if debug:
+	def square(x):
+		if not isinstance(x,float):
+			raise TypeError("Expected a float")
+		return x * x
+else:
+	def square(x):
+		return x * x
+
+``` 
+
+当加载文件时，python解释器顺序的执行每一条语句，知道不能执行为止。
+
+这种执行方式对于简单的作为主程序执行，或者经过import进行导入是一致的。
+<!-- more -->
+# 循环和迭代
+
+如果要迭代一个列表，可以使用常用的for in格式。如果迭代列表，还需要获取索引，可以使用enumerate函数，比如：
+
+```python
+
+for i,x in enumerate(s): 
+	statements
+``` 
+
+enumerate()函数实际上创建了一个iterator，这个迭代器每次返回一个元组(index, s[index])
+
+如果要迭代两个list，比如对两个list的每项元素相加。可以使用zip函数：
+
+```python
+# s and t are two sequences 
+for x,y in zip(s,t):
+	statements
+
+``` 
+
+zip()函数联合了s和t的元素，生成了一个元组序列：s[0],t[0]), (s[1],t[1]), (s[2], t[2]),等，直到最短的list结束。
+
+注意：
+* python2中，zip函数全部消耗了序列元素，生成一个序列。如果s和t比较大，那会生成一个大的列表，进而消耗内存资源。
+* python3中，zip改进了，一次生成一个元素，而不是一下子生成一个巨大的序列。
+* python2中，可以使用itertools.izip()函数来优化，其方式与python3中的zip一致。
+
+例子：
+
+```python
+>>> a = range(8)
+>>> b = range(9)
+>>> a
+[0, 1, 2, 3, 4, 5, 6, 7]
+>>> b
+[0, 1, 2, 3, 4, 5, 6, 7, 8]
+>>> for x,y in zip(a,b):
+...     print x+y
+...
+0
+2
+4
+6
+8
+10
+12
+14
+>>> import itertools
+>>> for x,y in itertools.izip(a,b):
+...     print x+y
+...
+0
+2
+4
+6
+8
+10
+12
+14
+``` 
+
+
+循环结构，还可以有一个else的语句,for-else或者while-else，比如：
+
+```python
+# for-else
+for line in open("foo.txt"):
+	stripped = line.strip() 
+	if not stripped:
+		break
+# process the stripped line ...
+else:
+	raise RuntimeError("Missing section separator")
+
+``` 
+
+有两种情况下能够执行到else分支：
+* 立即执行，既循环条件不满足。
+* 迭代执行完毕，这意味着，如果是break语句或异常语句中断了循环，则不会执行else分支。
+
+一般需要用到for-else这种结构的情况是：迭代完数据，并且需要检查或者设置标记时，可以使用。
+
+
+# 异常
+
+记住几个点：
+
+1. 在except语句中，既可以 except Exception as e，也可以except Exception, e，后面一个是老式用法，不推荐
+2. 可以一次except捕获多个异常：*except (IOError, TypeError, NameError) as e:*
+
+```python
+try:
+	do something
+except (IOError, TypeError, NameError) as e: # Handle I/O, Type, or Name errors
+	...
+``` 
+
+3. try也支持else语句，执行else的条件是try块中没有抛出异常：
+
+```python
+try:
+	f = open('foo', 'r')
+except IOError as e:
+	error_log.write('Unable to open foo : %s\n' % e)
+else:
+	data = f.read() f.close()
+``` 
+
+# 上下文管理和with语句
+
+在遇到异常的情况下，正确地管理系统资源（比如锁、文件、连接等）是比较棘手的。比如异常可能会绕过释放重要系统资源的代码。
+
+*with*语句允许代码在一个运行的上下文中执行代码，这个运行的上下文被一个作为上下文管理器的对象来控制。比如：
+
+```python
+# 当控制离开with代码块时，with自动的将打开的文件关闭
+with open("debuglog","a") as f: 
+	f.write("Debugging\n") 
+	statements 
+	f.write("Done\n")
+
+import threading
+lock = threading.Lock() 
+# 当控制进入和离开with代码块时，自动获取和释放锁。
+with lock:
+	# Critical section statements
+	# End critical section
+```
+
+语法 *with obj* 允许让对象obj来控制当执行进入和离开代码块时的行为。
+
+* 进入：
+当with obj执行时，它执行obj.__enter__()函数来标记正在进入一个新的上下文。
+* 离开：
+> 当控制离开上下文时，执行obj.__exit__(type,value,traceback)，此时，如果没有异常发生，__exit__()函数的三个参数都被设置为None，表示无异常。
+> 否则type,value,traceback就会被赋值为与导致控制流离开with代码块的异常相关联的信息。
+> __exit__() 返回True和False来标记是否产生的异常被处理了。如果返回False，异常会继续向上传递。
+
+with还可以跟着一个as标识符。*with obj as var:*如果设置了，则obj.__enter__()的返回值会被赋值给as指定的对象。注意，obj可以不等于var的值。
+
+注意：
+> with只能与支持上下文管理协议的对象（实现了__enter__()和__exit__）一块工作。
+
+用户可以实现这两个函数来使自己定义的对象支持上下文管理协议：
+
+```python
+class ListTransaction(object): 
+	def __init__(self,thelist):
+		self.thelist = thelist 
+
+	def __enter__(self):
+		self.workingcopy = list(self.thelist)
+		return self.workingcopy
+
+	def __exit__(self,type,value,tb):
+		if type is None:
+			self.thelist[:] = self.workingcopy
+		return False
+
+# 使用
+items = [1,2,3]
+with ListTransaction(items) as working:
+	working.append(4)
+	working.append(5)
+	print(items) # Produces [1,2,3,4,5]
+
+try:
+	with ListTransaction(items) as working:
+		working.append(6) working.append(7)
+		raise RuntimeError("We're hosed!")
+except RuntimeError: pass
+	print(items) # Produces [1,2,3,4,5]
+
+```
+
+
+可以使用contextlib模块来简化上下文对象的实现：
+
+```python
+from contextlib import contextmanager 
+
+@contextmanager
+def ListTransaction(thelist):
+	workingcopy = list(thelist)
+	yield workingcopy
+	# Modify the original list only if no errors 
+	thelist[:] = workingcopy
+```
+
+yield生成的对象，就相当于__enter__函数返回的对象。
+当执行到__exit__函数时，执行会从yield后继续执行。
+
+如果在上下文中出现了异常，可异常可以在生成器函数中展现（函数内有yield的函数，调用后产生生成器）
+
+# assert
+
+语法是这样：
+
+```python
+assert test [, msg]
+
+# test表达式生成True或者False，如果为False，assert会生成一个AssertionError异常，并附带msg信息
+```
+
+关于assert，需要知道以下几点：
+* 不能使用assert用来为了使程序正确而必须执行的代码（比如检查用户输入是否合法，则不能使用assert），因为有可能不被执行（运行python使用-O参数）
+* assert应该被用来事情总是是true的情况，否则就是个bug。
+
+
+
