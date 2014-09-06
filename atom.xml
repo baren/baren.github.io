@@ -4,7 +4,7 @@
   <title><![CDATA[Baren Blog]]></title>
   <link href="http://baren.github.io/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-05T16:12:26+08:00</updated>
+  <updated>2014-09-06T10:21:44+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -4826,7 +4826,7 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>使用例子：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -4837,19 +4837,17 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 <span class='line-number'>9</span>
 <span class='line-number'>10</span>
 <span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'># Compare two objects 
-</span><span class='line'>def compare(a,b):
-</span><span class='line'>    if a is b:
-</span><span class='line'>        # a和b是同样的对象，也就是身份相同 
-</span><span class='line'>        statements
-</span><span class='line'>    if a == b:
-</span><span class='line'>        # a和b具有同样的值，身份可以不一样，只要值一样 
-</span><span class='line'>        statements
-</span><span class='line'>  if type(a) is type(b):
-</span><span class='line'>      # a和b具有同样的类型 
-</span><span class='line'>      statements
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># Compare two objects </span>
+</span><span class='line'><span class="k">def</span> <span class="nf">compare</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="n">b</span><span class="p">:</span>
+</span><span class='line'>        <span class="c"># a和b是同样的对象，也就是身份相同 </span>
+</span><span class='line'>        <span class="n">statements</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="p">:</span>
+</span><span class='line'>        <span class="c"># a和b具有同样的值，身份可以不一样，只要值一样 </span>
+</span><span class='line'>        <span class="n">statements</span>
+</span><span class='line'>  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+</span><span class='line'>      <span class="c"># a和b具有同样的类型 </span>
+</span><span class='line'>      <span class="n">statements</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -4859,31 +4857,27 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>所有的类型对象都赋予一个名字，可以用来进行类型检查。大多数这种名字都是内置的，比如list、dict等。例如：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>if type(s) is list: 
-</span><span class='line'>  s.append(item)
-</span><span class='line'>if type(d) is dict: 
-</span><span class='line'>  d.update(t)
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+</span><span class='line'><span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span class='line'>  <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
 <p>一个比较好的判断类型的方式是使用内置的<code>isinstance(object, type)</code>函数，因为这个函数是可以识别继承的。比如：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>if isinstance(s,list): 
-</span><span class='line'>  s.append(item)
-</span><span class='line'>if isinstance(d,dict): 
-</span><span class='line'>  d.update(t)
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+</span><span class='line'><span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -4893,14 +4887,14 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>只要把对象赋给一个新名字，或者存放在容器中（list、dict等），都会使引用数增加。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>a = 37 # Creates an object with value 37 
-</span><span class='line'>b = a # Increases reference count on 37 
-</span><span class='line'>c = []
-</span><span class='line'>c.append(b) # Increases reference count on 37
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="mi">37</span> <span class="c"># Creates an object with value 37 </span>
+</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="n">a</span> <span class="c"># Increases reference count on 37 </span>
+</span><span class='line'><span class="n">c</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span class='line'><span class="n">c</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="c"># Increases reference count on 37</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -4912,30 +4906,32 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>还可以通过操作来减少引用，比如：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>del a # Decrease reference count of 37 
-</span><span class='line'>b = 42 # Decrease reference count of 37 
-</span><span class='line'>c[0] = 2.0 # Decrease reference count of 37</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">del</span> <span class="n">a</span> <span class="c"># Decrease reference count of 37 </span>
+</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="mi">42</span> <span class="c"># Decrease reference count of 37 </span>
+</span><span class='line'><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="c"># Decrease reference count of 37</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>可以通过函数来查看对象的引用情况：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt;
-</span><span class='line'>&gt;&gt;&gt; a = 37
-</span><span class='line'>&gt;&gt;&gt; import sys
-</span><span class='line'>&gt;&gt;&gt; sys.getrefcount(a)
-</span><span class='line'>7
-</span><span class='line'>&gt;&gt;&gt; sys.getrefcount(37)
-</span><span class='line'>9</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">37</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">sys</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">getrefcount</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</span><span class='line'><span class="mi">7</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">getrefcount</span><span class="p">(</span><span class="mi">37</span><span class="p">)</span>
+</span><span class='line'><span class="mi">9</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>当对象的引用计数到0的时候，就会被垃圾回收。</p>
@@ -4948,16 +4944,17 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>copy模块提供了浅拷贝和深拷贝操作</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>copy.copy(x)
-</span><span class='line'>  Return a shallow copy of x.
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">Return</span> <span class="n">a</span> <span class="n">shallow</span> <span class="n">copy</span> <span class="n">of</span> <span class="n">x</span><span class="o">.</span>
 </span><span class='line'>
-</span><span class='line'>copy.deepcopy(x)
-</span><span class='line'>  Return a deep copy of x.</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">Return</span> <span class="n">a</span> <span class="n">deep</span> <span class="n">copy</span> <span class="n">of</span> <span class="n">x</span><span class="o">.</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>浅拷贝和深拷贝的区别只与组合对象相关（包含其它对象的对象，比如list等）</p>
@@ -4970,7 +4967,7 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>浅拷贝创建一个引用，包含的元素是原对象包含的元素的引用。比如：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -4984,20 +4981,20 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 <span class='line-number'>12</span>
 <span class='line-number'>13</span>
 <span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; a = [1,2,[3,4]]
-</span><span class='line'>&gt;&gt;&gt; b = list(a)
-</span><span class='line'>&gt;&gt;&gt; b is a
-</span><span class='line'>False
-</span><span class='line'>&gt;&gt;&gt; b.append(100)
-</span><span class='line'>&gt;&gt;&gt; b
-</span><span class='line'>[1, 2, [3, 4], 100]
-</span><span class='line'>&gt;&gt;&gt; a
-</span><span class='line'>[1, 2, [3, 4]]
-</span><span class='line'>&gt;&gt;&gt; b[2][0] = -100
-</span><span class='line'>&gt;&gt;&gt; b
-</span><span class='line'>[1, 2, [-100, 4], 100]
-</span><span class='line'>&gt;&gt;&gt; a
-</span><span class='line'>[1, 2, [-100, 4]]
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="ow">is</span> <span class="n">a</span>
+</span><span class='line'><span class="bp">False</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span>
+</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="mi">100</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span>
+</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span>
+</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="mi">100</span><span class="p">]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span>
+</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">4</span><span class="p">]]</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -5005,7 +5002,7 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>深拷贝可以使用copy模块下的deepcopy函数实现：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -5013,14 +5010,14 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 <span class='line-number'>6</span>
 <span class='line-number'>7</span>
 <span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; import copy
-</span><span class='line'>&gt;&gt;&gt; a = [1, 2, [3, 4]]
-</span><span class='line'>&gt;&gt;&gt; b = copy.deepcopy(a)
-</span><span class='line'>&gt;&gt;&gt; b[2][0] = -100
-</span><span class='line'>&gt;&gt;&gt; b
-</span><span class='line'>[1, 2, [-100, 4]]
-</span><span class='line'>&gt;&gt;&gt; a # Notice that a is unchanged [1, 2, [3, 4]]
-</span><span class='line'>&gt;&gt;&gt;
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">copy</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span>
+</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">4</span><span class="p">]]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="c"># Notice that a is unchanged [1, 2, [3, 4]]</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -5058,18 +5055,14 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>比如：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>def foo(x, y):
-</span><span class='line'>  return x + y
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
 </span><span class='line'>
-</span><span class='line'>foo = lambda x,y: x + y
-</span><span class='line'>
+</span><span class='line'><span class="n">foo</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -5095,23 +5088,24 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 </table>
 
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; def foo(x=1, y=1):
-</span><span class='line'>...     return x + y
-</span><span class='line'>...
-</span><span class='line'>&gt;&gt;&gt; foo.__defaults__
-</span><span class='line'>(1, 1)</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="n">__defaults__</span>
+</span><span class='line'><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>用户定义的函数的类型是<code>types.FunctionType</code></p>
 
 <p>比如：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -5120,17 +5114,16 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 <span class='line-number'>7</span>
 <span class='line-number'>8</span>
 <span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>&gt;&gt;&gt; def foo(x=1, y=1):
-</span><span class='line'>...     return x + y
-</span><span class='line'>...
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
+</span><span class='line'><span class="o">...</span>
 </span><span class='line'>
-</span><span class='line'>&gt;&gt;&gt; import types
-</span><span class='line'>&gt;&gt;&gt; type(foo) is types.FunctionType
-</span><span class='line'>True
-</span><span class='line'>&gt;&gt;&gt; type(foo) is types.MethodType
-</span><span class='line'>False</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">types</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span> <span class="ow">is</span> <span class="n">types</span><span class="o">.</span><span class="n">FunctionType</span>
+</span><span class='line'><span class="bp">True</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span> <span class="ow">is</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span>
+</span><span class='line'><span class="bp">False</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <h3>方法</h3>
@@ -5146,7 +5139,7 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>比如：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -5160,20 +5153,21 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 <span class='line-number'>12</span>
 <span class='line-number'>13</span>
 <span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>class Foo(object):
-</span><span class='line'>  # 实例方法，第一个参数self
-</span><span class='line'>  def instance_method(self, arg):
-</span><span class='line'>      statements 
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>  <span class="c"># 实例方法，第一个参数self</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">instance_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+</span><span class='line'>      <span class="n">statements</span>
 </span><span class='line'>
-</span><span class='line'>  # 类方法， 第一个参数cls
-</span><span class='line'>  @classmethod
-</span><span class='line'>  def class_method(cls, arg): 
-</span><span class='line'>      statements
+</span><span class='line'>  <span class="c"># 类方法， 第一个参数cls</span>
+</span><span class='line'>  <span class="nd">@classmethod</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">class_method</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+</span><span class='line'>      <span class="n">statements</span>
 </span><span class='line'>
-</span><span class='line'>  # 静态方法，没有self或cls的参数
-</span><span class='line'>  @staticmethod
-</span><span class='line'>  def static_method(arg):
-</span><span class='line'>      statements</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'>  <span class="c"># 静态方法，没有self或cls的参数</span>
+</span><span class='line'>  <span class="nd">@staticmethod</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">static_method</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
+</span><span class='line'>      <span class="n">statements</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>实例方法和类方法都由types.MethodType来表示。</p>
@@ -5189,16 +5183,17 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>例子：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>f = Foo() # 创建一个实例
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">f</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span> <span class="c"># 创建一个实例</span>
 </span><span class='line'>
-</span><span class='line'>meth = f.instance_method # 查询方法，注意，后面没有括号"()"
+</span><span class='line'><span class="n">meth</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">instance_method</span> <span class="c"># 查询方法，注意，后面没有括号&quot;()&quot;</span>
 </span><span class='line'>
-</span><span class='line'>meth(37) # 现在调用函数</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'><span class="n">meth</span><span class="p">(</span><span class="mi">37</span><span class="p">)</span> <span class="c"># 现在调用函数</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>上面例子中，meth被称为<strong>绑定方法</strong>。绑定函数是一个可调用对象，它包括了函数（method）和相关的实例。</p>
@@ -5212,12 +5207,12 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 <p>接上面例子：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>umeth = Foo.instance_method # 在Foo上查询instance_method
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">umeth</span> <span class="o">=</span> <span class="n">Foo</span><span class="o">.</span><span class="n">instance_method</span> <span class="c"># 在Foo上查询instance_method</span>
 </span><span class='line'>
-</span><span class='line'>umeth(f,37) # 明确提供self，并且调用
+</span><span class='line'><span class="n">umeth</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">37</span><span class="p">)</span> <span class="c"># 明确提供self，并且调用</span>
 </span></code></pre></td></tr></table></div></figure>
 
 

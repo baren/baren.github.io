@@ -4,7 +4,7 @@
   <title><![CDATA[Category: python | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-05T16:12:26+08:00</updated>
+  <updated>2014-09-06T10:21:44+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -42,7 +42,7 @@
 
 <p>使用例子：</p>
 
-<pre><code>
+<pre><code class="python">
 # Compare two objects 
 def compare(a,b):
     if a is b:
