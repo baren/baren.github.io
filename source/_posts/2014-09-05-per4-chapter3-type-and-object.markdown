@@ -18,7 +18,7 @@ categories: python
 
 使用例子：
 
-```
+```python
 
 # Compare two objects 
 def compare(a,b):
