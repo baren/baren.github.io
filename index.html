@@ -9,15 +9,8 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="程序结构和执行 python程序被组织为一个语句序列。所有的语言特性，包括变量赋值、函数定义、类定义和模块导入等，都是语句，都是与其他语句具有相同状态。 因此所有语句都可以放置在程序的任何地方。 比如： 1
-2
-3
-4
-5
-6
-7
-8
-if debug: def square(x): if not &hellip;">
+  <meta name="description" content="作用域规则 每当一个函数执行，都会创建一个局部命名空间（local namespace）。这个命名空间代表了一个局部环境，这个环境包含了凡是参数的名字、在函数内定义的局部变量等。当解析一个名字时，解析器会： 首先检查局部环境变量
+如果在局部命名空间中找不到，然后再往上寻找全局命名空间（global &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -72,6 +65,60 @@ if debug: def square(x): if not &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">函数和函数式编程</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-13T17:07:23+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>作用域规则</h1>
+
+<p>每当一个函数执行，都会创建一个局部命名空间（local namespace）。这个命名空间代表了一个局部环境，这个环境包含了凡是参数的名字、在函数内定义的局部变量等。当解析一个名字时，解析器会：</p>
+
+<ul>
+<li>首先检查局部环境变量</li>
+<li>如果在局部命名空间中找不到，然后再往上寻找全局命名空间（global namespace），全局命名空间是函数定义所在的模块。</li>
+<li>如果在全局命名空间不存在，解释器会查找内置的命名空间，如果还找不到，则NameError异常抛出</li>
+</ul>
+
+
+<p>python的命名空间的一个特点就是：在函数内处理全局变量。</p>
+
+<p>比如：</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -669,64 +716,6 @@ chown改变该终端的所有权，使登录用户成为它的所有者
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/29/system-data-file-and-info/">Apue(系统数据文件和信息)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-29T08:06:39+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>时间和日期</h1>
-
-<p>unix内核提供的<em>基本时间服务</em>是计算自国际标准时间公元1970年1月1日00:00:00以来经过的秒数。</p>
-
-<p>这种秒数是以数据类型time_t表示的。称之为<strong>日历时间</strong>，日历时间包括日期和时间。</p>
-
-<p>time函数返回当前的时间和日期：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#include &lt;time.h&gt;
-</span><span class='line'>
-</span><span class='line'>time_t time(time_t *calptr);
-</span></code></pre></td></tr></table></div></figure>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/03/29/system-data-file-and-info/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="2">&larr; Older</a>
@@ -740,6 +729,10 @@ chown改变该终端的所有权，使登录用户成为它的所有者
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">函数和函数式编程</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a>
@@ -767,10 +760,6 @@ chown改变该终端的所有权，使登录用户成为它的所有者
     
       <li class="post">
         <a href="/blog/2014/05/04/process-control/">apue(进程控制)</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/04/22/python-note/">python杂记</a>
       </li>
     
   </ul>

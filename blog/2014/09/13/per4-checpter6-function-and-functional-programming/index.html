@@ -1,0 +1,631 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>函数和函数式编程 - Baren Blog</title>
+  <meta name="author" content="enwu">
+
+  
+  <meta name="description" content="作用域规则 每当一个函数执行，都会创建一个局部命名空间（local namespace）。这个命名空间代表了一个局部环境，这个环境包含了凡是参数的名字、在函数内定义的局部变量等。当解析一个名字时，解析器会： 首先检查局部环境变量
+如果在局部命名空间中找不到，然后再往上寻找全局命名空间（global &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Baren Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Baren Blog</a></h1>
+  
+    <h2>A blogging for baren.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:baren.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">函数和函数式编程</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-13T17:07:23+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h1>作用域规则</h1>
+
+<p>每当一个函数执行，都会创建一个局部命名空间（local namespace）。这个命名空间代表了一个局部环境，这个环境包含了凡是参数的名字、在函数内定义的局部变量等。当解析一个名字时，解析器会：</p>
+
+<ul>
+<li>首先检查局部环境变量</li>
+<li>如果在局部命名空间中找不到，然后再往上寻找全局命名空间（global namespace），全局命名空间是函数定义所在的模块。</li>
+<li>如果在全局命名空间不存在，解释器会查找内置的命名空间，如果还找不到，则NameError异常抛出</li>
+</ul>
+
+
+<p>python的命名空间的一个特点就是：在函数内处理全局变量。</p>
+
+<p>比如：</p>
+
+<!-- more -->
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="mi">42</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+</span><span class='line'>  <span class="n">a</span> <span class="o">=</span> <span class="mi">13</span>
+</span><span class='line'><span class="n">foo</span><span class="p">()</span>
+</span><span class='line'><span class="c"># a 还是 42</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里，虽然在函数foo内给a赋值为13，但是：<em>当一个变量在函数内赋值时，结果总是把这个变量绑定到局部命名空间中</em>，因此在foo内，a与全局变量的a是不一样的。</p>
+
+<p>如果要在函数内修改全局变量，必须使用<em>global</em>关键字来修饰变量。表示的意思是简单的生命这个名字属于全局命名空间。这只在这个变量需要被修改的情况下。
+例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="mi">42</span>
+</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="mi">37</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+</span><span class='line'>  <span class="k">global</span> <span class="n">a</span>  <span class="c"># &#39;a&#39; 此时在全局命名空间中</span>
+</span><span class='line'>  <span class="n">a</span> <span class="o">=</span> <span class="mi">13</span>
+</span><span class='line'>  <span class="n">b</span><span class="o">=</span><span class="mi">0</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">foo</span><span class="p">()</span>
+</span><span class='line'><span class="c"># a 是 13. b 仍然是 37.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>嵌套函数中的变量作用域</h2>
+
+<p>python支持嵌套函数定义，也就是在函数内定义函数：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">start</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">n</span> <span class="o">=</span> <span class="n">start</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">display</span><span class="p">():</span> <span class="c"># Nested function definition </span>
+</span><span class='line'>      <span class="k">print</span><span class="p">(</span><span class="s">&#39;T-minus </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>      <span class="n">display</span><span class="p">()</span>
+</span><span class='line'>      <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当作用域涉及到嵌套函数时，变量的搜寻是按照<em>词法范围（lexical scoping）</em>来查找的。意思是：</p>
+
+<ul>
+<li>变量名字受限检查局部范围</li>
+<li>然后是函数定义处外围范围，依次往外查找，从最内层到最外层范围</li>
+<li>然后就是全局命名空间</li>
+<li>最后是内置的命名空间</li>
+</ul>
+
+
+<p>在给变量赋值时，牵扯到嵌套函数，python2有个限制是：</p>
+
+<ul>
+<li>只允许在最内层范围的和全局范围的（使用global）的变量可以被赋值。</li>
+</ul>
+
+
+<p>这意味着：</p>
+
+<ul>
+<li>内部函数不能够给一个局部变量赋值，这个局部变量是定义在内部函数的外围函数内。</li>
+</ul>
+
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">start</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">n</span> <span class="o">=</span> <span class="n">start</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">def</span> <span class="nf">display</span><span class="p">():</span>
+</span><span class='line'>      <span class="k">print</span><span class="p">(</span><span class="s">&#39;T-minus </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">def</span> <span class="nf">decrement</span><span class="p">():</span>
+</span><span class='line'>      <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span> <span class="c"># 在Python 2是错误的，这里不能修改这个值。</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>      <span class="n">display</span><span class="p">()</span>
+</span><span class='line'>      <span class="n">decrement</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在python3中，可以使用<em>nonlocal</em>关键字来修改：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">start</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">n</span> <span class="o">=</span> <span class="n">start</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">def</span> <span class="nf">display</span><span class="p">():</span>
+</span><span class='line'>      <span class="k">print</span><span class="p">(</span><span class="s">&#39;T-minus </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">decrement</span><span class="p">():</span>
+</span><span class='line'>      <span class="n">nonlocal</span> <span class="n">n</span>
+</span><span class='line'>      <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>  <span class="c"># 绑定到外围的 n (Python 3)</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>      <span class="n">display</span><span class="p">()</span>
+</span><span class='line'>      <span class="n">decrement</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果一个局部变量在赋值前被使用，则会抛出UnboundLocalError的错误，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">i</span><span class="o">=</span><span class="mi">0</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+</span><span class='line'>  <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="c"># 导致UnboundLocalError 异常 </span>
+</span><span class='line'>  <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在这个例子中，变量<em>i</em>被定义为局部变量（在函数内被赋值，并且没有global关键字声明），这样，在执行 i = i +1 语句时，会试图读取变量“i”的值，会导致错误。</p>
+
+<h1>函数作为对象和闭包（closure）</h1>
+
+<h2>函数作为对象</h2>
+
+<p>python中，函数是一级对象（first-class），意思是</p>
+
+<ul>
+<li>函数可以作为参数传递给其它函数</li>
+<li>放在数据结构中</li>
+<li>以及作为结果从函数中返回。</li>
+</ul>
+
+
+<p>注意：</p>
+
+<blockquote><p>当函数作为数据被处理时，需要注意的是：函数隐含的携带了在函数定义处的外围环境信息。这会影响到自由的变量在函数内怎么被绑定。</p></blockquote>
+
+<p>比如下面例子：</p>
+
+<figure class='code'><figcaption><span>foo_test.py</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">x</span> <span class="o">=</span> <span class="mi">33</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">print_x</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">print</span> <span class="n">x</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>然后在foo.py文件中导入foo_test：</p>
+
+<figure class='code'><figcaption><span>foo.py</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">x</span> <span class="o">=</span> <span class="mi">42</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">func</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">foo</span><span class="p">(</span><span class="n">foo_test</span><span class="o">.</span><span class="n">print_x</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">//</span> <span class="err">输出结果是</span><span class="mi">33</span><span class="err">，而不是此处定义的</span><span class="mi">42</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在这个例子中，需要注意的是print_x使用的x是他所定义处的x的值，而不是在执行处的值，虽然在执行的地方，也定义了同样的变量。</p>
+
+<h2>闭包</h2>
+
+<p>闭包的定义：
+组成函数的语句，与执行的环境绑定在一起，产生的对象，被称为闭包。可以简单的认为闭包是一个函数，它在词法上下文中引用了自由变量，所谓自由变量就是除局部变量以外的变量。</p>
+
+<p>闭包只是在形式和表现上像函数，但实际上不是函数。函数是一些可执行的代码，这些代码在函数被定义后就确定了，不会在执行时发生变化，所以一个函数只有一个实例。闭包在运行时可以有多个实例，不同的引用环境和相同的函数组合可以产生不同的实例</p>
+
+<p>一般有闭包特征的语言有下面这样的特性：</p>
+
+<ul>
+<li>函数是第一级对象（first-class）</li>
+<li>函数可以嵌套定义。</li>
+</ul>
+
+
+<p>当嵌套函数被使用时，闭包会捕获嵌套函数执行所需要的整个环境。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">foo</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">bar</span><span class="p">():</span>
+</span><span class='line'>  <span class="n">x</span> <span class="o">=</span> <span class="mi">13</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">helloworld</span><span class="p">():</span>
+</span><span class='line'>  <span class="k">return</span> <span class="s">&quot;Hello World. x is </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">x</span>
+</span><span class='line'>  <span class="n">foo</span><span class="o">.</span><span class="n">callf</span><span class="p">(</span><span class="n">helloworld</span><span class="p">)</span>     <span class="c"># returns &#39;Hello World, x is 13&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>闭包和嵌套函数在你想延迟计算时，比较有用：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">urlopen</span>
+</span><span class='line'><span class="c"># from urllib.request import urlopen (Python 3) </span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">page</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get</span><span class="p">():</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">get</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>执行如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">python_url</span> <span class="o">=</span> <span class="n">page</span><span class="p">(</span><span class="s">&quot;http://www.python.org&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jython_url</span> <span class="o">=</span> <span class="n">page</span><span class="p">(</span><span class="s">&quot;http://www.jython.org&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">python_url</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span> <span class="n">get</span> <span class="n">at</span> <span class="mh">0x95d5f0</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jython</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span> <span class="n">get</span> <span class="n">at</span> <span class="mh">0x9735f0</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">pydata</span> <span class="o">=</span> <span class="n">python</span><span class="p">()</span>  <span class="c"># 读取url内容</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jydata</span> <span class="o">=</span> <span class="n">jython</span><span class="p">()</span>  <span class="c"># 读取url内容</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对于上面这个闭包例子，解释如下：</p>
+
+<ul>
+<li>两个变量python_url和jython_url实际上是两个不同的get函数的版本（语句与外围环境的绑定）</li>
+<li>即使创建这两个变量的函数page不再运行，get函数暗中的携带了get函数使用的外围get函数定义处的变量。</li>
+<li>当get调用时，绑定了代码和外围的变量。</li>
+</ul>
+
+
+<p>闭包一个非常有用的方式是：<em>可以用来保存跨越一系列函数调用的状态（函数式编程所用到的状态的保存）</em>，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">next</span><span class="p">():</span>
+</span><span class='line'>      <span class="n">nonlocal</span> <span class="n">n</span>  <span class="c"># python3</span>
+</span><span class='line'>      <span class="n">r</span><span class="o">=</span><span class="n">n</span>
+</span><span class='line'>      <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">r</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nb">next</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Example use</span>
+</span><span class='line'><span class="nb">next</span> <span class="o">=</span> <span class="n">countdown</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'><span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>  <span class="n">v</span> <span class="o">=</span> <span class="nb">next</span><span class="p">()</span>  <span class="c"># 获取下一个值</span>
+</span><span class='line'>  <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span><span class="p">:</span>
+</span><span class='line'>      <span class="k">break</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在这段代码中，闭包被用来保存内部的计数值 n。这样，每次调用next()函数时，都能够更新和返回上一个计数变量的值（感觉就是更新了一个全局变量，但是这个n实际上是一个局部变量）。</p>
+
+<p>假设，语言不支持闭包，那么要实现上面同样的功能，可以这样(基本原则是在函数外定义一个变量，变量的生命周期不随函数调用而结束)：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">class</span> <span class="nc">Countdown</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>      <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>      <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+</span><span class='line'>      <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">r</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Example use</span>
+</span><span class='line'><span class="n">c</span> <span class="o">=</span> <span class="n">Countdown</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>  <span class="n">v</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span> <span class="c"># 获取下一个值</span>
+</span><span class='line'>  <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span><span class="p">:</span>
+</span><span class='line'>      <span class="k">break</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>总结：</p>
+
+<blockquote><p>闭包可以保存变量的状态，这个变量不随着闭包调用结束而丢失。重要的特性。
+闭包可以捕获嵌套函数的环境的特性，在包装一个存在的函数来增加额外的功能的时候，非常有用（装饰器）。</p></blockquote>
+
+<h1>装饰器</h1>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">enwu</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-13T17:07:23+08:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/python/'>python</a>, <a class='category' href='/blog/categories/python-essential-reference/'>python essential reference</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming/" data-via="" data-counturl="http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/" title="Previous Post: 程序结构和控制">&laquo; 程序结构和控制</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">函数和函数式编程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/06/octopress-syntax/">octopress syntax</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/06/linux-performance-observability-tools/">linux performance observability tools</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/08/28/pthread/">apue(线程)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/06/24/signal/">apue(信号)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/process-relate/">apue(进程关系)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/04/process-control/">apue(进程控制)</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - enwu -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
+  <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

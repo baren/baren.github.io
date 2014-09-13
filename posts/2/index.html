@@ -9,7 +9,10 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="流和FILE对象 流介绍 对于标准I/O库，他们的操作是围绕流进行的。 与JAVA使用Stream类来代表流不一样，标准I/O采用结构体FILE来代表流，由于大多数标准库的函数使用FILE 来作为参数，因此也用文件指针*来代称流。 struct FILE结构体在stdio.h中做了声明： 1 &hellip;">
+  <meta name="description" content="时间和日期 unix内核提供的基本时间服务是计算自国际标准时间公元1970年1月1日00:00:00以来经过的秒数。 这种秒数是以数据类型time_t表示的。称之为日历时间，日历时间包括日期和时间。 time函数返回当前的时间和日期： 1
+2
+3
+4 #include &lt;time.h&gt &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -64,6 +67,64 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/03/29/system-data-file-and-info/">Apue(系统数据文件和信息)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-29T08:06:39+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>时间和日期</h1>
+
+<p>unix内核提供的<em>基本时间服务</em>是计算自国际标准时间公元1970年1月1日00:00:00以来经过的秒数。</p>
+
+<p>这种秒数是以数据类型time_t表示的。称之为<strong>日历时间</strong>，日历时间包括日期和时间。</p>
+
+<p>time函数返回当前的时间和日期：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;time.h&gt;
+</span><span class='line'>
+</span><span class='line'>time_t time(time_t *calptr);
+</span></code></pre></td></tr></table></div></figure>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/03/29/system-data-file-and-info/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -614,6 +675,10 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">函数和函数式编程</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a>
       </li>
     
@@ -639,10 +704,6 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     
       <li class="post">
         <a href="/blog/2014/05/04/process-control/">apue(进程控制)</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/04/22/python-note/">python杂记</a>
       </li>
     
   </ul>

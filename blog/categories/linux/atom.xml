@@ -4,7 +4,7 @@
   <title><![CDATA[Category: linux | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-06T23:33:53+08:00</updated>
+  <updated>2014-09-13T21:53:31+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -290,6 +290,198 @@ int pthread_cancel(pthread_t tid);
 <p>线程在取消请求发出后还继续运行，直到线程打到某个<em>取消点</em>。取消点是线程检查是否被取消并按照请求进行动作的一个位置。</p>
 
 <h1>线程同步</h1>
+
+<p>有三种同步方式：互斥量、读写锁以及条件变量</p>
+
+<h2>互斥量</h2>
+
+<p>互斥量用pthread_mutex_t数据类型表示，使用互斥量之前必须对其进行初始化
+* 初始化为常量PTHREAD_MUTEX_INITIALIZER，前提是pthread_mutex_t为静态分配的
+* 调用pthread_mutex_init函数初始化动态分配的pthread_mutex_t变量。</p>
+
+<p>注意：
+* 如果pthread_mutex_t是动态分配的（比如通过malloc），则须用pthread_mutex_destory函数来师傅内存。</p>
+
+<pre><code class="c">
+int pthread_mutex_init(pthread_mutex_t *restrict mutex, pthread_mutexattr_t *attr);
+int pthread_mutex_destory(pthread_mutex_t *mutex)
+</code></pre>
+
+<p>对互斥量加锁解锁函数</p>
+
+<pre><code>
+#include &lt;pthread.h&gt;
+int pthread_mutex_lock(pthread_mutex_t *mutex);
+int pthread_mutex_trylock(pthread_mutex_t *mutex);
+int pthread_mutex_unlock(pthread_mutex_t *mutex);
+</code></pre>
+
+<p>对互斥量要找到平衡点，既不使锁得粒度太粗导致线程阻塞，又不能因为锁得粒度太细导致代码复杂性和过多锁导致性能下降。</p>
+
+<h2>读写锁</h2>
+
+<p>与互斥量类似，但是读写锁具有更高的并行性。读写锁有三种状态：
+* 读模式下的锁状态
+* 写模式下的加锁状态
+* 不加锁状态</p>
+
+<p>对于读写锁，有几个特征：</p>
+
+<ul>
+<li>一次只能有一个线程可以占有写锁，但是多个线程可以同时占用读锁。</li>
+<li>当处于写锁状态时，所有试图对其进行加读锁的线程，都会被阻塞</li>
+<li>当处于读锁状态时，所有试图对齐进行加读锁的线程，都可以立即获得</li>
+<li>如果在读锁状态下，线程希望以写锁对此锁进行加锁，必须阻塞直到线程释放获的的读锁才可以加上写锁。</li>
+<li>为了防止一直处于读锁中而使写锁一直阻塞，一旦进行加写锁阻塞，会阻塞后续对其进行的增加读锁行为。</li>
+</ul>
+
+
+<p>读写锁也叫共享-独占锁。</p>
+
+<p>对读写锁也需要初始化和销毁操作。</p>
+
+<pre><code class="c">
+#include &lt;pthread.h&gt;
+
+int pthread_rwlock_init(pthread_rwlock_t rwlock, pthread_rwlockattr_t * attr);
+int pthread_rwlock_destory(pthread_rwlock_t *rwlock);
+</code></pre>
+
+<p>读写锁加锁操作</p>
+
+<pre><code>#include &lt;pthread.h&gt;
+int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);
+int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
+int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
+
+// 实现读写锁的时候，可能会对共享模式下可获取的锁进行数量限制，因此要检查pthread_rwlock_rdlock()的返回值。
+</code></pre>
+
+<h2>条件变量</h2>
+
+<p>mutex阻止了多个线程同时访问共享的变量。
+条件变量允许一个线程在共享的变量状态改变的时候通知其他线程这个改变，并允许其它线程等待（block）这个通知。</p>
+
+<p>下面代码，没有使用条件变量，只是使用互斥量来实现，来证明在特定情况下，条件变量的用处。</p>
+
+<pre><code class="c">static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER; 
+static int avail = 0;  // 表示可消费的数目
+
+// 在生产线程中的代码
+
+s = pthread_mutex_lock(&amp;mtx);
+if (s != 0)
+    errExitEN(s, "pthread_mutex_lock");
+
+avail++; /* 仅仅表示有可用资源，其它步骤省略*/
+
+s = pthread_mutex_unlock(&amp;mtx); 
+
+if (s != 0)
+    errExitEN(s, "pthread_mutex_unlock");
+
+// 在主线程中，主要用来消费生产线程生产的数据
+
+for (;;) {
+    s = pthread_mutex_lock(&amp;mtx);
+    if (s != 0)
+        errExitEN(s, "pthread_mutex_lock");
+
+    while (avail &gt; 0) { /* 消耗生产的数据 */ 
+        /* 用生产的数据做一些其它时期 */
+        avail--;
+    }
+    s = pthread_mutex_unlock(&amp;mtx); 
+    if (s != 0)
+        errExitEN(s, "pthread_mutex_unlock");
+}
+</code></pre>
+
+<p>上面用互斥量实现的生产者消费者同步代码，问题有：</p>
+
+<ol>
+<li>空耗CPU，会一直持续循环来检查avail的状态</li>
+</ol>
+
+
+<p>条件变量解决了这个问题，允许消费进程在没有数据的时候挂起（wait），当有数据的时候通知线程。</p>
+
+<p>条件变量通常与互斥量联合使用：</p>
+
+<ul>
+<li>互斥量保护共享变量的修改</li>
+<li>条件变量则用来通知状态的修改</li>
+</ul>
+
+
+<p>条件变量在使用前必须初始化，跟互斥量一样，既可以静态初始化，也可以动态初始化。</p>
+
+<pre><code class="c">// 静态
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+
+// 动态，pthread_cond_t变量是动态分配的。需要调用下面函数
+
+#include &lt;pthread.h&gt;
+int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr);
+
+int pthread_cond_destroy(pthread_cond_t *cond);
+</code></pre>
+
+<h2>基于条件变量的通知和等待</h2>
+
+<p>条件变量的主要操作就是signal（通知）和wait（等待），通知可以一次给一个线程通知，也可以广播给所有等待线程。
+wait操作是等待，直到有通知到来。</p>
+
+<pre><code class="c">
+#include &lt;pthread.h&gt;
+int pthread_cond_signal(pthread_cond_t *cond);
+int pthread_cond_broadcast(pthread_cond_t *cond);
+int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex);
+
+int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
+const struct timespec *abstime);
+</code></pre>
+
+<p>下面代码是使用条件变量的典型代码：</p>
+
+<pre><code class="c 消耗线程代码">
+pthread_mutex_lock(&amp;mutex);         /* 锁住互斥量          */
+while (!predicate) {                    /* 检查 predicate      */
+    pthread_cond_wait(&amp;condvar,&amp;mutex);   /* go to sleep - recheck pred on awakening    */
+
+}
+pthread_mutex_unlock(&amp;mutex); 
+</code></pre>
+
+<p>pthread_cond_wait() 做了以下事情：</p>
+
+<ul>
+<li>释放互斥量的锁</li>
+<li>让线程进入休眠状态（sleep）</li>
+</ul>
+
+
+<p>当某个线程进入休眠状态，需要有其它线程唤醒它，这就是生产线程：</p>
+
+<pre><code class="c 生产线程">
+pthread_mutex_lock(&amp;mutex);                 /* 锁住互斥量       */
+predicate=1;                                /* 设置 predicate    */
+pthread_cond_broadcast(&amp;condvar);           /* 唤醒每一个等待条件变量的线程     */
+pthread_mutex_unlock(&amp;mutex);               /* 解锁互斥量     */
+</code></pre>
+
+<p>这里，重要的调用是pthread_cond_broadcast()，他会唤醒每一个等待条件变量的线程。第一个被唤醒的线程还是处于pthread_cond_wait函数调用中。然后，pthread_cond_wait完成了下面操作：</p>
+
+<ul>
+<li>重新获得互斥量锁。</li>
+</ul>
+
+
+<p>然后执行就再次检查predicate。</p>
+
+<h3>条件变量实际例子（join任何终止的线程）</h3>
+
+<p>使用pthread_join仅仅可以等待一个指定的线程，并没办法join任何终止的线程。使用条件变量可以实现。</p>
 ]]></content>
   </entry>
   

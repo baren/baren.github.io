@@ -4,7 +4,7 @@
   <title><![CDATA[Baren Blog]]></title>
   <link href="http://baren.github.io/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-06T23:33:53+08:00</updated>
+  <updated>2014-09-13T21:53:31+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -12,6 +12,415 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[函数和函数式编程]]></title>
+    <link href="http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming/"/>
+    <updated>2014-09-13T17:07:23+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming</id>
+    <content type="html"><![CDATA[<h1>作用域规则</h1>
+
+<p>每当一个函数执行，都会创建一个局部命名空间（local namespace）。这个命名空间代表了一个局部环境，这个环境包含了凡是参数的名字、在函数内定义的局部变量等。当解析一个名字时，解析器会：</p>
+
+<ul>
+<li>首先检查局部环境变量</li>
+<li>如果在局部命名空间中找不到，然后再往上寻找全局命名空间（global namespace），全局命名空间是函数定义所在的模块。</li>
+<li>如果在全局命名空间不存在，解释器会查找内置的命名空间，如果还找不到，则NameError异常抛出</li>
+</ul>
+
+
+<p>python的命名空间的一个特点就是：在函数内处理全局变量。</p>
+
+<p>比如：</p>
+
+<!-- more -->
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="mi">42</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+</span><span class='line'>  <span class="n">a</span> <span class="o">=</span> <span class="mi">13</span>
+</span><span class='line'><span class="n">foo</span><span class="p">()</span>
+</span><span class='line'><span class="c"># a 还是 42</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里，虽然在函数foo内给a赋值为13，但是：<em>当一个变量在函数内赋值时，结果总是把这个变量绑定到局部命名空间中</em>，因此在foo内，a与全局变量的a是不一样的。</p>
+
+<p>如果要在函数内修改全局变量，必须使用<em>global</em>关键字来修饰变量。表示的意思是简单的生命这个名字属于全局命名空间。这只在这个变量需要被修改的情况下。
+例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="mi">42</span>
+</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="mi">37</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+</span><span class='line'>  <span class="k">global</span> <span class="n">a</span>  <span class="c"># &#39;a&#39; 此时在全局命名空间中</span>
+</span><span class='line'>  <span class="n">a</span> <span class="o">=</span> <span class="mi">13</span>
+</span><span class='line'>  <span class="n">b</span><span class="o">=</span><span class="mi">0</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">foo</span><span class="p">()</span>
+</span><span class='line'><span class="c"># a 是 13. b 仍然是 37.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>嵌套函数中的变量作用域</h2>
+
+<p>python支持嵌套函数定义，也就是在函数内定义函数：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">start</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">n</span> <span class="o">=</span> <span class="n">start</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">display</span><span class="p">():</span> <span class="c"># Nested function definition </span>
+</span><span class='line'>      <span class="k">print</span><span class="p">(</span><span class="s">&#39;T-minus </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>      <span class="n">display</span><span class="p">()</span>
+</span><span class='line'>      <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当作用域涉及到嵌套函数时，变量的搜寻是按照<em>词法范围（lexical scoping）</em>来查找的。意思是：</p>
+
+<ul>
+<li>变量名字受限检查局部范围</li>
+<li>然后是函数定义处外围范围，依次往外查找，从最内层到最外层范围</li>
+<li>然后就是全局命名空间</li>
+<li>最后是内置的命名空间</li>
+</ul>
+
+
+<p>在给变量赋值时，牵扯到嵌套函数，python2有个限制是：</p>
+
+<ul>
+<li>只允许在最内层范围的和全局范围的（使用global）的变量可以被赋值。</li>
+</ul>
+
+
+<p>这意味着：</p>
+
+<ul>
+<li>内部函数不能够给一个局部变量赋值，这个局部变量是定义在内部函数的外围函数内。</li>
+</ul>
+
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">start</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">n</span> <span class="o">=</span> <span class="n">start</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">def</span> <span class="nf">display</span><span class="p">():</span>
+</span><span class='line'>      <span class="k">print</span><span class="p">(</span><span class="s">&#39;T-minus </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">def</span> <span class="nf">decrement</span><span class="p">():</span>
+</span><span class='line'>      <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span> <span class="c"># 在Python 2是错误的，这里不能修改这个值。</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>      <span class="n">display</span><span class="p">()</span>
+</span><span class='line'>      <span class="n">decrement</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在python3中，可以使用<em>nonlocal</em>关键字来修改：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">start</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">n</span> <span class="o">=</span> <span class="n">start</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">def</span> <span class="nf">display</span><span class="p">():</span>
+</span><span class='line'>      <span class="k">print</span><span class="p">(</span><span class="s">&#39;T-minus </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">decrement</span><span class="p">():</span>
+</span><span class='line'>      <span class="n">nonlocal</span> <span class="n">n</span>
+</span><span class='line'>      <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>  <span class="c"># 绑定到外围的 n (Python 3)</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>      <span class="n">display</span><span class="p">()</span>
+</span><span class='line'>      <span class="n">decrement</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果一个局部变量在赋值前被使用，则会抛出UnboundLocalError的错误，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">i</span><span class="o">=</span><span class="mi">0</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+</span><span class='line'>  <span class="n">i</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="c"># 导致UnboundLocalError 异常 </span>
+</span><span class='line'>  <span class="k">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在这个例子中，变量<em>i</em>被定义为局部变量（在函数内被赋值，并且没有global关键字声明），这样，在执行 i = i +1 语句时，会试图读取变量“i”的值，会导致错误。</p>
+
+<h1>函数作为对象和闭包（closure）</h1>
+
+<h2>函数作为对象</h2>
+
+<p>python中，函数是一级对象（first-class），意思是</p>
+
+<ul>
+<li>函数可以作为参数传递给其它函数</li>
+<li>放在数据结构中</li>
+<li>以及作为结果从函数中返回。</li>
+</ul>
+
+
+<p>注意：</p>
+
+<blockquote><p>当函数作为数据被处理时，需要注意的是：函数隐含的携带了在函数定义处的外围环境信息。这会影响到自由的变量在函数内怎么被绑定。</p></blockquote>
+
+<p>比如下面例子：</p>
+
+<figure class='code'><figcaption><span>foo_test.py</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">x</span> <span class="o">=</span> <span class="mi">33</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">print_x</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">print</span> <span class="n">x</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>然后在foo.py文件中导入foo_test：</p>
+
+<figure class='code'><figcaption><span>foo.py</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">x</span> <span class="o">=</span> <span class="mi">42</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">func</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">foo</span><span class="p">(</span><span class="n">foo_test</span><span class="o">.</span><span class="n">print_x</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">//</span> <span class="err">输出结果是</span><span class="mi">33</span><span class="err">，而不是此处定义的</span><span class="mi">42</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在这个例子中，需要注意的是print_x使用的x是他所定义处的x的值，而不是在执行处的值，虽然在执行的地方，也定义了同样的变量。</p>
+
+<h2>闭包</h2>
+
+<p>闭包的定义：
+组成函数的语句，与执行的环境绑定在一起，产生的对象，被称为闭包。可以简单的认为闭包是一个函数，它在词法上下文中引用了自由变量，所谓自由变量就是除局部变量以外的变量。</p>
+
+<p>闭包只是在形式和表现上像函数，但实际上不是函数。函数是一些可执行的代码，这些代码在函数被定义后就确定了，不会在执行时发生变化，所以一个函数只有一个实例。闭包在运行时可以有多个实例，不同的引用环境和相同的函数组合可以产生不同的实例</p>
+
+<p>一般有闭包特征的语言有下面这样的特性：</p>
+
+<ul>
+<li>函数是第一级对象（first-class）</li>
+<li>函数可以嵌套定义。</li>
+</ul>
+
+
+<p>当嵌套函数被使用时，闭包会捕获嵌套函数执行所需要的整个环境。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">foo</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">bar</span><span class="p">():</span>
+</span><span class='line'>  <span class="n">x</span> <span class="o">=</span> <span class="mi">13</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">helloworld</span><span class="p">():</span>
+</span><span class='line'>  <span class="k">return</span> <span class="s">&quot;Hello World. x is </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">x</span>
+</span><span class='line'>  <span class="n">foo</span><span class="o">.</span><span class="n">callf</span><span class="p">(</span><span class="n">helloworld</span><span class="p">)</span>     <span class="c"># returns &#39;Hello World, x is 13&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>闭包和嵌套函数在你想延迟计算时，比较有用：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">urlopen</span>
+</span><span class='line'><span class="c"># from urllib.request import urlopen (Python 3) </span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">page</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get</span><span class="p">():</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">get</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>执行如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">python_url</span> <span class="o">=</span> <span class="n">page</span><span class="p">(</span><span class="s">&quot;http://www.python.org&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jython_url</span> <span class="o">=</span> <span class="n">page</span><span class="p">(</span><span class="s">&quot;http://www.jython.org&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">python_url</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span> <span class="n">get</span> <span class="n">at</span> <span class="mh">0x95d5f0</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jython</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span> <span class="n">get</span> <span class="n">at</span> <span class="mh">0x9735f0</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">pydata</span> <span class="o">=</span> <span class="n">python</span><span class="p">()</span>  <span class="c"># 读取url内容</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jydata</span> <span class="o">=</span> <span class="n">jython</span><span class="p">()</span>  <span class="c"># 读取url内容</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对于上面这个闭包例子，解释如下：</p>
+
+<ul>
+<li>两个变量python_url和jython_url实际上是两个不同的get函数的版本（语句与外围环境的绑定）</li>
+<li>即使创建这两个变量的函数page不再运行，get函数暗中的携带了get函数使用的外围get函数定义处的变量。</li>
+<li>当get调用时，绑定了代码和外围的变量。</li>
+</ul>
+
+
+<p>闭包一个非常有用的方式是：<em>可以用来保存跨越一系列函数调用的状态（函数式编程所用到的状态的保存）</em>，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">next</span><span class="p">():</span>
+</span><span class='line'>      <span class="n">nonlocal</span> <span class="n">n</span>  <span class="c"># python3</span>
+</span><span class='line'>      <span class="n">r</span><span class="o">=</span><span class="n">n</span>
+</span><span class='line'>      <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">r</span>
+</span><span class='line'>  <span class="k">return</span> <span class="nb">next</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Example use</span>
+</span><span class='line'><span class="nb">next</span> <span class="o">=</span> <span class="n">countdown</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'><span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>  <span class="n">v</span> <span class="o">=</span> <span class="nb">next</span><span class="p">()</span>  <span class="c"># 获取下一个值</span>
+</span><span class='line'>  <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span><span class="p">:</span>
+</span><span class='line'>      <span class="k">break</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在这段代码中，闭包被用来保存内部的计数值 n。这样，每次调用next()函数时，都能够更新和返回上一个计数变量的值（感觉就是更新了一个全局变量，但是这个n实际上是一个局部变量）。</p>
+
+<p>假设，语言不支持闭包，那么要实现上面同样的功能，可以这样(基本原则是在函数外定义一个变量，变量的生命周期不随函数调用而结束)：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">class</span> <span class="nc">Countdown</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>      <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span class='line'>      <span class="n">r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span>
+</span><span class='line'>      <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">r</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Example use</span>
+</span><span class='line'><span class="n">c</span> <span class="o">=</span> <span class="n">Countdown</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>  <span class="n">v</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span> <span class="c"># 获取下一个值</span>
+</span><span class='line'>  <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span><span class="p">:</span>
+</span><span class='line'>      <span class="k">break</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>总结：</p>
+
+<blockquote><p>闭包可以保存变量的状态，这个变量不随着闭包调用结束而丢失。重要的特性。
+闭包可以捕获嵌套函数的环境的特性，在包装一个存在的函数来增加额外的功能的时候，非常有用（装饰器）。</p></blockquote>
+
+<h1>装饰器</h1>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[程序结构和控制]]></title>
@@ -831,6 +1240,274 @@ pthread_exit的参数不能是线程栈的数据，因为一旦线程结束，�
 <p>线程在取消请求发出后还继续运行，直到线程打到某个<em>取消点</em>。取消点是线程检查是否被取消并按照请求进行动作的一个位置。</p>
 
 <h1>线程同步</h1>
+
+<p>有三种同步方式：互斥量、读写锁以及条件变量</p>
+
+<h2>互斥量</h2>
+
+<p>互斥量用pthread_mutex_t数据类型表示，使用互斥量之前必须对其进行初始化
+* 初始化为常量PTHREAD_MUTEX_INITIALIZER，前提是pthread_mutex_t为静态分配的
+* 调用pthread_mutex_init函数初始化动态分配的pthread_mutex_t变量。</p>
+
+<p>注意：
+* 如果pthread_mutex_t是动态分配的（比如通过malloc），则须用pthread_mutex_destory函数来师傅内存。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutex_init</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="kr">restrict</span> <span class="n">mutex</span><span class="p">,</span> <span class="kt">pthread_mutexattr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">pthread_mutex_destory</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对互斥量加锁解锁函数</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutex_lock</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutex_trylock</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutex_unlock</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对互斥量要找到平衡点，既不使锁得粒度太粗导致线程阻塞，又不能因为锁得粒度太细导致代码复杂性和过多锁导致性能下降。</p>
+
+<h2>读写锁</h2>
+
+<p>与互斥量类似，但是读写锁具有更高的并行性。读写锁有三种状态：
+* 读模式下的锁状态
+* 写模式下的加锁状态
+* 不加锁状态</p>
+
+<p>对于读写锁，有几个特征：</p>
+
+<ul>
+<li>一次只能有一个线程可以占有写锁，但是多个线程可以同时占用读锁。</li>
+<li>当处于写锁状态时，所有试图对其进行加读锁的线程，都会被阻塞</li>
+<li>当处于读锁状态时，所有试图对齐进行加读锁的线程，都可以立即获得</li>
+<li>如果在读锁状态下，线程希望以写锁对此锁进行加锁，必须阻塞直到线程释放获的的读锁才可以加上写锁。</li>
+<li>为了防止一直处于读锁中而使写锁一直阻塞，一旦进行加写锁阻塞，会阻塞后续对其进行的增加读锁行为。</li>
+</ul>
+
+
+<p>读写锁也叫共享-独占锁。</p>
+
+<p>对读写锁也需要初始化和销毁操作。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_rwlock_init</span><span class="p">(</span><span class="kt">pthread_rwlock_t</span> <span class="n">rwlock</span><span class="p">,</span> <span class="kt">pthread_rwlockattr_t</span> <span class="o">*</span> <span class="n">attr</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_rwlock_destory</span><span class="p">(</span><span class="kt">pthread_rwlock_t</span> <span class="o">*</span><span class="n">rwlock</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>读写锁加锁操作</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_rwlock_rdlock</span><span class="p">(</span><span class="kt">pthread_rwlock_t</span> <span class="o">*</span><span class="n">rwlock</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_rwlock_wrlock</span><span class="p">(</span><span class="kt">pthread_rwlock_t</span> <span class="o">*</span><span class="n">rwlock</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_rwlock_unlock</span><span class="p">(</span><span class="kt">pthread_rwlock_t</span> <span class="o">*</span><span class="n">rwlock</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 实现读写锁的时候，可能会对共享模式下可获取的锁进行数量限制，因此要检查pthread_rwlock_rdlock()的返回值。</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>条件变量</h2>
+
+<p>mutex阻止了多个线程同时访问共享的变量。
+条件变量允许一个线程在共享的变量状态改变的时候通知其他线程这个改变，并允许其它线程等待（block）这个通知。</p>
+
+<p>下面代码，没有使用条件变量，只是使用互斥量来实现，来证明在特定情况下，条件变量的用处。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">pthread_mutex_t</span> <span class="n">mtx</span> <span class="o">=</span> <span class="n">PTHREAD_MUTEX_INITIALIZER</span><span class="p">;</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="n">avail</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>  <span class="c1">// 表示可消费的数目</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 在生产线程中的代码</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">s</span> <span class="o">=</span> <span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mtx</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_mutex_lock&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">avail</span><span class="o">++</span><span class="p">;</span> <span class="cm">/* 仅仅表示有可用资源，其它步骤省略*/</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">s</span> <span class="o">=</span> <span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mtx</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_mutex_unlock&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 在主线程中，主要用来消费生产线程生产的数据</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">for</span> <span class="p">(;;)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mtx</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_mutex_lock&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">while</span> <span class="p">(</span><span class="n">avail</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* 消耗生产的数据 */</span>
+</span><span class='line'>      <span class="cm">/* 用生产的数据做一些其它时期 */</span>
+</span><span class='line'>      <span class="n">avail</span><span class="o">--</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mtx</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_mutex_unlock&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面用互斥量实现的生产者消费者同步代码，问题有：</p>
+
+<ol>
+<li>空耗CPU，会一直持续循环来检查avail的状态</li>
+</ol>
+
+
+<p>条件变量解决了这个问题，允许消费进程在没有数据的时候挂起（wait），当有数据的时候通知线程。</p>
+
+<p>条件变量通常与互斥量联合使用：</p>
+
+<ul>
+<li>互斥量保护共享变量的修改</li>
+<li>条件变量则用来通知状态的修改</li>
+</ul>
+
+
+<p>条件变量在使用前必须初始化，跟互斥量一样，既可以静态初始化，也可以动态初始化。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// 静态</span>
+</span><span class='line'><span class="kt">pthread_cond_t</span> <span class="n">cond</span> <span class="o">=</span> <span class="n">PTHREAD_COND_INITIALIZER</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 动态，pthread_cond_t变量是动态分配的。需要调用下面函数</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_init</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">,</span> <span class="k">const</span> <span class="kt">pthread_condattr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_destroy</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>基于条件变量的通知和等待</h2>
+
+<p>条件变量的主要操作就是signal（通知）和wait（等待），通知可以一次给一个线程通知，也可以广播给所有等待线程。
+wait操作是等待，直到有通知到来。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_signal</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_broadcast</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_wait</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">,</span> <span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_timedwait</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">,</span> <span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">,</span>
+</span><span class='line'><span class="k">const</span> <span class="k">struct</span> <span class="n">timespec</span> <span class="o">*</span><span class="n">abstime</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>下面代码是使用条件变量的典型代码：</p>
+
+<figure class='code'><figcaption><span>消耗线程代码</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mutex</span><span class="p">);</span>         <span class="cm">/* 锁住互斥量          */</span>
+</span><span class='line'><span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="n">predicate</span><span class="p">)</span> <span class="p">{</span>                    <span class="cm">/* 检查 predicate      */</span>
+</span><span class='line'>  <span class="n">pthread_cond_wait</span><span class="p">(</span><span class="o">&amp;</span><span class="n">condvar</span><span class="p">,</span><span class="o">&amp;</span><span class="n">mutex</span><span class="p">);</span>   <span class="cm">/* go to sleep - recheck pred on awakening    */</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mutex</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>pthread_cond_wait() 做了以下事情：</p>
+
+<ul>
+<li>释放互斥量的锁</li>
+<li>让线程进入休眠状态（sleep）</li>
+</ul>
+
+
+<p>当某个线程进入休眠状态，需要有其它线程唤醒它，这就是生产线程：</p>
+
+<figure class='code'><figcaption><span>生产线程</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mutex</span><span class="p">);</span>              <span class="cm">/* 锁住互斥量       */</span>
+</span><span class='line'><span class="n">predicate</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span>                             <span class="cm">/* 设置 predicate    */</span>
+</span><span class='line'><span class="n">pthread_cond_broadcast</span><span class="p">(</span><span class="o">&amp;</span><span class="n">condvar</span><span class="p">);</span>          <span class="cm">/* 唤醒每一个等待条件变量的线程     */</span>
+</span><span class='line'><span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mutex</span><span class="p">);</span>               <span class="cm">/* 解锁互斥量     */</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里，重要的调用是pthread_cond_broadcast()，他会唤醒每一个等待条件变量的线程。第一个被唤醒的线程还是处于pthread_cond_wait函数调用中。然后，pthread_cond_wait完成了下面操作：</p>
+
+<ul>
+<li>重新获得互斥量锁。</li>
+</ul>
+
+
+<p>然后执行就再次检查predicate。</p>
+
+<h3>条件变量实际例子（join任何终止的线程）</h3>
+
+<p>使用pthread_join仅仅可以等待一个指定的线程，并没办法join任何终止的线程。使用条件变量可以实现。</p>
 ]]></content>
   </entry>
   

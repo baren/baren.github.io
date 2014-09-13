@@ -458,6 +458,274 @@ pthread_exit的参数不能是线程栈的数据，因为一旦线程结束，�
 <p>线程在取消请求发出后还继续运行，直到线程打到某个<em>取消点</em>。取消点是线程检查是否被取消并按照请求进行动作的一个位置。</p>
 
 <h1>线程同步</h1>
+
+<p>有三种同步方式：互斥量、读写锁以及条件变量</p>
+
+<h2>互斥量</h2>
+
+<p>互斥量用pthread_mutex_t数据类型表示，使用互斥量之前必须对其进行初始化
+* 初始化为常量PTHREAD_MUTEX_INITIALIZER，前提是pthread_mutex_t为静态分配的
+* 调用pthread_mutex_init函数初始化动态分配的pthread_mutex_t变量。</p>
+
+<p>注意：
+* 如果pthread_mutex_t是动态分配的（比如通过malloc），则须用pthread_mutex_destory函数来师傅内存。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutex_init</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="kr">restrict</span> <span class="n">mutex</span><span class="p">,</span> <span class="kt">pthread_mutexattr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="n">pthread_mutex_destory</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对互斥量加锁解锁函数</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutex_lock</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutex_trylock</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutex_unlock</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>对互斥量要找到平衡点，既不使锁得粒度太粗导致线程阻塞，又不能因为锁得粒度太细导致代码复杂性和过多锁导致性能下降。</p>
+
+<h2>读写锁</h2>
+
+<p>与互斥量类似，但是读写锁具有更高的并行性。读写锁有三种状态：
+* 读模式下的锁状态
+* 写模式下的加锁状态
+* 不加锁状态</p>
+
+<p>对于读写锁，有几个特征：</p>
+
+<ul>
+<li>一次只能有一个线程可以占有写锁，但是多个线程可以同时占用读锁。</li>
+<li>当处于写锁状态时，所有试图对其进行加读锁的线程，都会被阻塞</li>
+<li>当处于读锁状态时，所有试图对齐进行加读锁的线程，都可以立即获得</li>
+<li>如果在读锁状态下，线程希望以写锁对此锁进行加锁，必须阻塞直到线程释放获的的读锁才可以加上写锁。</li>
+<li>为了防止一直处于读锁中而使写锁一直阻塞，一旦进行加写锁阻塞，会阻塞后续对其进行的增加读锁行为。</li>
+</ul>
+
+
+<p>读写锁也叫共享-独占锁。</p>
+
+<p>对读写锁也需要初始化和销毁操作。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_rwlock_init</span><span class="p">(</span><span class="kt">pthread_rwlock_t</span> <span class="n">rwlock</span><span class="p">,</span> <span class="kt">pthread_rwlockattr_t</span> <span class="o">*</span> <span class="n">attr</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_rwlock_destory</span><span class="p">(</span><span class="kt">pthread_rwlock_t</span> <span class="o">*</span><span class="n">rwlock</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>读写锁加锁操作</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_rwlock_rdlock</span><span class="p">(</span><span class="kt">pthread_rwlock_t</span> <span class="o">*</span><span class="n">rwlock</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_rwlock_wrlock</span><span class="p">(</span><span class="kt">pthread_rwlock_t</span> <span class="o">*</span><span class="n">rwlock</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_rwlock_unlock</span><span class="p">(</span><span class="kt">pthread_rwlock_t</span> <span class="o">*</span><span class="n">rwlock</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 实现读写锁的时候，可能会对共享模式下可获取的锁进行数量限制，因此要检查pthread_rwlock_rdlock()的返回值。</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>条件变量</h2>
+
+<p>mutex阻止了多个线程同时访问共享的变量。
+条件变量允许一个线程在共享的变量状态改变的时候通知其他线程这个改变，并允许其它线程等待（block）这个通知。</p>
+
+<p>下面代码，没有使用条件变量，只是使用互斥量来实现，来证明在特定情况下，条件变量的用处。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="k">static</span> <span class="kt">pthread_mutex_t</span> <span class="n">mtx</span> <span class="o">=</span> <span class="n">PTHREAD_MUTEX_INITIALIZER</span><span class="p">;</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="n">avail</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>  <span class="c1">// 表示可消费的数目</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 在生产线程中的代码</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">s</span> <span class="o">=</span> <span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mtx</span><span class="p">);</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_mutex_lock&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">avail</span><span class="o">++</span><span class="p">;</span> <span class="cm">/* 仅仅表示有可用资源，其它步骤省略*/</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">s</span> <span class="o">=</span> <span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mtx</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_mutex_unlock&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 在主线程中，主要用来消费生产线程生产的数据</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">for</span> <span class="p">(;;)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mtx</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_mutex_lock&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">while</span> <span class="p">(</span><span class="n">avail</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* 消耗生产的数据 */</span>
+</span><span class='line'>      <span class="cm">/* 用生产的数据做一些其它时期 */</span>
+</span><span class='line'>      <span class="n">avail</span><span class="o">--</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mtx</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_mutex_unlock&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面用互斥量实现的生产者消费者同步代码，问题有：</p>
+
+<ol>
+<li>空耗CPU，会一直持续循环来检查avail的状态</li>
+</ol>
+
+
+<p>条件变量解决了这个问题，允许消费进程在没有数据的时候挂起（wait），当有数据的时候通知线程。</p>
+
+<p>条件变量通常与互斥量联合使用：</p>
+
+<ul>
+<li>互斥量保护共享变量的修改</li>
+<li>条件变量则用来通知状态的修改</li>
+</ul>
+
+
+<p>条件变量在使用前必须初始化，跟互斥量一样，既可以静态初始化，也可以动态初始化。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// 静态</span>
+</span><span class='line'><span class="kt">pthread_cond_t</span> <span class="n">cond</span> <span class="o">=</span> <span class="n">PTHREAD_COND_INITIALIZER</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 动态，pthread_cond_t变量是动态分配的。需要调用下面函数</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_init</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">,</span> <span class="k">const</span> <span class="kt">pthread_condattr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_destroy</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>基于条件变量的通知和等待</h2>
+
+<p>条件变量的主要操作就是signal（通知）和wait（等待），通知可以一次给一个线程通知，也可以广播给所有等待线程。
+wait操作是等待，直到有通知到来。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_signal</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_broadcast</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_wait</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">,</span> <span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cond_timedwait</span><span class="p">(</span><span class="kt">pthread_cond_t</span> <span class="o">*</span><span class="n">cond</span><span class="p">,</span> <span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">,</span>
+</span><span class='line'><span class="k">const</span> <span class="k">struct</span> <span class="n">timespec</span> <span class="o">*</span><span class="n">abstime</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>下面代码是使用条件变量的典型代码：</p>
+
+<figure class='code'><figcaption><span>消耗线程代码</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mutex</span><span class="p">);</span>         <span class="cm">/* 锁住互斥量          */</span>
+</span><span class='line'><span class="k">while</span> <span class="p">(</span><span class="o">!</span><span class="n">predicate</span><span class="p">)</span> <span class="p">{</span>                    <span class="cm">/* 检查 predicate      */</span>
+</span><span class='line'>  <span class="n">pthread_cond_wait</span><span class="p">(</span><span class="o">&amp;</span><span class="n">condvar</span><span class="p">,</span><span class="o">&amp;</span><span class="n">mutex</span><span class="p">);</span>   <span class="cm">/* go to sleep - recheck pred on awakening    */</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'><span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mutex</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>pthread_cond_wait() 做了以下事情：</p>
+
+<ul>
+<li>释放互斥量的锁</li>
+<li>让线程进入休眠状态（sleep）</li>
+</ul>
+
+
+<p>当某个线程进入休眠状态，需要有其它线程唤醒它，这就是生产线程：</p>
+
+<figure class='code'><figcaption><span>生产线程</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mutex</span><span class="p">);</span>              <span class="cm">/* 锁住互斥量       */</span>
+</span><span class='line'><span class="n">predicate</span><span class="o">=</span><span class="mi">1</span><span class="p">;</span>                             <span class="cm">/* 设置 predicate    */</span>
+</span><span class='line'><span class="n">pthread_cond_broadcast</span><span class="p">(</span><span class="o">&amp;</span><span class="n">condvar</span><span class="p">);</span>          <span class="cm">/* 唤醒每一个等待条件变量的线程     */</span>
+</span><span class='line'><span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mutex</span><span class="p">);</span>               <span class="cm">/* 解锁互斥量     */</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里，重要的调用是pthread_cond_broadcast()，他会唤醒每一个等待条件变量的线程。第一个被唤醒的线程还是处于pthread_cond_wait函数调用中。然后，pthread_cond_wait完成了下面操作：</p>
+
+<ul>
+<li>重新获得互斥量锁。</li>
+</ul>
+
+
+<p>然后执行就再次检查predicate。</p>
+
+<h3>条件变量实际例子（join任何终止的线程）</h3>
+
+<p>使用pthread_join仅仅可以等待一个指定的线程，并没办法join任何终止的线程。使用条件变量可以实现。</p>
 </div>
 
 
@@ -521,6 +789,10 @@ pthread_exit的参数不能是线程栈的数据，因为一旦线程结束，�
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">函数和函数式编程</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a>
       </li>
     
@@ -546,10 +818,6 @@ pthread_exit的参数不能是线程栈的数据，因为一旦线程结束，�
     
       <li class="post">
         <a href="/blog/2014/05/04/process-control/">apue(进程控制)</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/04/22/python-note/">python杂记</a>
       </li>
     
   </ul>

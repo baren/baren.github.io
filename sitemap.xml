@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming/</loc>
+    <lastmod>2014-09-13T17:07:23+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://baren.github.io/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/</loc>
     <lastmod>2014-09-06T21:56:14+08:00</lastmod>
     <priority>0.8</priority>
@@ -119,14 +125,14 @@
   
   <url>
     <loc>http://baren.github.io/blog/archives/</loc>
-    <lastmod>2014-09-06T23:33:53+08:00</lastmod>
+    <lastmod>2014-09-13T21:53:31+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://baren.github.io/</loc>
-    <lastmod>2014-09-06T23:33:53+08:00</lastmod>
+    <lastmod>2014-09-13T21:53:31+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
