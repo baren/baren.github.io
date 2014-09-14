@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Baren Blog</title>
+  <title>python decorator 深入理解 - Baren Blog</title>
   <meta name="author" content="enwu">
 
   
@@ -26,7 +26,7 @@ def square(x): return &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://baren.github.io/">
+  <link rel="canonical" href="http://baren.github.io/blog/2014/09/14/per4-checpter6-decorator/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -70,15 +70,12 @@ def square(x): return &hellip;">
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2014/09/14/per4-checpter6-decorator/">Python Decorator 深入理解</a></h1>
+      <h1 class="entry-title">Python Decorator 深入理解</h1>
     
     
       <p class="meta">
@@ -101,7 +98,7 @@ def square(x): return &hellip;">
   </header>
 
 
-  <div class="entry-content"><h1>装饰器介绍</h1>
+<div class="entry-content"><h1>装饰器介绍</h1>
 
 <p>装饰器是一个函数，其主要目的是包装另一个函数或类，来透明的修改或者增强被包装对象的功能。语法上，装饰器用<em>@</em>表示，比如：</p>
 
@@ -793,76 +790,16 @@ functools。wraps()实际上也是个装饰器。</p>
 <p><a href="http://www.artima.com/weblogs/viewpost.jsp?thread=240845">http://www.artima.com/weblogs/viewpost.jsp?thread=240845</a>
 <a href="http://www.artima.com/weblogs/viewpost.jsp?thread=240808">http://www.artima.com/weblogs/viewpost.jsp?thread=240808</a></p>
 </div>
-  
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">Python 作用域规则</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
   
 
+<span class="byline author vcard">Posted by <span class="fn">enwu</span></span>
 
-<time datetime="2014-09-13T17:07:23+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>作用域规则</h1>
-
-<p>每当一个函数执行，都会创建一个局部命名空间（local namespace）。这个命名空间代表了一个局部环境，这个环境包含了凡是参数的名字、在函数内定义的局部变量等。当解析一个名字时，解析器会：</p>
-
-<ul>
-<li>首先检查局部环境变量</li>
-<li>如果在局部命名空间中找不到，然后再往上寻找全局命名空间（global namespace），全局命名空间是函数定义所在的模块。</li>
-<li>如果在全局命名空间不存在，解释器会查找内置的命名空间，如果还找不到，则NameError异常抛出</li>
-</ul>
-
-
-<p>python的命名空间的一个特点就是：在函数内处理全局变量。</p>
-
-<p>比如：</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a></h1>
-    
-    
-      <p class="meta">
-        
 
 
 
@@ -874,535 +811,38 @@ functools。wraps()实际上也是个装饰器。</p>
   
 
 
-<time datetime="2014-09-06T21:56:14+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>程序结构和执行</h1>
-
-<p>python程序被组织为一个语句序列。所有的语言特性，包括变量赋值、函数定义、类定义和模块导入等，都是语句，都是与其他语句具有相同状态。</p>
-
-<p>因此所有语句都可以放置在程序的任何地方。</p>
-
-<p>比如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-</span><span class='line'>      <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="nb">float</span><span class="p">):</span>
-</span><span class='line'>          <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Expected a float&quot;</span><span class="p">)</span>
-</span><span class='line'>      <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
-</span><span class='line'><span class="k">else</span><span class="p">:</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-</span><span class='line'>      <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>当加载文件时，python解释器顺序的执行每一条语句，知道不能执行为止。</p>
-
-<p>这种执行方式对于简单的作为主程序执行，或者经过import进行导入是一致的。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
+<time datetime="2014-09-14T11:38:09+08:00" pubdate data-updated="true"></time>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/06/octopress-syntax/">Octopress Syntax</a></h1>
-    
-    
-      <p class="meta">
-        
 
-
-
-
-
-
-
-
+<span class="categories">
   
+    <a class='category' href='/blog/categories/decorator/'>decorator</a>, <a class='category' href='/blog/categories/python/'>python</a>
+  
+</span>
 
 
-<time datetime="2014-09-06T10:53:04+08:00" pubdate data-updated="true"></time>
-        
-      </p>
+    </p>
     
-  </header>
-
-
-  <div class="entry-content"><h1>代码高亮语法</h1>
-
-<blockquote><p>{ % codeblock [lang:language] [title] [url] [link text] % }
-code snippet
-{ % endcodeblock % }</p></blockquote>
-
-<p>例子：</p>
-
-<figure class='code'><figcaption><span>Javascript Array Syntax</span><a href='http://j.mp/pPUUmW'>MDN Documentation </a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">arr1</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">arrayLength</span><span class="p">);</span>
-</span><span class='line'><span class="kd">var</span> <span class="nx">arr2</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">element0</span><span class="p">,</span> <span class="nx">element1</span><span class="p">,</span> <span class="p">...,</span> <span class="nx">elementN</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>图片语法</h1>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>{ % img [class names] /path/to/image [width] [height] [title text [alt text]] %}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>例子：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>{ % img /images/assets/linux.png %}
-</span><span class='line'>{ % img left /images/assets/linux.png Place Kitten #2 %}
-</span><span class='line'>{ % img right /images/assets/linux.png 150 250 Place Kitten #3 %}
-</span><span class='line'>{ % img right /images/assets/linux.png 150 250 'Place Kitten #4' 'An image of a very cute kitten' %}</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>多个分类</h1>
-
-<p>例子</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>categories:
-</span><span class='line'>- CSS3
-</span><span class='line'>- Sass
-</span><span class='line'>- Media Queries
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>显示部分内容</h1>
-
-<p>插入</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;!-- more --&gt;</span></code></pre></td></tr></table></div></figure>
-
-
-<p>会让文章下面的部分不显示，并会提示一个按钮，来查看未显示的内容。</p>
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2014/09/14/per4-checpter6-decorator/" data-via="" data-counturl="http://baren.github.io/blog/2014/09/14/per4-checpter6-decorator/" >Tweet</a>
+  
+  
+  
 </div>
-  
-  
 
-
-    </article>
-  
-  
-    <article>
+    
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/06/linux-performance-observability-tools/">Linux Performance Observability Tools</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-06T10:42:48+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img src="/images/assets/linux.png" title="linux" alt="alt text" /></p>
-
-<p>链接：<a href="http://www.brendangregg.com/linuxperf.html">http://www.brendangregg.com/linuxperf.html</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
+        <a class="basic-alignment left" href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/" title="Previous Post: python 作用域规则">&laquo; python 作用域规则</a>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/08/28/pthread/">Apue(线程)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-08-28T20:00:53+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>线程概念</h1>
-
-<p>主要是POSIX线程，也就是pthread。</p>
-
-<p>正常情况下，unix的进程包括一个单一的线程执行，从main开始。有了线程后，一个进程可以有多个线程同时执行。</p>
-
-<p>判断系统是否支持pthread，可以使用宏<em>POSIX_THREADS进行测试，还可以把</em>SC_THREADS传递给sysconf函数来运行时判断。</p>
-
-<p>线程可以有多种好处，按照传统的多进程的实现方式，一般是在网络服务器环境下使用，多进程可以同时支持多个客户端的请求。但也有一些限制：</p>
-
-<ul>
-<li>进程之间共享数据非常困难</li>
-<li>使用fork创建一个进程是耗资源的。即使使用了copy-on-write技术，复制各种进程的属性（page表和fd表等）也意味着是耗时间的。</li>
-</ul>
-
-
-<p>使用线程，解决这上面这些问题：</p>
-
-<ul>
-<li>线程之间共享信息是容易和迅速的。仅仅拷贝数据到共享内存（global或heap）的消耗。</li>
-<li>线程创建比进程创建迅速多了。大约有10倍。linux创建线程使用clone系统调用，也还是比进程快。</li>
-</ul>
-
-
-<p>除了共享全局内存，线程还共享一些其他属性，包括</p>
-
-<ul>
-<li>进程id和父进程id</li>
-<li>进程组合session id</li>
-<li>控制终端</li>
-<li>进程凭证（用户和组id）</li>
-<li>打开的文件描述符（比较重要）</li>
-<li>信号处理</li>
-<li>文件系统相关信息：umask、当前工作目录和根目录</li>
-<li>等</li>
-</ul>
-
-
-<p>下面是各个线程不同的属性：</p>
-
-<ul>
-<li>线程id</li>
-<li>信号mask</li>
-<li>线程私有数据</li>
-<li>errno变量</li>
-<li>等</li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/08/28/pthread/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/24/signal/">Apue(信号)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-24T20:00:20+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>信号概念</h1>
-
-<p>信号是软中断，提供了一种处理异步事件的方法</p>
-
-<p>关于信号：</p>
-
-<ul>
-<li>每个信号都有一个唯一的整数定义，从1开始（不存在为0的信号，值为0可以利用kill函数有其它作用），顺序递增。并且还为每个信号定义了一个名字，以SIG开头。
-这些信号定义在signal.h中</li>
-<li>产生信号的条件
-
-<blockquote><ul>
-<li>用户按终端键，印发终端产生信号</li>
-<li>硬件异常产生信号，比如无效的内存引用，除数为0等</li>
-<li>进程调用kill函数，将信号发送给另一个进程（包括自己）或进程组（有权限限制）</li>
-<li>用户用kill命令给进程发送信号</li>
-<li>当检测到某种条件已经发生，并应将信号通知有关进程时，也产生信号。比如SIGURG（网络连接传来数据），SIGPIPE在管道的读进程终止后，一个进程写此管道时产生。</li>
-</ul>
-</blockquote></li>
-</ul>
-
+    </p>
+  </footer>
+</article>
 
 </div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/06/24/signal/">Read on &rarr;</a>
-    </footer>
-  
 
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/04/process-relate/">Apue(进程关系)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-04T20:00:26+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>终端登录</h1>
-
-<p>由终端登录至unix，这个过程是类似的，而与所使用的终端无关，终端可以是基于字符的终端、仿真简单的基于字符终端的图形终端，或者是运行窗口系统的图形终端。</p>
-
-<p>终端登录步骤：</p>
-
-<ol>
-<li>系统自举时，创建进程ID为1的init进程。使系统进入多用户状态。</li>
-<li>init进程读取文件/etc/ttys，对每一个允许登录的终端设备，init进程调用一次fork，fork后的子进程执行getty程序（exec getty程序）</li>
-<li>getty程序会调用open函数，以读写方式打开终端，一旦打开设备，则文件描述符0、1、2设置到该设备，输出login:之类的信息</li>
-<li>gettty调用login函数（<code>execle("/bin/login", "login", "-p", username, (char *) 0, envp);</code>）</li>
-<li>login执行多个工作
-
-<blockquote><p>验证用户、密码正确性，连续几次不对，则退出；父进程init知道子进程终止后，会再次调用fork，执行getty，重复上述动作。登录成功后：
-将当前工作目录改为该用户的起始目录（home目录）
-chown改变该终端的所有权，使登录用户成为它的所有者
-对该终端设备的访问权限改为用户读写
-调用setgid及initgroups设置进程的组id
-用login所得到的所有信息初始化环境
-调用该登录用户的登录shell</p></blockquote></li>
-</ol>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/05/04/process-relate/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/04/process-control/">Apue(进程控制)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-04T20:00:02+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>进程标识符</h1>
-
-<p>进程都有一个非负整数代表唯一的进程ID。</p>
-
-<p>当进程终止后，进程ID可以重用，为了防止将新进程视为使用同一个进程ID的旧的进程，系统采用了<em>延迟重用</em>算法来重用进程ID。</p>
-
-<p>系统启动后有一些专用进程：</p>
-
-<ul>
-<li>ID为0的进程——调度进程，也称为交换进程（swapper），这个进程是内核的一部分，不执行磁盘上的程序，被称为系统进程。</li>
-<li>ID为1的进程——init进程，自举结束时由内核调用；早期的进程文件是/etc/init，现在都是/sbin/init。init通常读取系统的配置文件来初始化系统（/etc/rc*或/etc/initab, /etc/init.d）。init进程不会终止，虽然是普通进程，但是以超级用户权限运行，还接收孤儿进程，是所有孤儿进程（子进程还活着，父进程终止了，称为孤儿进程）父进程。</li>
-</ul>
-
-
-<p>下面函数返回与进程相关的其他标识符：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>pid_t getpid(void);
-</span><span class='line'>
-</span><span class='line'>pid_t getppid(void);
-</span><span class='line'>
-</span><span class='line'>uid_t getuid(void);  // 实际用户id
-</span><span class='line'>
-</span><span class='line'>uid_t geteuid(void);  // 有效用户id
-</span><span class='line'>
-</span><span class='line'>gid_t getgid(void);  // 实际组id
-</span><span class='line'>
-</span><span class='line'>gid_t getegid(void);  // 有效组id
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/05/04/process-control/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/04/22/python-note/">Python杂记</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-04-22T11:15:07+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul>
-<li><p>实际上，每一个python函数都有返回值，如果有return，则返回return指定的值；没有就返回None。</p></li>
-<li><p>python的搜索路径是在sys.path中搜索，sys.path是一个list，可以修改这个list的值。</p></li>
-<li><p>python中，所有都是对象（函数是对象，模块是对象等），意思是所有都可以赋值给变量，或者作为参数传递给函数。所有都是对象，有些可能不具有方法和属性，有些不能被继承，但是都可以赋值和传参。</p></li>
-</ul>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  <div class="pagination">
-    
-      <a class="prev" href="2">&larr; Older</a>
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
 <aside class="sidebar">
   
     <section>
@@ -1450,6 +890,7 @@ chown改变该终端的所有权，使登录用户成为它的所有者
 
   
 </aside>
+
 
     </div>
   </div>

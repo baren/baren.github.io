@@ -4,7 +4,7 @@
   <title><![CDATA[Category: python | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-13T21:53:31+08:00</updated>
+  <updated>2014-09-14T16:24:57+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -14,7 +14,428 @@
 
   
   <entry>
-    <title type="html"><![CDATA[函数和函数式编程]]></title>
+    <title type="html"><![CDATA[python decorator 深入理解]]></title>
+    <link href="http://baren.github.io/blog/2014/09/14/per4-checpter6-decorator/"/>
+    <updated>2014-09-14T11:38:09+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/14/per4-checpter6-decorator</id>
+    <content type="html"><![CDATA[<h1>装饰器介绍</h1>
+
+<p>装饰器是一个函数，其主要目的是包装另一个函数或类，来透明的修改或者增强被包装对象的功能。语法上，装饰器用<em>@</em>表示，比如：</p>
+
+<pre><code class="python">
+@trace
+def square(x):
+    return x*x
+</code></pre>
+
+<p>上面装饰器，类似于这样的：</p>
+
+<pre><code class="python">
+def square(x):
+    return x*x
+
+square = trace(square)
+</code></pre>
+
+<h1>不带参数的装饰器</h1>
+
+<p>装饰器不带参数，被装饰的函数可以带参数，也可以不带，</p>
+
+<h2>被装饰函数不带参数</h2>
+
+<p>不带参数的装饰器，比较简单，只需要接收一个函数作为参数即可。
+例子：</p>
+
+<pre><code class="python">
+import time
+
+def timing_function(some_function):  # 装饰器，接收一个函数作为参数
+
+    """
+    Outputs the time a function takes
+    to execute.
+    """
+
+    def wrapper():
+        t1 = time.time()
+        some_function()
+        t2 = time.time()
+        return "Time it took to run the function: " + str((t2-t1)) + "\n"
+    return wrapper
+
+@timing_function
+def my_function():
+    num_list = []
+    for x in (range(0,10000)):
+        num_list.append(x)
+    print "\nSum of all the numbers: " +str((sum(num_list)))
+
+
+print my_function()
+</code></pre>
+
+<h2>被装饰函数带参数</h2>
+
+<p>如果被装饰的函数带参数，让包装函数带着参数就可以。
+例子：</p>
+
+<pre><code class="python">
+# It’s not black magic, you just have to let the wrapper 
+# pass the argument:
+
+def a_decorator_passing_arguments(function_to_decorate):
+    def a_wrapper_accepting_arguments(arg1, arg2):
+        print "I got args! Look:", arg1, arg2
+        function_to_decorate(arg1, arg2)
+    return a_wrapper_accepting_arguments
+
+# Since when you are calling the function returned by the decorator, you are
+# calling the wrapper, passing arguments to the wrapper will let it pass them to 
+# the decorated function
+
+@a_decorator_passing_arguments
+def print_full_name(first_name, last_name):
+    print "My name is", first_name, last_name
+
+print_full_name("Peter", "Venkman")
+# outputs:
+#I got args! Look: Peter Venkman
+#My name is Peter Venkman
+</code></pre>
+
+<p>为了函数通用，可以让包装器接收参数设置为(*args, **kwargs)的形式：</p>
+
+<pre><code class="python">
+def common_decorator(function):
+
+    """
+    Limits how fast the function is
+    called.
+    """
+
+    def wrapper(*args, **kwargs):
+        # 处理代码
+        function(*args, **kwargs)
+        # 处理代码
+    return wrapper
+
+
+@common_decorator
+def print_number(num):
+    return num
+</code></pre>
+
+<h1>装饰器需要参数</h1>
+
+<p>有时候为了装饰器的功能性，需要装饰器本身也需要接收参数，但是装饰器应该接收一个函数作为参数，为了达到让装饰器也能接收参数，需要：</p>
+
+<ul>
+<li>多套一层函数，最外层函数接收装饰器用到的参数</li>
+<li>在打装饰器时，把参数传给装饰器，也就是在<em>@</em>后面是一个函数调用，而不是仅仅是装饰器的名字。</li>
+</ul>
+
+
+<p>例子：</p>
+
+<pre><code class="python">
+def decorator_maker_with_arguments(decorator_arg1, decorator_arg2):
+
+    print "I make decorators! And I accept arguments:", decorator_arg1, decorator_arg2
+
+    def my_decorator(func):
+        # The ability to pass arguments here is a gift from closures.
+        # If you are not comfortable with closures, you can assume it’s ok,
+        # or read: http://stackoverflow.com/questions/13857/can-you-explain-closures-as-they-relate-to-python
+        print "I am the decorator. Somehow you passed me arguments:", decorator_arg1, decorator_arg2
+
+        # Don't confuse decorator arguments and function arguments!
+        def wrapped(function_arg1, function_arg2) :
+            print ("I am the wrapper around the decorated function.\n"
+                  "I can access all the variables\n"
+                  "\t- from the decorator: {0} {1}\n"
+                  "\t- from the function call: {2} {3}\n"
+                  "Then I can pass them to the decorated function"
+                  .format(decorator_arg1, decorator_arg2,
+                          function_arg1, function_arg2))
+            return func(function_arg1, function_arg2)
+
+        return wrapped
+
+    return my_decorator
+
+@decorator_maker_with_arguments("Leonard", "Sheldon")
+def decorated_function_with_arguments(function_arg1, function_arg2):
+    print ("I am the decorated function and only knows about my arguments: {0}"
+           " {1}".format(function_arg1, function_arg2))
+
+decorated_function_with_arguments("Rajesh", "Howard")
+#outputs:
+#I make decorators! And I accept arguments: Leonard Sheldon
+#I am the decorator. Somehow you passed me arguments: Leonard Sheldon
+#I am the wrapper around the decorated function. 
+#I can access all the variables 
+#   - from the decorator: Leonard Sheldon 
+#   - from the function call: Rajesh Howard 
+#Then I can pass them to the decorated function
+#I am the decorated function and only knows about my arguments: Rajesh Howard
+</code></pre>
+
+<p>注意上面的例子：
+1、打装饰器的时候，其实是一个函数调用：@decorator_maker_with_arguments(&ldquo;Leonard&rdquo;, &ldquo;Sheldon&rdquo;)。
+2、装饰器返回的包装函数，实际上是一个闭包，它引用了装饰器的参数（decorator_arg1和decorator_arg2）。</p>
+
+<h1>functools模块用于装饰器</h1>
+
+<p>functools在python2.5引入的，他包含了函数functools.wraps()，这个函数的作用是拷贝被包装的函数的名字、模块和docstring到它的包装器上。
+functools。wraps()实际上也是个装饰器。</p>
+
+<p>例子：</p>
+
+<pre><code class="python">
+# For debugging, the stacktrace prints you the function __name__
+def foo():
+    print "foo"
+
+print foo.__name__
+#outputs: foo
+
+# With a decorator, it gets messy    
+def bar(func):
+    def wrapper():
+        print "bar"
+        return func()
+    return wrapper
+
+@bar
+def foo():
+    print "foo"
+
+print foo.__name__
+#outputs: wrapper
+# 输出的信息是包装器的信息，而不是原始函数的信息。
+
+# 使用"functools" 来解决上面问题
+
+import functools
+
+def bar(func):
+    # We say that "wrapper", is wrapping "func"
+    # and the magic begins
+    @functools.wraps(func)
+    def wrapper():
+        print "bar"
+        return func()
+    return wrapper
+
+@bar
+def foo():
+    print "foo"
+
+print foo.__name__
+#outputs: foo
+# 输出的信息是实际的foo函数的信息
+</code></pre>
+
+<h1>类作为装饰器</h1>
+
+<p>装饰器除了使用函数的方式外（大部分都是用函数来实现装饰器），还可以使用类的形式。</p>
+
+<p>对于装饰器来说，唯一的约束是：<em>装饰器返回的对象必须可以被当成函数使用，也就是它可以被调用</em>。</p>
+
+<p>如果类被当成装饰器，那么，类必须实现<strong>call</strong>函数。</p>
+
+<p>需要注意的点：</p>
+
+<ul>
+<li>类的初始化函数（<strong>init</strong>）需要接受一个函数作为参赛</li>
+<li>在给函数打装饰器时，<strong>init</strong>会执行</li>
+<li>在调用被装饰的函数时，类的<strong>call</strong>被调用</li>
+</ul>
+
+
+<p>例子：</p>
+
+<pre><code class="python">
+&gt;&gt;&gt; class myDecorator(object):
+...     def __init__(self, f):
+...             print "inside myDecorator.__init__()"
+...             f()
+...     def __call__(self):
+...             print "inside myDecorator.__call__()"
+...
+&gt;&gt;&gt; @myDecorator
+... def aFunction():
+...     print "inside aFunction()"
+...
+inside myDecorator.__init__()
+inside aFunction()
+&gt;&gt;&gt; aFunction()
+inside myDecorator.__call__()
+</code></pre>
+
+<h2>被装饰函数带参数</h2>
+
+<p>如果使用类来作为装饰器，如果被装饰函数需要参数，则定义在<strong>call</strong>函数上。比如：</p>
+
+<pre><code class="python">
+class decoratorWithoutArguments(object):
+
+    def __init__(self, f):
+        """
+        If there are no decorator arguments, the function
+        to be decorated is passed to the constructor.
+        """
+        print "Inside __init__()"
+        self.f = f
+
+    def __call__(self, *args):  # 传给被装饰器的参数，传递给__call__()
+        """
+        The __call__ method is not called until the
+        decorated function is called.
+        """
+        print "Inside __call__()"
+        self.f(*args)
+        print "After self.f(*args)"
+
+@decoratorWithoutArguments
+def sayHello(a1, a2, a3, a4):
+    print 'sayHello arguments:', a1, a2, a3, a4
+
+print "After decoration"
+
+print "Preparing to call sayHello()"
+sayHello("say", "hello", "argument", "list")
+print "After first sayHello() call"
+sayHello("a", "different", "set of", "arguments")
+print "After second sayHello() call"
+</code></pre>
+
+<p>结果是：</p>
+
+<pre><code class="text">
+# 函数定义的执行结果
+Inside __init__()
+After decoration
+
+Preparing to call sayHello()  
+
+# 下面结果是一次函数调用
+Inside __call__()  
+sayHello arguments: say hello argument list
+After self.f(*args)
+
+After first sayHello() call
+
+# 下面结果是一次函数调用
+Inside __call__()
+sayHello arguments: a different set of arguments
+After self.f(*args)
+
+After second sayHello() call
+</code></pre>
+
+<h2>装饰器带参数</h2>
+
+<p>如果类作为装饰器，装饰器如果带参数，则需要注意的比较多：</p>
+
+<ul>
+<li>参数传递给<strong>init</strong>函数。</li>
+<li><strong>call</strong>函数需要返回一个包装函数（因为装饰器有参数，所有打装饰器的地方，实际上是个函数调用，这会导致class的<strong>call</strong>调用）。</li>
+</ul>
+
+
+<p>比如：</p>
+
+<pre><code class="python">
+class decoratorWithArguments(object):
+
+    def __init__(self, arg1, arg2, arg3):
+        """
+        If there are decorator arguments, the function
+        to be decorated is not passed to the constructor!
+        """
+        print "Inside __init__()"
+        self.arg1 = arg1
+        self.arg2 = arg2
+        self.arg3 = arg3
+
+    def __call__(self, f):
+        """
+        If there are decorator arguments, __call__() is only called
+        once, as part of the decoration process! You can only give
+        it a single argument, which is the function object.
+        """
+        print "Inside __call__()"
+        def wrapped_f(*args):
+            print "Inside wrapped_f()"
+            print "Decorator arguments:", self.arg1, self.arg2, self.arg3
+            f(*args)
+            print "After f(*args)"
+        return wrapped_f
+
+@decoratorWithArguments("hello", "world", 42)
+def sayHello(a1, a2, a3, a4):
+    print 'sayHello arguments:', a1, a2, a3, a4
+
+print "After decoration"
+
+print "Preparing to call sayHello()"
+sayHello("say", "hello", "argument", "list")
+print "after first sayHello() call"
+sayHello("a", "different", "set of", "arguments")
+print "after second sayHello() call"
+</code></pre>
+
+<p>输出结果是：</p>
+
+<pre><code class="text">定义输出
+Inside __init__()
+Inside __call__()  # 因此装饰器是函数调用，因此走到__call__调用
+
+
+After decoration
+
+Preparing to call sayHello()
+
+# 下面结果是一次函数调用装饰器调用
+Inside wrapped_f()
+Decorator arguments: hello world 42
+sayHello arguments: say hello argument list
+After f(*args)
+
+after first sayHello() call
+
+# 下面结果是一次函数调用
+Inside wrapped_f()
+Decorator arguments: hello world 42
+sayHello arguments: a different set of arguments
+After f(*args)
+
+after second sayHello() call
+</code></pre>
+
+<h1>总结</h1>
+
+<p>装饰器可以由函数实现，也可以由类实现，由类实现需要类实现<strong>call</strong>函数。
+不管用哪种方式，装饰器返回的必须是一个接受一个函数参数的可调用对象。</p>
+
+<h1>实际例子</h1>
+
+<p>关于装饰器的实际例子，可以参考</p>
+
+<p><a href="https://wiki.python.org/moin/PythonDecoratorLibrary">https://wiki.python.org/moin/PythonDecoratorLibrary</a></p>
+
+<h1>参考</h1>
+
+<p><a href="http://stackoverflow.com/questions/739654/how-can-i-make-a-chain-of-function-decorators-in-python/1594484#1594484">http://stackoverflow.com/questions/739654/how-can-i-make-a-chain-of-function-decorators-in-python/1594484#1594484</a></p>
+
+<p><a href="http://www.artima.com/weblogs/viewpost.jsp?thread=240845">http://www.artima.com/weblogs/viewpost.jsp?thread=240845</a>
+<a href="http://www.artima.com/weblogs/viewpost.jsp?thread=240808">http://www.artima.com/weblogs/viewpost.jsp?thread=240808</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[python 作用域规则]]></title>
     <link href="http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming/"/>
     <updated>2014-09-13T17:07:23+08:00</updated>
     <id>http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming</id>
@@ -296,8 +717,6 @@ while True:
 
 <blockquote><p>闭包可以保存变量的状态，这个变量不随着闭包调用结束而丢失。重要的特性。
 闭包可以捕获嵌套函数的环境的特性，在包装一个存在的函数来增加额外的功能的时候，非常有用（装饰器）。</p></blockquote>
-
-<h1>装饰器</h1>
 ]]></content>
   </entry>
   
@@ -890,123 +1309,6 @@ umeth(f,37) # 明确提供self，并且调用
 <p>如果一个实例实现了<strong>call</strong>方法，那么这个实例也可以模拟函数调用。如果对象x定义了<strong>call</strong>函数，那么x(args)会调用x.<strong>call</strong>(args)。</p>
 
 <h2>类、类型和实例</h2>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[python词法约定和语法(PER4 chapter 2)]]></title>
-    <link href="http://baren.github.io/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax/"/>
-    <updated>2014-02-08T10:33:00+08:00</updated>
-    <id>http://baren.github.io/blog/2014/02/08/per4-chapter2-lexical-conventions-and-syntax</id>
-    <content type="html"><![CDATA[<h1>行结构和缩进</h1>
-
-<p>python中，每一行用换行符来结束，如果一行太长，可以使用<em>行继续操作符“\”</em>来分割，比如：</p>
-
-<pre><code class="python">a = math.cos(3 * (x - n)) + \ 
-    math.sin(3 * (y - n))
-</code></pre>
-
-<p>在(&hellip;), [&hellip;], {&hellip;}, &ldquo;&rdquo;&ldquo;&hellip;&rdquo;&ldquo;&#8221;和&#8217;&lsquo;&rsquo;&hellip;&lsquo;&rsquo;&lsquo;之间的代码，如果跨越多行，可以不用这个操作符。</p>
-
-<p>如果函数、条件、循环或者类的代码体只有一行语句，可以放在同一行中，比如：</p>
-
-<pre><code>if a:   statement1
-else:   statement2
-</code></pre>
-
-<p>如果多个语句放在一行，可以使用&#8221;;&ldquo;来分割。</p>
-
-<!-- more -->
-
-
-<h1>标识符</h1>
-
-<ul>
-<li>以下划线开头的标识符是不会被导入语句<code>from module import *</code>导入的。</li>
-<li>前后有两个下划线的标识符（比如<code>__init__</code>），是为特殊方法保留的。</li>
-<li>前面有两个下划线的标识符（比如<code>__bar</code>），为了实现私有的类成员。</li>
-</ul>
-
-
-<h1>数字字面量</h1>
-
-<p>有四种数字类型：</p>
-
-<ul>
-<li>布尔</li>
-<li>整数</li>
-<li>浮点数</li>
-<li>复数</li>
-</ul>
-
-
-<p>作为布尔值的True和False被解释成1和0.</p>
-
-<p>除了十进制，还可以把整数指定为八进制、十六进制和二进制，分别用前缀0、0x和0b（比如：0644, 0x100fea8, or 0b11101010）</p>
-
-<p>python的整数没有限制，可以任意写。</p>
-
-<h1>字符串字面量</h1>
-
-<p>字符串字面常量使用单引号（&#8217;）、双引号（&#8221;）或者三个引号（&#8217;&lsquo;&#8217;或者&#8221;&ldquo;&#8221;）括起来。</p>
-
-<p>在字面常量内，反斜线（\）字符可以被用来特殊字符比如换行，反斜线自己，引号和不能打印的字符。如果转义字符不能识别，则保留原样。</p>
-
-<p>除了\r \n等常用的转移字符外，几个不常用的列到下：</p>
-
-<ul>
-<li>\OOO              八进制值，后面三个数字。（\000 到 \377，\377的十进制值是255）</li>
-<li>\uxxxx            Unicode字符，x是十六进制字符（\u0000到\uffff）</li>
-<li>\Uxxxxxxxx        Unicode字符（\U00000000到\Uffffffff）</li>
-<li>\xhh              十六进制值（\x00到\xff，\xff的值是255）</li>
-</ul>
-
-
-<p>\OOO和\xhh的用法是在字符串内嵌入不能够容易的打出的字符（控制字符，不能打印字符，符号和国际化字符等）。比如：</p>
-
-<p>如果写字符串“Jalapeño”，可以&#8221;Jalape\xf1o&#8221; \xf1就是字符ñ。</p>
-
-<p>在python 2中，字符串字面量对应的是8-bit的字符或者说面向字节的数据。为了能够使用国际化字符集，需要在字符串前面前缀一个字符“u”</p>
-
-<p>不管使用哪种字符串，可以使用\u或者\U来嵌入一个国际化字符到字符串中。</p>
-
-<p>原始字符串，在字符串前缀一个“r”字符。原始字符串中，所有的反斜线字符串都不转义，原样保存。这种字符串，多用在正则表达式中。</p>
-
-<p>如果一个字符串前缀既有u又有r，则r必须在u之后。比如<code>ur"\\u1234"</code></p>
-
-<p>注意：</p>
-
-<blockquote><p>当使用utf-8和utf-16对字符串字面量进行编码时，不能够使用原始的byte的数据，比如直接写一个utf-8编码的字符串字面量&#8217;Jalape\xc3\xb1o&#8217;，以为简单的表示9个字符。
-但是实际上可能不是想的那样。因为在utf-8编码中，多个byte序列\xc3\xb1表示单一字符U+00F1。而不是这两个字符U+00C3 和 U+00B1。
-为了能让这样的字符串进行编码，需要在字符串前面前缀一个字符“b”，比如：b&#8221;Jalape\xc3\xb1o&#8221;。</p>
-
-<p>正常情况下，很少用到这种（byte literals）字符串字面常量</p></blockquote>
-
-<h1>文档字符串</h1>
-
-<p>模块、类和函数的第一行语句是个字符串，那这个字符串变成这个对象的文档字符串。比如：</p>
-
-<pre><code class="python">def fact(n):
-    "This function computes a factorial" 
-    if (n &lt;= 1): return 1
-    else: return n * fact(n - 1)
-</code></pre>
-
-<pre><code>&gt;&gt;&gt; print fact.__doc__
-This function computes a factorial 
-&gt;&gt;&gt;
-</code></pre>
-
-<h1>源代码编码</h1>
-
-<p>为了让python的源代码以不同的编码方式编码，需要在源代码的前面两行包含：</p>
-
-<pre><code class="python">#!/usr/bin/env python 
-# -*- coding: UTF-8 -*-
-s = "Jalapeño" # String in quotes is directly encoded in UTF-8.
-</code></pre>
-
-<p>当这样指定后，注释、字符串字面量，可以直接在识别unicode的编辑器中输入。但是其它的，包括标识符，都必须是ascii的字符。</p>
 ]]></content>
   </entry>
   

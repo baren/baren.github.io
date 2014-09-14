@@ -4,7 +4,7 @@
   <title><![CDATA[Category: python essential reference | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/python-essential-reference/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-13T21:53:31+08:00</updated>
+  <updated>2014-09-14T16:24:57+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[函数和函数式编程]]></title>
+    <title type="html"><![CDATA[python 作用域规则]]></title>
     <link href="http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming/"/>
     <updated>2014-09-13T17:07:23+08:00</updated>
     <id>http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming</id>
@@ -296,8 +296,6 @@ while True:
 
 <blockquote><p>闭包可以保存变量的状态，这个变量不随着闭包调用结束而丢失。重要的特性。
 闭包可以捕获嵌套函数的环境的特性，在包装一个存在的函数来增加额外的功能的时候，非常有用（装饰器）。</p></blockquote>
-
-<h1>装饰器</h1>
 ]]></content>
   </entry>
   

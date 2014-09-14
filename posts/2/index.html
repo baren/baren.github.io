@@ -9,10 +9,8 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="时间和日期 unix内核提供的基本时间服务是计算自国际标准时间公元1970年1月1日00:00:00以来经过的秒数。 这种秒数是以数据类型time_t表示的。称之为日历时间，日历时间包括日期和时间。 time函数返回当前的时间和日期： 1
-2
-3
-4 #include &lt;time.h&gt &hellip;">
+  <meta name="description" content="main函数 c程序的起始运行函数是 1
+int main(int argc, char *argv[]); argc是命令行参数数目，argv是指针数组，指向每一个参数。 内核执行C程序是调用exec函数，在调用main函数之前，会先调用一个特殊的启动例程， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -67,6 +65,60 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/04/09/process-environment/">Apue(进程环境)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-04-09T20:00:58+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>main函数</h1>
+
+<p>c程序的起始运行函数是</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>int main(int argc, char *argv[]);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>argc是命令行参数数目，argv是指针数组，指向每一个参数。</p>
+
+<p>内核执行C程序是调用exec函数，在调用main函数之前，会先调用一个特殊的启动例程，可执行程序文件指定这个例程作为程序的启动地址。这是由链接编辑器设置的。链接编辑器由编译器调用。</p>
+
+<p>启动例程会从内核取得命令行参数和环境变量值。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/04/09/process-environment/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -612,55 +664,9 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/12/17/linux-open-max-fd-num/">Linux最大文件描述符设置</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-12-17T14:36:20+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>在linux中，所有都是文件，也就是说一个连接也是一个文件。每打开一个文件，内核会分配一个文件描述符，因此一个进程可打开的最大文件描述符决定了可支持的最大连接数。这是一个重要的参数。</p>
-
-<p>linux有两个限制：</p>
-
-<pre><code>1、系统级限制。限制了整个系统可打开的最大文件描述符
-
-2、每个进程的限制。一个应用可打开的最大文件描述符
-</code></pre>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2013/12/17/linux-open-max-fd-num/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="3">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -675,7 +681,11 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">函数和函数式编程</a>
+        <a href="/blog/2014/09/14/per4-checpter6-decorator/">python decorator 深入理解</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">python 作用域规则</a>
       </li>
     
       <li class="post">
@@ -700,10 +710,6 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     
       <li class="post">
         <a href="/blog/2014/05/04/process-relate/">apue(进程关系)</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/05/04/process-control/">apue(进程控制)</a>
       </li>
     
   </ul>
