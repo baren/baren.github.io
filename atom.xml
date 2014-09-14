@@ -4,7 +4,7 @@
   <title><![CDATA[Baren Blog]]></title>
   <link href="http://baren.github.io/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-14T16:24:57+08:00</updated>
+  <updated>2014-09-14T16:28:39+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -42,6 +42,9 @@
 </span><span class='line'>
 </span><span class='line'><span class="n">square</span> <span class="o">=</span> <span class="n">trace</span><span class="p">(</span><span class="n">square</span><span class="p">)</span>
 </span></code></pre></td></tr></table></div></figure>
+
+
+<!-- more -->
 
 
 <h1>不带参数的装饰器</h1>

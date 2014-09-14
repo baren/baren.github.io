@@ -4,7 +4,7 @@
   <title><![CDATA[Category: decorator | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/decorator/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-14T16:24:57+08:00</updated>
+  <updated>2014-09-14T16:28:39+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -36,6 +36,9 @@ def square(x):
 
 square = trace(square)
 </code></pre>
+
+<!-- more -->
+
 
 <h1>不带参数的装饰器</h1>
 
