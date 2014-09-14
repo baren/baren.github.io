@@ -30,7 +30,7 @@ def square(x):
 square = trace(square)
 
 ```
-
+<!-- more -->
 # 不带参数的装饰器
 
 装饰器不带参数，被装饰的函数可以带参数，也可以不带，
