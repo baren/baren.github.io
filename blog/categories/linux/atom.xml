@@ -4,7 +4,7 @@
   <title><![CDATA[Category: linux | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-14T16:28:39+08:00</updated>
+  <updated>2014-09-24T21:43:51+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -12,6 +12,341 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[pthread control]]></title>
+    <link href="http://baren.github.io/blog/2014/09/17/pthread-control/"/>
+    <updated>2014-09-17T21:19:03+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/17/pthread-control</id>
+    <content type="html"><![CDATA[<h1>线程属性</h1>
+
+<p>在使用pthread_create函数：</p>
+
+<pre><code class="c">int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start)(void *), void *arg);
+</code></pre>
+
+<p>创建线程时，第三个参数attr是线程属性。可以使用pthread_attr_t结构来修改线程默认属性。</p>
+
+<p>pthread_attr_t变量需要初始化，需要使用pthread_attr_init函数进行初始化。调用初始化函数后，pthread_attr_t结构所包含的内容就是操作系统实现支持的线程所有属性的默认值。</p>
+
+<!-- more -->
+
+
+<p>pthread_attr_t属性的初始化和销毁接口：</p>
+
+<pre><code class="c">
+#include &lt;pthread.h&gt;
+int pthread_attr_init(ptread_attr_t *attr);
+int pthread_attr_destory(pthread_attr_t *attr);
+</code></pre>
+
+<p>POSIX.1支持的线程属性包括：</p>
+
+<ul>
+<li>线程的分离状态属性</li>
+<li>线程栈末尾的警戒缓冲区大小</li>
+<li>线程栈的最低地址</li>
+<li>线程栈的大小</li>
+</ul>
+
+
+<p>如果创建的线程不需要知道线程的终止状态，可以在创建的时候，以分离状态启动。通过设置pthread_attr_t的值为分离状态。设置pthread_attr_t的函数是：</p>
+
+<pre><code class="c">#include &lt;pthread.h&gt;
+int pthread_attr_getdetachstate(pthread_attr_t *attr, int *detachstate);
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
+</code></pre>
+
+<p>设置分离状态的属性值是：PTHREAD_CREATE_DETACHED</p>
+
+<h1>同步属性</h1>
+
+<p>互斥量、读写锁和条件变量的属性</p>
+
+<h2>互斥量属性</h2>
+
+<p>主要讲互斥量属性的类型属性。类型属性有以下几种：</p>
+
+<ul>
+<li>PTHREAD_MUTEX_NORMAL——不检查死锁错误，如果一个线程试图去lock一个他已经锁住的互斥量，则发生死锁。</li>
+<li>PTHREAD_MUTEX_ERRORCHECK——提供错误检查</li>
+<li>PTHREAD_MUTEX_RECURSIVE——允许同一个线程多同一个互斥量多次加锁。会维持一个加锁计数量。</li>
+</ul>
+
+
+<p>对互斥量，属性初始化和销毁函数是：</p>
+
+<pre><code class="c">#include &lt;pthread.h&gt;
+int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
+
+int pthread_mutex_destroy(pthread_mutex_t *mutex);
+</code></pre>
+
+<p>可以通过下面函数设置互斥量属性：</p>
+
+<pre><code class="c">int pthread_mutexattr_gettype(pthread_mutexattr_t *attr, int *type);
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
+</code></pre>
+
+<h2>读写锁属性</h2>
+
+<p>支持进程共享属性</p>
+
+<h2>条件变量属性</h2>
+
+<p>支持进程共享属性</p>
+
+<h1>重入</h1>
+
+<p>在信号处理时，可重入的函数是指函数没有访问静态数据结构，或者没有调用malloc和free等。在线程处理时，函数同样也有重用的概念。</p>
+
+<p>在多线程环境下，一个函数是可重入的，意思是：一个函数在同一时刻可以被多个线程安全调用。</p>
+
+<p>注意与信号的区别
+* 一个函数对多线程来说是可重入的，意思是这个函数是线程安全的。
+* 但并不意味着对信号处理程序来说该函数是可重入的（比如标准io函数，是线程安全的，会对流加锁保证，但是对信号处理是不可重入的，因为会修改全局数据结构）。</p>
+
+<p>有一个列表，列出了posix.1中不能保证线程安全的函数：</p>
+
+<p><img src="/images/assets/pthread-1.png" title="linux" alt="alt text" /></p>
+
+<p>如果操作系统实现线程安全这一特性时，会同时提供一个对应的线程安全版本。</p>
+
+<p>比如asctime，对应的就是asctime_r，后缀是_r表示可重入。</p>
+
+<p>posix.1还提供了以线程按方式管理FILE对象的方法。</p>
+
+<p>标准IO流的实现，会对流加锁解锁操作，如果频繁调用getc函数，会有性能下降，因为会有频繁的加锁解锁。</p>
+
+<p>为了解决这个问题，posix1.c引入非可重入版本的流函数：</p>
+
+<pre><code class="c">
+#include &lt;stdio.h&gt;
+int getchar_unlocked(void); 
+int getc_unlocked(FILE *fp);
+
+putchar_unlocked(int c);
+int putc_unlocked(int c, FILE *fp);
+</code></pre>
+
+<p>同时提供了线程安全的方式管理FILE对象的方法：</p>
+
+<pre><code class="c">
+#include &lt;stdio.h&gt;
+int ftrylockfile(FILE *fp);
+void flockfile(FILE *fp); 
+void funlockfile(FILE *fp);
+</code></pre>
+
+<p>使用非线程安全的流函数版本时，需要用flockfile和funlockfile包围，否则会出现不可预测的问题（因为是非线程安全的）。</p>
+
+<p>好处：</p>
+
+<ul>
+<li>一旦对FILE对象进行加锁，就可以在释放锁之前对这些函数进行多次调用。这样就可以在多次数据读写上分摊总的加解锁开销。</li>
+</ul>
+
+
+<h1>线程私有数据</h1>
+
+<p>让一个函数是线程安全的最有效的方式就是让函数是可重入的。新的函数最好这么实现。尽管如此，
+一些老的函数，不是线程安全的，如果要将其改造成线程安全函数，需要满足：</p>
+
+<ul>
+<li>实现线程安全的</li>
+<li>不能改变函数的签名，也就是不需要调用这个函数的程序去修改</li>
+</ul>
+
+
+<p>使用线程私有（thread-specific）数据可以实现。</p>
+
+<blockquote><p>注意：
+要理解线程私有数据，以函数的角度考虑问题。</p></blockquote>
+
+<p>线程私有数据允许函数为每一个线程维持一个单独的数据拷贝。如图所示：</p>
+
+<p><img src="/images/assets/pthread-psd.png" title="linux" alt="alt text" /></p>
+
+<p>线程A调用函数myfunc时，myfunc函数为线程A维持一个单独数据，线程B调用myfunc函数时，myfunc为线程B维持一个线程B单独的数据。</p>
+
+<p>线程私有数据有个特点：</p>
+
+<ul>
+<li>存储的数据是持久化的，每一份数据会一直存在，这允许函数间共享数据（虽然不推荐）。</li>
+</ul>
+
+
+<h2>从函数角度考虑线程私有数据</h2>
+
+<p>为了更好的理解线程私有数据，需要从函数角度（实现角度）考虑如何使用线程私有数据</p>
+
+<ul>
+<li>在线程第一次调用函数时，函数为线程分配独立的存储块。存储块只分配一次，就是在线程第一次调用此函数时。</li>
+<li>同一个线程对这个函数的随后的调用，函数能够获取这个第一次调用而分配存储块。因此不能用局部变量存储指向存储块的key；也不能用static变量存储，因为在进程内，只有一个static的实例。</li>
+<li>不同的函数可能都需要线程私有数据，因此每个函数都得需要自己的线程私有数据key</li>
+<li>当线程停止时，函数不需要控制私有数据，因为停止时，代码有可能已经执行到函数外了。因此需要有个地方来执行清理操作。</li>
+</ul>
+
+
+<h2>线程私有数据 API</h2>
+
+<h3>创建私有数据key</h3>
+
+<p>创建一个key，两个用处：</p>
+
+<ul>
+<li>用来获取函数分配的存储块</li>
+<li>用来区分其它函数的线程私有数据对应的key</li>
+</ul>
+
+
+<p>使用pthread_key_create函数</p>
+
+<pre><code class="c">#include &lt;pthread.h&gt;
+int pthread_key_create(pthread_key_t *key, void (*destructor)(void *));
+</code></pre>
+
+<p>destructor指向一个清理函数，用来释放函数内分配的存储块。</p>
+
+<p>其签名是：</p>
+
+<pre><code class="c">void dest(void *value)
+{
+/* Release storage pointed to by 'value' */ 
+}
+</code></pre>
+
+<p>线程停止时，并且这个key关联的数据不是NULL时，就会自动调用这个函数来清理。</p>
+
+<p>一般，线程私有数据的实现，使用一个全局数组来存储这个key，这个key有两个状态：</p>
+
+<ul>
+<li>是否使用的标记</li>
+<li>清理函数指针</li>
+</ul>
+
+
+<p>如图：</p>
+
+<p><img src="/images/assets/pthread-psd-key.png" title="linux" alt="alt text" /></p>
+
+<p>根据图，pthread_key_create()返回的一般是全局数组的索引，数组元素包含两个字段，是否使用字段和清理函数地址字段。</p>
+
+<h3>关联函数分配内存与key</h3>
+
+<p>使用函数pthread_setspecific函数来关联函数分配的存储和pthread_key_create创建的key。</p>
+
+<pre><code class="c">#include &lt;pthread.h&gt;
+int pthread_setspecific(pthread_key_t key, const void *value);
+// value参数是一个分配的内存的指针
+// 当线程停止时，这个值会传给create函数指定的清理函数。
+void *pthread_getspecific(pthread_key_t key);
+</code></pre>
+
+<p>为了维护线程私有数据，Pthreads API 为每一个线程维护了一个指针数组，数据元素是函数分配的存储的指针。</p>
+
+<p>如下图，假设pthread_keys[1]是函数myfunc分配的key，对于每一个线程，pthread api维护了一个指针数组，
+数组元素指向函数内分配的内存，</p>
+
+<p><img src="/images/assets/pthread-psd-key-2.png" title="linux" alt="alt text" /></p>
+
+<h2>例子</h2>
+
+<h3>非线程安全的</h3>
+
+<p>下面是一个非线程安全的strerror()的实现：</p>
+
+<pre><code class="c">#define _GNU_SOURCE  /* Get '_sys_nerr' and '_sys_errlist' declarations from &lt;stdio.h&gt; */
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;   /* Get declaration of strerror() */
+#define MAX_ERROR_LEN 256  /* Maximum length of string returned by strerror() */
+static char buf[MAX_ERROR_LEN];  /* Statically allocated return buffer */
+char *
+strerror(int err)
+{
+
+    if (err &lt; 0 || err &gt;= _sys_nerr || _sys_errlist[err] == NULL) {
+        snprintf(buf, MAX_ERROR_LEN, "Unknown error %d", err);
+    } else {
+        strncpy(buf, _sys_errlist[err], MAX_ERROR_LEN - 1);
+
+        buf[MAX_ERROR_LEN - 1] = '\0'; /* Ensure null termination */
+    }
+    return buf; 
+}
+</code></pre>
+
+<h3>线程安全例子</h3>
+
+<pre><code class="c">
+#define _GNU_SOURCE     /* Get '_sys_nerr' and '_sys_errlist' declarations from &lt;stdio.h&gt; */
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;     /* Get declaration of strerror() */
+#include &lt;pthread.h&gt;
+#include "tlpi_hdr.h"
+
+
+static pthread_once_t once = PTHREAD_ONCE_INIT; 
+static pthread_key_t strerrorKey;
+
+
+#define MAX_ERROR_LEN 256       /* Maximum length of string in per-thread buffer returned by strerror() */
+
+static void
+destructor(void *buf)       /* Free thread-specific data buffer */
+{
+    free(buf);
+}
+
+static void
+createKey(void)     /* One-time key creation function */
+{
+    int s;
+    /* Allocate a unique thread-specific data key and save the address of the destructor for thread-specific data buffers */
+
+    s = pthread_key_create(&amp;strerrorKey, destructor);
+    if (s != 0)
+        errExitEN(s, "pthread_key_create");
+}
+
+char *
+strerror(int err)
+{
+    int s;
+    char *buf;
+
+    /* Make first caller allocate key for thread-specific data */
+
+    s = pthread_once(&amp;once, createKey); 
+    if (s != 0)
+        errExitEN(s, "pthread_once");
+
+    buf = pthread_getspecific(strerrorKey);
+    if (buf == NULL) { /* If first call from this thread, allocate buffer for thread, and save its location */
+
+        buf = malloc(MAX_ERROR_LEN);
+        if (buf == NULL)
+            errExit("malloc");
+
+        s = pthread_setspecific(strerrorKey, buf); 
+        if (s != 0)
+            errExitEN(s, "pthread_setspecific");
+    }
+
+    if (err &lt; 0 || err &gt;= _sys_nerr || _sys_errlist[err] == NULL) { 
+        snprintf(buf, MAX_ERROR_LEN, "Unknown error %d", err);
+    } else {
+        strncpy(buf, _sys_errlist[err], MAX_ERROR_LEN - 1);
+        buf[MAX_ERROR_LEN - 1] = '\0'; /* Ensure null termination */
+    }
+
+    return buf; 
+}
+</code></pre>
+
+<h1>取消选项</h1>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[apue(线程)]]></title>
@@ -2187,418 +2522,6 @@ ARGV[3] = f3
 <li>解释器文件的路径名/usr/local/bin/awkexample给传给解释器，因为不知道解释器是不是会从搜索路径中搜索该文件，因此传全路径文件名</li>
 <li>awk读取解释器文件，第一行是#，注释，因此忽略第一行，执行后续程序</li>
 </ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[apue(进程环境)]]></title>
-    <link href="http://baren.github.io/blog/2014/04/09/process-environment/"/>
-    <updated>2014-04-09T20:00:58+08:00</updated>
-    <id>http://baren.github.io/blog/2014/04/09/process-environment</id>
-    <content type="html"><![CDATA[<h1>main函数</h1>
-
-<p>c程序的起始运行函数是</p>
-
-<pre><code>int main(int argc, char *argv[]);
-</code></pre>
-
-<p>argc是命令行参数数目，argv是指针数组，指向每一个参数。</p>
-
-<p>内核执行C程序是调用exec函数，在调用main函数之前，会先调用一个特殊的启动例程，可执行程序文件指定这个例程作为程序的启动地址。这是由链接编辑器设置的。链接编辑器由编译器调用。</p>
-
-<p>启动例程会从内核取得命令行参数和环境变量值。</p>
-
-<!-- more -->
-
-
-<h1>进程终止</h1>
-
-<p>有八种终止进程的方式，其中5种方式为正常终止，为：</p>
-
-<ol>
-<li>从main函数返回</li>
-<li>调用exit函数</li>
-<li>调用<em>exit或</em>Exit</li>
-<li>最后一个线程从其启动例程返回</li>
-<li>最后一个线程调用pthread_exit</li>
-</ol>
-
-
-<p>异常终止的三种方式：</p>
-
-<ol>
-<li>调用abort</li>
-<li>接到一个信号并终止</li>
-<li>最后一个线程对取消请求做出响应</li>
-</ol>
-
-
-<p>程序启动例程，在main函数返回后，会立即调用exit函数。其类似过程是这样的：</p>
-
-<pre><code>exit(main(argc, argv));
-</code></pre>
-
-<p>实际上，并不是这样（过程是一样的），启动例程一般是用汇编编写。</p>
-
-<h2>exit函数</h2>
-
-<p>三个用于正常终止程序的函数中，<em>exit和</em>Exit函数立即进入内核。</p>
-
-<p>exit函数则先执行一些清理处理（调用终止处理程序，关闭所有标识I/O流），然后进入内核。</p>
-
-<pre><code>
-#include &lt;stdlib.h&gt;
-void exit(int status);
-void _Exit(int status);
-
-#include &lt;unistd.h&gt;
-void _exit(int status);
-</code></pre>
-
-<p>exit的清理操作，执行一个标准的I/O库的清理关闭操作，为所有打开流调用fclose函数（怎么实现的？）</p>
-
-<blockquote><p>注意
-exit和<em>Exit函数是ISO C标准定义的，而</em>exit则是POSIX说明的，因此使用的头不一样。</p></blockquote>
-
-<p>由于标准库有buffer，因此怎样退出程序很重要。</p>
-
-<p>若使用fopen函数打开文件，并没用fclost关闭它，影响是什么呢？</p>
-
-<p>若使用exit函数或正常从main函数返回，两种方式都会调用exit函数。因此，exit函数会为你处理：</p>
-
-<ul>
-<li>flush输出流</li>
-<li>关闭文件</li>
-<li>进程拥有的其它资源也会被释放</li>
-</ul>
-
-
-<p>如果非正常退出，或调用<em>exit或</em>Exit函数，则</p>
-
-<ul>
-<li>系统会关闭打开的文件</li>
-<li>释放资源</li>
-<li>buffer并不会被flush</li>
-</ul>
-
-
-<p>三个exit函数都有一个整型参数，称之为终止状态（或退出状态，exit status），shell可用$?查看上一条命令的返回值。</p>
-
-<p>若：</p>
-
-<ul>
-<li>调用这些函数不带终止符</li>
-<li>main执行了一个无返回值的return语句</li>
-<li>main没有生命返回类型为整型</li>
-</ul>
-
-
-<p>则：</p>
-
-<p>进程状态为未定义的。</p>
-
-<p>但：</p>
-
-<p>若main生命为int返回类型，并执行到最后一条语句时返回（隐式返回），</p>
-
-<p>则：</p>
-
-<p>进程终止状态为0</p>
-
-<p>在main函数返回一整型值与用该值调用exit函数是等价的</p>
-
-<pre><code>exit(0) == return 0;
-</code></pre>
-
-<h2>atexit函数</h2>
-
-<p>可以注册终止处理函数，这批函数在exit自动调用，ISO C规定，可注册函数多达32个，注册这些函数使用atexit函数</p>
-
-<pre><code>#include &lt;stdlib.h&gt;
-
-int atexit(void (*func)(void));
-</code></pre>
-
-<blockquote><p>注：
-1. exit调用这些函数顺序与他们登记的顺序相近
-2. 同一个函数若登记多次，则会调用多次</p></blockquote>
-
-<p><img src="/images/assets/Figure7-1.png" title="time-function" alt="alt text" /></p>
-
-<h1>命令行参数</h1>
-
-<p>比较简单，记录一点。</p>
-
-<p>argv[argc]是一个空指针，这样，可以在循环获取参数时，这样：</p>
-
-<pre><code>
-for(i=0; garv[i] != NULL; i++)
-{
-    // 代码
-}
-</code></pre>
-
-<h1>环境表</h1>
-
-<p>每个程序，都会收到一张环境表，环境表是字符指针数组，每个指针指向的字符以null结束。</p>
-
-<p><strong>全局变量</strong><code>environ</code>包含了该指针数组的地址：</p>
-
-<pre><code>extern char ** environ;
-</code></pre>
-
-<p>称environ为环境指针，指针数组为环境表，环境表每个表项由name=value组成。</p>
-
-<h1>C程序的存储空间</h1>
-
-<p>C程序由以下几部分组成</p>
-
-<ul>
-<li>正文段：是由CPU执行的机器指令部分，正文段是共享的，而且是只读的。</li>
-<li>初始化数据段：常称为数据段，它包含了程序中须明确的赋初始值的变量。比如
-在C程序中出现在任何函数之外的声明：</li>
-</ul>
-
-
-<pre><code>int maxcount = 99;
-</code></pre>
-
-<ul>
-<li>非初始化数据段：常称为bss段，在程序开始执行之前，内核将此段中的数据初始化为0或空指针，出现在任何函数外的C声明：</li>
-</ul>
-
-
-<pre><code>long sum[1000];
-</code></pre>
-
-<ul>
-<li>栈：自动变量，函数调用时所需要保存的信息，都存放到栈中，这种实现方式允许递归调用。</li>
-<li>堆：一般在堆中进行动态存储分配。堆位于非初始化数据段和栈之间。</li>
-</ul>
-
-
-<p>示意图：</p>
-
-<p><img src="/images/assets/Figure7-2.png" title="time-function" alt="" /></p>
-
-<p>linux的size命令可以报告正文段、数据段和bss段的长度。</p>
-
-<h1>共享库</h1>
-
-<p>共享库使得可执行文件中不再需要包含共用库的例程。</p>
-
-<p>只需要在所有进程都可引用的存储区中维护这种库例程的一个副本，在例程<strong>第一次</strong>执行或在第一次调用某个库函数时，用<strong>动态链接</strong>方法，将程序与共享库函数相链接。</p>
-
-<p>好处：</p>
-
-<ul>
-<li>减少了执行文件长度</li>
-<li>方便替换使用的库函数的版本而不需要重新链接。</li>
-</ul>
-
-
-<p>坏处：
-* 增加了首次的运行时间</p>
-
-<blockquote><p>GCC编译器，默认引用动态库，动态库是以.so结尾；而静态库是以.a为扩展名。引用一个程序库，可以使用-l<em>NAME</em>选项。</p></blockquote>
-
-<h1>存储器分配</h1>
-
-<ol>
-<li>malloc 分配指定大小（字节数）的存储区，初始值不确定</li>
-<li>calloc 为指定数量且指定长度的对象分配存储空间，初始化值为0</li>
-<li>realloc 更改以前分配区的长度（增加或减少）</li>
-</ol>
-
-
-<pre><code>
-# include &lt;stdlib.h&gt;
-
-void *malloc(size_t size);
-void *calloc(size_t nobj, size_t size);
-void *realloc(void *ptr, size_t newsize);
-
-void free(void *ptr);
-</code></pre>
-
-<p>三个函数返回的指针一定是适当对齐的（原理基本上是已对齐单位的倍数的方式多分配内存）。</p>
-
-<p>三个函数返回void *指针，因此可以将其赋值给任何指针而不需要强制转换。</p>
-
-<p>free可以释放由上面三个函数分配的内存。</p>
-
-<p>这些分配函数通常调用sbrk系统调用实现。</p>
-
-<p>sbrk可增大和减少进程的存储空间，但malloc和free一般都不减少存储空间，以便分配并保持在malloc池中不返回内核。</p>
-
-<h1>环境变量</h1>
-
-<p>环境变量字符串的形式为<code>name=value</code>，unix不会查看此字符串，完全由程序解释。</p>
-
-<p>ISO C定义了一个函数getenv，根据name获取其value。</p>
-
-<pre><code>#include &lt;stdlib.h&gt;
-
-char *getenv(const char *name);
-</code></pre>
-
-<p>除了获取环境变量，还可以设置环境变量：</p>
-
-<pre><code>
-#include &lt;stdlib.h&gt;
-
-int putenv(char *str);
-
-int setenv(const char *name, const char *value, int rewrite);
-
-int unsetenv(const char *name);
-</code></pre>
-
-<p>putenv，参数为name=value字符串，若name存在，则先删除</p>
-
-<p>setenv，参数name的值设为value，如果name存在，则根据rewrite参数决定是重写还是不删除。</p>
-
-<p>unsetenv，删除name的定义</p>
-
-<blockquote><p>注意：
-1. putenv的实现，linux直接将字符串地址作为参数放入环境表中，如果参数是存放在栈中，则会发生错误。
-2. 由于环境变量存放在程序空间的最上面，大小是有边界的，因此，如果设置的环境变量超出了存储空间大小，则需要由malloc在堆上分配空间来存储。</p></blockquote>
-
-<h1>setjmp和longjmp函数</h1>
-
-<p>c语言中，goto语句不能跨函数，如果要跨函数，则需要setjmp和longjmp函数：</p>
-
-<pre><code>#include &lt;setjmp.h&gt;
-
-int setjmp(jmp_buf env);
-void longjmp(jmp_buf env, int val);
-</code></pre>
-
-<p>调用这两个函数，遇到的问题是：</p>
-
-<ol>
-<li>调用longjmp后，自动变量和寄存器变量的状态如何？这些值能回滚到调用setjmp的状态码？</li>
-</ol>
-
-
-<p>答：不确定，跟实现有关系。大多数实现并不回滚这些自动变量和寄存器变量的值，而所有标准则说他们的值是不确定的。如果有一个自动变量，而又不想使其回滚，则可以定义具有volatile属性。声明为全局或静态变量的值在执行longjmp时保持不变。</p>
-
-<ol>
-<li>自动变量的问题：若在函数内部声明指针，并返回了这个指针，则会出问题。</li>
-</ol>
-
-
-<h1>进程资源</h1>
-
-<h2>进程资源使用</h2>
-
-<p>getrusage()系统调用返回调用进程或者其所有子进程运行所使用的各种系统资源。</p>
-
-<pre><code>#include &lt;sys/resource.h&gt;
-
-int getrusage(int who, struct rusage *res_usage);
-</code></pre>
-
-<p>参数who指定了进程中谁的资源使用信息将会被获取。有下面几个值：</p>
-
-<ul>
-<li>RUSAGE_SELF 返回调用进程的资源</li>
-<li>RUSAGE_CHILDREN 返回调用进程的所有子进程的资源。子进程是停止的和wait的。</li>
-<li>RUSAGE_THREAD 返回调用线程的资源（Linux 2.6.26）</li>
-</ul>
-
-
-<p>res_usage参数是一个指针，指向结构为rusage的对象。</p>
-
-<h2>进程资源限制</h2>
-
-<p>每个进程都消耗系统资源，OS对每个进程都有一些资源限制。在shell中，可以使用ulimit命令设置进程的资源限制。所有通过shell启动的进程都会继承ulimit设置的限制。</p>
-
-<p><em>getrlimit()</em> 和 <em>setrlimit()</em> 两个函数可以获取和设置进程的资源限制。</p>
-
-<pre><code>#include &lt;sys/resource.h&gt;
-int getrlimit(int resource, struct rlimit *rlim);
-int setrlimit(int resource, const struct rlimit *rlim);
-// Both return 0 on success, or –1 on error
-</code></pre>
-
-<p><em>resource</em>参数代表了需要获取或设置的资源标记符。rlimit是一个结构体，用来描述资源限制的值。</p>
-
-<pre><code>struct rlimit {
-rlim_t rlim_cur; /* Soft limit (actual process limit) */ 
-rlim_t rlim_max; /* Hard limit (ceiling for rlim_cur) */
-};
-</code></pre>
-
-<p>关于结构体<code>struct rlimit</code>解释如下：</p>
-
-<p>既有软限制（rlim_cur），又有硬限制（rlim_max）。软限制表示进程可以消耗的最大资源设置。一个进程可以调整软限制，调整范围是[0-硬限制]。进程可以调整其硬限制。没有权限的进程，只能降硬限制调小（但不小于软限制），对于大多数进程，硬限制只是说明进程的可消耗的资源的最大值。</p>
-
-<p>有权限的进程（CAP_SYS_RESOURCE）可以调整硬限制大小，既可往大得方向调整，也可以往小的方向调整。</p>
-
-<p>如果rlim_cur和rlim_max的值是RLIM_INFINITY，表示没有限制。</p>
-
-<p>虽然设置进程的资源限制是针对单个进程的。但进程可消耗的资源除了与这个设置有关系外，还需要依赖同一个用户id的进程所消耗的资源之和。</p>
-
-<p>比如RLIMIT_NPROC资源，表示可创建的进程数限制，就是一个很好的例子。但是如果根据进程的子进程数来检查这个限制，将会失效，因为子进程也会创建新的进程。实际上，这个资源限制是针对所有的用户id都相同的进程设置的。但是，即使是具有同样的用户id，如果其他进程并没有针对这个资源进行限制，或者有限制，但是限制数跟其他不一样，则这个限制资源检查则是根据这个进程的相应设置来进行相应检查的。</p>
-
-<p>下表是参数<em>resource</em>的取值表：</p>
-
-<table>
-<thead>
-<tr>
-<th>resource        </th>
-<th style="text-align:center;"> Limit on</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>RLIMIT_AS      </td>
-<td style="text-align:center;"> 进程的虚拟内存大小（byte）</td>
-</tr>
-<tr>
-<td>RLIMIT_CORE    </td>
-<td style="text-align:center;"> Core 文件大小（byte）</td>
-</tr>
-<tr>
-<td>RLIMIT_CPU     </td>
-<td style="text-align:center;"> 进程的cpu时间(seconds)</td>
-</tr>
-<tr>
-<td>RLIMIT_DATA    </td>
-<td style="text-align:center;"> 进程的数据段大小（byte）</td>
-</tr>
-<tr>
-<td>RLIMIT_FSIZE   </td>
-<td style="text-align:center;"> 文件大小（byte）</td>
-</tr>
-<tr>
-<td>RLIMIT_MEMLOCK </td>
-<td style="text-align:center;"> 锁定的内存大小（byte）</td>
-</tr>
-<tr>
-<td>RLIMIT_MSGQUEUE </td>
-<td style="text-align:center;"> 为实际用户id分配的POSIX的消息队列的大小(since Linux 2.6.8)</td>
-</tr>
-<tr>
-<td>RLIMIT_NICE    </td>
-<td style="text-align:center;"> nice的值(since Linux 2.6.12)</td>
-</tr>
-<tr>
-<td>RLIMIT_NOFILE  </td>
-<td style="text-align:center;"> 最大的文件描述符个数</td>
-</tr>
-<tr>
-<td>RLIMIT_NPROC   </td>
-<td style="text-align:center;"> 一个实际用户id可创建的进程数</td>
-</tr>
-<tr>
-<td>RLIMIT_RSS     </td>
-<td style="text-align:center;"> Resident set size (bytes; not implemented)</td>
-</tr>
-</tbody>
-</table>
 
 ]]></content>
   </entry>

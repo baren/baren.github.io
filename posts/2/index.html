@@ -9,8 +9,9 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="main函数 c程序的起始运行函数是 1
-int main(int argc, char *argv[]); argc是命令行参数数目，argv是指针数组，指向每一个参数。 内核执行C程序是调用exec函数，在调用main函数之前，会先调用一个特殊的启动例程， &hellip;">
+  <meta name="description" content="实际上，每一个python函数都有返回值，如果有return，则返回return指定的值；没有就返回None。
+python的搜索路径是在sys.path中搜索，sys.path是一个list，可以修改这个list的值。
+python中，所有都是对象（函数是对象，模块是对象等）， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -65,6 +66,47 @@ int main(int argc, char *argv[]); argc是命令行参数数目，argv是指针�
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/04/22/python-note/">Python杂记</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-04-22T11:15:07+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul>
+<li><p>实际上，每一个python函数都有返回值，如果有return，则返回return指定的值；没有就返回None。</p></li>
+<li><p>python的搜索路径是在sys.path中搜索，sys.path是一个list，可以修改这个list的值。</p></li>
+<li><p>python中，所有都是对象（函数是对象，模块是对象等），意思是所有都可以赋值给变量，或者作为参数传递给函数。所有都是对象，有些可能不具有方法和属性，有些不能被继承，但是都可以赋值和传参。</p></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -583,87 +625,6 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/12/23/the-universal-io-model/">FiFe I/O 通用的I/O模型</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-12-23T14:36:16+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>总述</h2>
-
-<p>所有完成IO的系统调用，都是使用文件描述符（file descriptor）来引用一个文件。文件描述符用来引用打开的所有类型文件，包括管道、socket、设备等。每个进程都有自己的文件描述符集。</p>
-
-<p>根据惯例，大多数的应用程序都希望打开三个标准的文件描述符（标准输入、输出和错误）。这三个文集描述符，一般是由在程序启动之前启动的shell程序打开的。</p>
-
-<table>
-<thead>
-<tr>
-<th> 文件描述符        </th>
-<th style="text-align:center;"> POSIX 名称（在unistd.h头文件中定义）           </th>
-<th style="text-align:right;"> 描述  </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td> 0      </td>
-<td style="text-align:center;"> STDIN_FILENO </td>
-<td style="text-align:right;"> 标准输入 </td>
-</tr>
-<tr>
-<td> 1     </td>
-<td style="text-align:center;"> STDOUT_FILENO      </td>
-<td style="text-align:right;">   标准输出 </td>
-</tr>
-<tr>
-<td> 2 </td>
-<td style="text-align:center;"> STDERR_FILENO     </td>
-<td style="text-align:right;">    标准错误 </td>
-</tr>
-</tbody>
-</table>
-
-
-<p>在程序中，既可以使用数字，也可以使用posix的名称来指向这几个文件描述符。</p>
-
-<p>下面是四个关键的完成IO的系统调用：
-* fd = open(pathname, flags, mode) 。通过制定flags参数，open函数既可以打开文件，也可以创建文件。如果创建文件，mode参数用来指定创建文件的访问权限。如果不是用来创建文件，可以忽略mode这个文件。SUSv3规定，如果open成功，他保证使用这个进程的最小的没有使用的文件描述符。
-* numread = read(fd, buffer, count)。读取fd引用的文件，最多读取count个字节，返回的是实际读取的字节数，如果到了文件末尾，返回0。
-* numwritten = write(fd, buffer, count)。从buffer中，写入count个字节数据到fd所指向的文件中。返回的是实际写入的字节数，有可能小于count。
-* status = close(fd) 。释放文件描述符，以及相关的内核资源</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2013/12/23/the-universal-io-model/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="3">&larr; Older</a>
@@ -679,6 +640,10 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/09/17/pthread-control/">pthread control</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/09/14/per4-checpter6-decorator/">python decorator 深入理解</a>
@@ -706,10 +671,6 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     
       <li class="post">
         <a href="/blog/2014/06/24/signal/">apue(信号)</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/05/04/process-relate/">apue(进程关系)</a>
       </li>
     
   </ul>

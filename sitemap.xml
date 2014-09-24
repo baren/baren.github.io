@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://baren.github.io/blog/2014/09/17/pthread-control/</loc>
+    <lastmod>2014-09-17T21:19:03+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://baren.github.io/blog/2014/09/14/per4-checpter6-decorator/</loc>
     <lastmod>2014-09-14T11:38:09+08:00</lastmod>
     <priority>0.8</priority>
@@ -131,14 +137,14 @@
   
   <url>
     <loc>http://baren.github.io/blog/archives/</loc>
-    <lastmod>2014-09-14T16:28:39+08:00</lastmod>
+    <lastmod>2014-09-24T21:43:51+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://baren.github.io/</loc>
-    <lastmod>2014-09-14T16:28:39+08:00</lastmod>
+    <lastmod>2014-09-24T21:43:51+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>

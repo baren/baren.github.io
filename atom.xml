@@ -4,7 +4,7 @@
   <title><![CDATA[Baren Blog]]></title>
   <link href="http://baren.github.io/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-14T16:28:39+08:00</updated>
+  <updated>2014-09-24T21:43:51+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -12,6 +12,464 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[pthread control]]></title>
+    <link href="http://baren.github.io/blog/2014/09/17/pthread-control/"/>
+    <updated>2014-09-17T21:19:03+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/17/pthread-control</id>
+    <content type="html"><![CDATA[<h1>线程属性</h1>
+
+<p>在使用pthread_create函数：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">pthread_create</span><span class="p">(</span><span class="kt">pthread_t</span> <span class="o">*</span><span class="kr">thread</span><span class="p">,</span> <span class="k">const</span> <span class="kt">pthread_attr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">start</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="p">),</span> <span class="kt">void</span> <span class="o">*</span><span class="n">arg</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>创建线程时，第三个参数attr是线程属性。可以使用pthread_attr_t结构来修改线程默认属性。</p>
+
+<p>pthread_attr_t变量需要初始化，需要使用pthread_attr_init函数进行初始化。调用初始化函数后，pthread_attr_t结构所包含的内容就是操作系统实现支持的线程所有属性的默认值。</p>
+
+<!-- more -->
+
+
+<p>pthread_attr_t属性的初始化和销毁接口：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_attr_init</span><span class="p">(</span><span class="kt">ptread_attr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_attr_destory</span><span class="p">(</span><span class="kt">pthread_attr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>POSIX.1支持的线程属性包括：</p>
+
+<ul>
+<li>线程的分离状态属性</li>
+<li>线程栈末尾的警戒缓冲区大小</li>
+<li>线程栈的最低地址</li>
+<li>线程栈的大小</li>
+</ul>
+
+
+<p>如果创建的线程不需要知道线程的终止状态，可以在创建的时候，以分离状态启动。通过设置pthread_attr_t的值为分离状态。设置pthread_attr_t的函数是：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_attr_getdetachstate</span><span class="p">(</span><span class="kt">pthread_attr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">detachstate</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_attr_setdetachstate</span><span class="p">(</span><span class="kt">pthread_attr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span> <span class="kt">int</span> <span class="n">detachstate</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>设置分离状态的属性值是：PTHREAD_CREATE_DETACHED</p>
+
+<h1>同步属性</h1>
+
+<p>互斥量、读写锁和条件变量的属性</p>
+
+<h2>互斥量属性</h2>
+
+<p>主要讲互斥量属性的类型属性。类型属性有以下几种：</p>
+
+<ul>
+<li>PTHREAD_MUTEX_NORMAL——不检查死锁错误，如果一个线程试图去lock一个他已经锁住的互斥量，则发生死锁。</li>
+<li>PTHREAD_MUTEX_ERRORCHECK——提供错误检查</li>
+<li>PTHREAD_MUTEX_RECURSIVE——允许同一个线程多同一个互斥量多次加锁。会维持一个加锁计数量。</li>
+</ul>
+
+
+<p>对互斥量，属性初始化和销毁函数是：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutex_init</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">,</span> <span class="k">const</span> <span class="kt">pthread_mutexattr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutex_destroy</span><span class="p">(</span><span class="kt">pthread_mutex_t</span> <span class="o">*</span><span class="n">mutex</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以通过下面函数设置互斥量属性：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutexattr_gettype</span><span class="p">(</span><span class="kt">pthread_mutexattr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">type</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_mutexattr_settype</span><span class="p">(</span><span class="kt">pthread_mutexattr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span> <span class="kt">int</span> <span class="n">type</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>读写锁属性</h2>
+
+<p>支持进程共享属性</p>
+
+<h2>条件变量属性</h2>
+
+<p>支持进程共享属性</p>
+
+<h1>重入</h1>
+
+<p>在信号处理时，可重入的函数是指函数没有访问静态数据结构，或者没有调用malloc和free等。在线程处理时，函数同样也有重用的概念。</p>
+
+<p>在多线程环境下，一个函数是可重入的，意思是：一个函数在同一时刻可以被多个线程安全调用。</p>
+
+<p>注意与信号的区别
+* 一个函数对多线程来说是可重入的，意思是这个函数是线程安全的。
+* 但并不意味着对信号处理程序来说该函数是可重入的（比如标准io函数，是线程安全的，会对流加锁保证，但是对信号处理是不可重入的，因为会修改全局数据结构）。</p>
+
+<p>有一个列表，列出了posix.1中不能保证线程安全的函数：</p>
+
+<p><img src="http://baren.github.io/images/assets/pthread-1.png" title="linux" alt="alt text" /></p>
+
+<p>如果操作系统实现线程安全这一特性时，会同时提供一个对应的线程安全版本。</p>
+
+<p>比如asctime，对应的就是asctime_r，后缀是_r表示可重入。</p>
+
+<p>posix.1还提供了以线程按方式管理FILE对象的方法。</p>
+
+<p>标准IO流的实现，会对流加锁解锁操作，如果频繁调用getc函数，会有性能下降，因为会有频繁的加锁解锁。</p>
+
+<p>为了解决这个问题，posix1.c引入非可重入版本的流函数：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">getchar_unlocked</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">getc_unlocked</span><span class="p">(</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">putchar_unlocked</span><span class="p">(</span><span class="kt">int</span> <span class="n">c</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">putc_unlocked</span><span class="p">(</span><span class="kt">int</span> <span class="n">c</span><span class="p">,</span> <span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>同时提供了线程安全的方式管理FILE对象的方法：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">ftrylockfile</span><span class="p">(</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">flockfile</span><span class="p">(</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">funlockfile</span><span class="p">(</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用非线程安全的流函数版本时，需要用flockfile和funlockfile包围，否则会出现不可预测的问题（因为是非线程安全的）。</p>
+
+<p>好处：</p>
+
+<ul>
+<li>一旦对FILE对象进行加锁，就可以在释放锁之前对这些函数进行多次调用。这样就可以在多次数据读写上分摊总的加解锁开销。</li>
+</ul>
+
+
+<h1>线程私有数据</h1>
+
+<p>让一个函数是线程安全的最有效的方式就是让函数是可重入的。新的函数最好这么实现。尽管如此，
+一些老的函数，不是线程安全的，如果要将其改造成线程安全函数，需要满足：</p>
+
+<ul>
+<li>实现线程安全的</li>
+<li>不能改变函数的签名，也就是不需要调用这个函数的程序去修改</li>
+</ul>
+
+
+<p>使用线程私有（thread-specific）数据可以实现。</p>
+
+<blockquote><p>注意：
+要理解线程私有数据，以函数的角度考虑问题。</p></blockquote>
+
+<p>线程私有数据允许函数为每一个线程维持一个单独的数据拷贝。如图所示：</p>
+
+<p><img src="http://baren.github.io/images/assets/pthread-psd.png" title="linux" alt="alt text" /></p>
+
+<p>线程A调用函数myfunc时，myfunc函数为线程A维持一个单独数据，线程B调用myfunc函数时，myfunc为线程B维持一个线程B单独的数据。</p>
+
+<p>线程私有数据有个特点：</p>
+
+<ul>
+<li>存储的数据是持久化的，每一份数据会一直存在，这允许函数间共享数据（虽然不推荐）。</li>
+</ul>
+
+
+<h2>从函数角度考虑线程私有数据</h2>
+
+<p>为了更好的理解线程私有数据，需要从函数角度（实现角度）考虑如何使用线程私有数据</p>
+
+<ul>
+<li>在线程第一次调用函数时，函数为线程分配独立的存储块。存储块只分配一次，就是在线程第一次调用此函数时。</li>
+<li>同一个线程对这个函数的随后的调用，函数能够获取这个第一次调用而分配存储块。因此不能用局部变量存储指向存储块的key；也不能用static变量存储，因为在进程内，只有一个static的实例。</li>
+<li>不同的函数可能都需要线程私有数据，因此每个函数都得需要自己的线程私有数据key</li>
+<li>当线程停止时，函数不需要控制私有数据，因为停止时，代码有可能已经执行到函数外了。因此需要有个地方来执行清理操作。</li>
+</ul>
+
+
+<h2>线程私有数据 API</h2>
+
+<h3>创建私有数据key</h3>
+
+<p>创建一个key，两个用处：</p>
+
+<ul>
+<li>用来获取函数分配的存储块</li>
+<li>用来区分其它函数的线程私有数据对应的key</li>
+</ul>
+
+
+<p>使用pthread_key_create函数</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_key_create</span><span class="p">(</span><span class="kt">pthread_key_t</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">destructor</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>destructor指向一个清理函数，用来释放函数内分配的存储块。</p>
+
+<p>其签名是：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">void</span> <span class="nf">dest</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="cm">/* Release storage pointed to by &#39;value&#39; */</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>线程停止时，并且这个key关联的数据不是NULL时，就会自动调用这个函数来清理。</p>
+
+<p>一般，线程私有数据的实现，使用一个全局数组来存储这个key，这个key有两个状态：</p>
+
+<ul>
+<li>是否使用的标记</li>
+<li>清理函数指针</li>
+</ul>
+
+
+<p>如图：</p>
+
+<p><img src="http://baren.github.io/images/assets/pthread-psd-key.png" title="linux" alt="alt text" /></p>
+
+<p>根据图，pthread_key_create()返回的一般是全局数组的索引，数组元素包含两个字段，是否使用字段和清理函数地址字段。</p>
+
+<h3>关联函数分配内存与key</h3>
+
+<p>使用函数pthread_setspecific函数来关联函数分配的存储和pthread_key_create创建的key。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_setspecific</span><span class="p">(</span><span class="kt">pthread_key_t</span> <span class="n">key</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">);</span>
+</span><span class='line'><span class="c1">// value参数是一个分配的内存的指针</span>
+</span><span class='line'><span class="c1">// 当线程停止时，这个值会传给create函数指定的清理函数。</span>
+</span><span class='line'><span class="kt">void</span> <span class="o">*</span><span class="nf">pthread_getspecific</span><span class="p">(</span><span class="kt">pthread_key_t</span> <span class="n">key</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>为了维护线程私有数据，Pthreads API 为每一个线程维护了一个指针数组，数据元素是函数分配的存储的指针。</p>
+
+<p>如下图，假设pthread_keys[1]是函数myfunc分配的key，对于每一个线程，pthread api维护了一个指针数组，
+数组元素指向函数内分配的内存，</p>
+
+<p><img src="http://baren.github.io/images/assets/pthread-psd-key-2.png" title="linux" alt="alt text" /></p>
+
+<h2>例子</h2>
+
+<h3>非线程安全的</h3>
+
+<p>下面是一个非线程安全的strerror()的实现：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define _GNU_SOURCE  </span><span class="cm">/* Get &#39;_sys_nerr&#39; and &#39;_sys_errlist&#39; declarations from &lt;stdio.h&gt; */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;string.h&gt;   </span><span class="cm">/* Get declaration of strerror() */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#define MAX_ERROR_LEN 256  </span><span class="cm">/* Maximum length of string returned by strerror() */</span><span class="cp"></span>
+</span><span class='line'><span class="k">static</span> <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="n">MAX_ERROR_LEN</span><span class="p">];</span>  <span class="cm">/* Statically allocated return buffer */</span>
+</span><span class='line'><span class="kt">char</span> <span class="o">*</span>
+</span><span class='line'><span class="nf">strerror</span><span class="p">(</span><span class="kt">int</span> <span class="n">err</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">err</span> <span class="o">&gt;=</span> <span class="n">_sys_nerr</span> <span class="o">||</span> <span class="n">_sys_errlist</span><span class="p">[</span><span class="n">err</span><span class="p">]</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">snprintf</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">MAX_ERROR_LEN</span><span class="p">,</span> <span class="s">&quot;Unknown error %d&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">strncpy</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">_sys_errlist</span><span class="p">[</span><span class="n">err</span><span class="p">],</span> <span class="n">MAX_ERROR_LEN</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="n">buf</span><span class="p">[</span><span class="n">MAX_ERROR_LEN</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span> <span class="cm">/* Ensure null termination */</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">buf</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>线程安全例子</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define _GNU_SOURCE        </span><span class="cm">/* Get &#39;_sys_nerr&#39; and &#39;_sys_errlist&#39; declarations from &lt;stdio.h&gt; */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="cp">#include &lt;string.h&gt;        </span><span class="cm">/* Get declaration of strerror() */</span><span class="cp"></span>
+</span><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="cp">#include &quot;tlpi_hdr.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">pthread_once_t</span> <span class="n">once</span> <span class="o">=</span> <span class="n">PTHREAD_ONCE_INIT</span><span class="p">;</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">pthread_key_t</span> <span class="n">strerrorKey</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="cp">#define MAX_ERROR_LEN 256        </span><span class="cm">/* Maximum length of string in per-thread buffer returned by strerror() */</span><span class="cp"></span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">void</span>
+</span><span class='line'><span class="nf">destructor</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">buf</span><span class="p">)</span>     <span class="cm">/* Free thread-specific data buffer */</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">free</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">void</span>
+</span><span class='line'><span class="nf">createKey</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>     <span class="cm">/* One-time key creation function */</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">s</span><span class="p">;</span>
+</span><span class='line'>  <span class="cm">/* Allocate a unique thread-specific data key and save the address of the destructor for thread-specific data buffers */</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_key_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">strerrorKey</span><span class="p">,</span> <span class="n">destructor</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_key_create&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">char</span> <span class="o">*</span>
+</span><span class='line'><span class="nf">strerror</span><span class="p">(</span><span class="kt">int</span> <span class="n">err</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">s</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="o">*</span><span class="n">buf</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="cm">/* Make first caller allocate key for thread-specific data */</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_once</span><span class="p">(</span><span class="o">&amp;</span><span class="n">once</span><span class="p">,</span> <span class="n">createKey</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_once&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">buf</span> <span class="o">=</span> <span class="n">pthread_getspecific</span><span class="p">(</span><span class="n">strerrorKey</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">buf</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* If first call from this thread, allocate buffer for thread, and save its location */</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">buf</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">MAX_ERROR_LEN</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">buf</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;malloc&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_setspecific</span><span class="p">(</span><span class="n">strerrorKey</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_setspecific&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">err</span> <span class="o">&gt;=</span> <span class="n">_sys_nerr</span> <span class="o">||</span> <span class="n">_sys_errlist</span><span class="p">[</span><span class="n">err</span><span class="p">]</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">snprintf</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">MAX_ERROR_LEN</span><span class="p">,</span> <span class="s">&quot;Unknown error %d&quot;</span><span class="p">,</span> <span class="n">err</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">strncpy</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">_sys_errlist</span><span class="p">[</span><span class="n">err</span><span class="p">],</span> <span class="n">MAX_ERROR_LEN</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>      <span class="n">buf</span><span class="p">[</span><span class="n">MAX_ERROR_LEN</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span> <span class="cm">/* Ensure null termination */</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">return</span> <span class="n">buf</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>取消选项</h1>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[python decorator 深入理解]]></title>
@@ -7828,64 +8286,6 @@ i-node在内存的描述，记录了打开的文件描述符指向这个i-node�
 <p>对于每一个进程，内核提供了一个虚拟目录/dev/fd ，这个目录包含的文件形式是<em>/dev/fd/n</em>。n对应的进程中的打开的文件描述符。因此使用/dev/fd/n或者fd都可以指向一个文件。</p>
 
 <p>但是在程序内很少使用这种方式，一般只在shell中使用。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[FiFe I/O 通用的I/O模型]]></title>
-    <link href="http://baren.github.io/blog/2013/12/23/the-universal-io-model/"/>
-    <updated>2013-12-23T14:36:16+08:00</updated>
-    <id>http://baren.github.io/blog/2013/12/23/the-universal-io-model</id>
-    <content type="html"><![CDATA[<h2>总述</h2>
-
-<p>所有完成IO的系统调用，都是使用文件描述符（file descriptor）来引用一个文件。文件描述符用来引用打开的所有类型文件，包括管道、socket、设备等。每个进程都有自己的文件描述符集。</p>
-
-<p>根据惯例，大多数的应用程序都希望打开三个标准的文件描述符（标准输入、输出和错误）。这三个文集描述符，一般是由在程序启动之前启动的shell程序打开的。</p>
-
-<table>
-<thead>
-<tr>
-<th> 文件描述符        </th>
-<th style="text-align:center;"> POSIX 名称（在unistd.h头文件中定义）           </th>
-<th style="text-align:right;"> 描述  </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td> 0      </td>
-<td style="text-align:center;"> STDIN_FILENO </td>
-<td style="text-align:right;"> 标准输入 </td>
-</tr>
-<tr>
-<td> 1     </td>
-<td style="text-align:center;"> STDOUT_FILENO      </td>
-<td style="text-align:right;">   标准输出 </td>
-</tr>
-<tr>
-<td> 2 </td>
-<td style="text-align:center;"> STDERR_FILENO     </td>
-<td style="text-align:right;">    标准错误 </td>
-</tr>
-</tbody>
-</table>
-
-
-<p>在程序中，既可以使用数字，也可以使用posix的名称来指向这几个文件描述符。</p>
-
-<p>下面是四个关键的完成IO的系统调用：
-* fd = open(pathname, flags, mode) 。通过制定flags参数，open函数既可以打开文件，也可以创建文件。如果创建文件，mode参数用来指定创建文件的访问权限。如果不是用来创建文件，可以忽略mode这个文件。SUSv3规定，如果open成功，他保证使用这个进程的最小的没有使用的文件描述符。
-* numread = read(fd, buffer, count)。读取fd引用的文件，最多读取count个字节，返回的是实际读取的字节数，如果到了文件末尾，返回0。
-* numwritten = write(fd, buffer, count)。从buffer中，写入count个字节数据到fd所指向的文件中。返回的是实际写入的字节数，有可能小于count。
-* status = close(fd) 。释放文件描述符，以及相关的内核资源</p>
-
-<!-- more -->
-
-
-<h2>I/O通用性</h2>
-
-<p>所谓通用性，是指这四个函数可以作用于所有的类型文件，来完成IO操作。这些文件包括管道、设备、socket等。</p>
-
-<p>如果需要使用特定类型文件特有的功能，可以使用ioctl系统调用，它提供了所有通用功能以外的特定功能。</p>
 ]]></content>
   </entry>
   
