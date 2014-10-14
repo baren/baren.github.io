@@ -4,7 +4,7 @@
   <title><![CDATA[Category: syntax | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/syntax/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-10-14T22:14:12+08:00</updated>
+  <updated>2014-10-14T22:20:23+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -67,6 +67,22 @@ code snippet
 
 <p>&#8220;`
 会让文章下面的部分不显示，并会提示一个按钮，来查看未显示的内容。</p>
+
+<h1>命令</h1>
+
+<p>生成内容
+rake generate</p>
+
+<p>预览
+rake preview</p>
+
+<p>提交：
+git add .
+git commit -m &ldquo;new&rdquo;
+git push origin source</p>
+
+<p>发布：
+rake deploy</p>
 ]]></content>
   </entry>
   

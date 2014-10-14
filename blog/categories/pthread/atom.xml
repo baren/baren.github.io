@@ -4,7 +4,7 @@
   <title><![CDATA[Category: pthread | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/pthread/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-10-14T22:14:12+08:00</updated>
+  <updated>2014-10-14T22:20:23+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -187,6 +187,9 @@ int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset);
     <updated>2014-09-25T20:56:04+08:00</updated>
     <id>http://baren.github.io/blog/2014/09/25/pthread-cancel</id>
     <content type="html"><![CDATA[<p>主要描述POSIX线程的取消机制和更进一步的线程细节，包括线程和信号，线程栈等。</p>
+
+<!-- more -->
+
 
 <h1>取消一个线程</h1>
 
