@@ -9,7 +9,11 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="总述 所有完成IO的系统调用，都是使用文件描述符（file descriptor）来引用一个文件。文件描述符用来引用打开的所有类型文件，包括管道、socket、设备等。每个进程都有自己的文件描述符集。 根据惯例，大多数的应用程序都希望打开三个标准的文件描述符（标准输入、输出和错误）。 &hellip;">
+  <meta name="description" content="每一个进程，都有一组与之关联的数字的用户ID和组ID。有时候这些ID被成为进程凭据（process credentials），这些ID包含： 实际用户ID和实际组ID
+有效用户ID和有效组ID
+保存的设置用户ID和保存的设置组ID
+文件系统用户ID和组ID（linux特定的）
+补充组ID（ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -64,6 +68,104 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/01/26/chapter-9-linux-programming-interface/">进程凭据(chapter 9 Linux Programming Interface)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-01-26T10:33:32+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>每一个进程，都有一组与之关联的数字的用户ID和组ID。有时候这些ID被成为进程凭据（process credentials），这些ID包含：</p>
+
+<ul>
+<li>实际用户ID和实际组ID</li>
+<li>有效用户ID和有效组ID</li>
+<li>保存的设置用户ID和保存的设置组ID</li>
+<li>文件系统用户ID和组ID（linux特定的）</li>
+<li>补充组ID（supplementary group IDs）</li>
+</ul>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/01/26/chapter-9-linux-programming-interface/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/30/fileio-further-details/">Linux文件io进一步描述</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-30T13:15:19+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>原子性和条件竞争</h2>
+
+<p>所有系统调用都是原子执行的。原子执行避免了条件竞争。所谓条件竞争，指的是两个进程，在共享资源上操作，产生的结果依赖于两个进程的执行顺序。</p>
+
+<h3>排他性创建文件</h3>
+
+<p>在调用open系统调用函数时，如果文件存在，则如果指定O_EXCL和O_CREAT会导致open失败。这就为进程提供了一种确保是他创建了文件的方式。
+如果没有这个选项，则一般是先检查文件存在不存在，如果不存在，就创建一个文件。由于是check-if-absent方式，产生条件竞争。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/12/30/fileio-further-details/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -209,6 +311,14 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/09/28/pthread-further-details/">pthread 进一步细节</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/25/pthread-cancel/">取消线程</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/09/17/pthread-control/">pthread control</a>
       </li>
     
@@ -230,14 +340,6 @@
     
       <li class="post">
         <a href="/blog/2014/09/06/linux-performance-observability-tools/">linux performance observability tools</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/08/28/pthread/">apue(线程)</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/06/24/signal/">apue(信号)</a>
       </li>
     
   </ul>

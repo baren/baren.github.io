@@ -4,7 +4,7 @@
   <title><![CDATA[Baren Blog]]></title>
   <link href="http://baren.github.io/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-09-24T21:43:51+08:00</updated>
+  <updated>2014-10-14T22:14:12+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -12,6 +12,541 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[pthread 进一步细节]]></title>
+    <link href="http://baren.github.io/blog/2014/09/28/pthread-further-details/"/>
+    <updated>2014-09-28T20:43:21+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/28/pthread-further-details</id>
+    <content type="html"><![CDATA[<h1>线程和信号</h1>
+
+<p>信号的设计实现早于线程，导致线程与信号之间有许多冲突。冲突的地方主要在于：</p>
+
+<ul>
+<li>既要维护传统的在单线程进程环境下的信号语义</li>
+<li>同时又要开发符合多线程进程环境下的信号程序</li>
+</ul>
+
+
+<!-- more -->
+
+
+<h2>信号模式怎样映射到线程</h2>
+
+<p>需要弄清楚信号的哪些方面是进程级别的，哪些方面是针对特定线程的。说明：</p>
+
+<ul>
+<li>信号动作是<em>进程</em>级别的。这意味着一个默认动作是终止进程的信号被内核递送到进程的任意线程，所有的进程内的线程都会终止。</li>
+<li>信号处理是<em>进程</em>级别的。进程内的所有线程都共享同一个信号处理器。如果一个线程使用sigaction()建立的信号处理器，进程内的任意线程如果收到这个信号，都会调用这个处理器；如果一个线程设置了忽略某个信号，其它线程也自动忽略</li>
+<li>如果信号递送给一个多线程的进程时，内核会随机选取一个线程，用来递送信号和执行信号处理程序。</li>
+<li>屏蔽信号是基于线程的。线程可以使用pthread_sigmask()来屏蔽某些信号。</li>
+<li>内核维护了针对进程的一个全局的阻塞（pending）的信号集；也维护了针对每个线程的阻塞的信号集。sigpending()函数会返回进程的全局阻塞的信号集和调用这个函数的线程的阻塞信号集的并集。一个新创建的线程，阻塞的信号集是空。如果一个线程阻塞了一个信号，这个信号一直被阻塞，直到线程取消阻塞或者线程停止。</li>
+<li>如果一个信号处理中断了pthread_mutex_lock()调用，这个调用总是会自动启动。如果中断了pthread_cond_wait()，也会自动重启。</li>
+</ul>
+
+
+<p>以下几种情况，信号会递送给特定线程：</p>
+
+<ul>
+<li>在某个线程上下文中，执行了一个特定的硬件指令的直接结果，生成信号</li>
+<li>线程试图写入到一个终端的pipe文件时，生成一个SIGPIPE</li>
+<li>使用pthread_kill() 或 pthread_sigqueue()可以允许同一进程的线程给另一个线程发信号</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;signal.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_kill</span><span class="p">(</span><span class="kt">pthread_t</span> <span class="kr">thread</span><span class="p">,</span> <span class="kt">int</span> <span class="n">sig</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_sigmask</span><span class="p">(</span><span class="kt">int</span> <span class="n">how</span><span class="p">,</span> <span class="k">const</span> <span class="kt">sigset_t</span> <span class="o">*</span><span class="n">set</span><span class="p">,</span> <span class="kt">sigset_t</span> <span class="o">*</span><span class="n">oldset</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>线程和进程控制</h1>
+
+<p>就像信号一样exec(), fork(), and exit()也是早于线程。</p>
+
+<h5>线程和exec()</h5>
+
+<p>当任意线程调用exec()函数时，调用的程序会被完全取代。所有的线程，除了调用线程外，都会被终止。不会去执行线程的终止处理函数，属于进程的锁和条件变量都会消失。</p>
+
+<h5>线程和fork()</h5>
+
+<p>多线程环境的进程调用fork()函数，只有调用进程在子进程中复制。其它线程在子进程中会消失，线程特定的析构或者清理函数都不会执行。这会导致严重问题：</p>
+
+<ul>
+<li><p>虽然只有调用线程被复制了，但是进程全局状态，还有pthread对象（比如锁和条件变量）等全局对象，都会被复制到子进程。这会导致，如果在fork的同时，有个线程锁住了mutex，并且部分更新了全局数据结构，这种情况下，子进程中的线程将不能够解锁这个mutex。更进一步，子进程中的全局状态可能处于不一致状态。</p></li>
+<li><p>由于线程的析构或者清理函数没有被调用，有可能导致子进程的内存泄露。</p></li>
+</ul>
+
+
+<p>由于在多线程环境下调用fork有这么多严重问题，通常的建议是：</p>
+
+<ul>
+<li>只有在后续立即调用exec函数的情况下，才会调用fork函数。否则不要调用。</li>
+</ul>
+
+
+<p>如果必须调用fork函数，但是后面不跟着调用exec函数，linux提供了一个这种情况下的解决办法：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="n">pthread_atfork</span><span class="p">(</span><span class="n">prepare_func</span><span class="p">,</span> <span class="n">parent_func</span><span class="p">,</span> <span class="n">child_func</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>线程实现模式</h1>
+
+<p>有许多线程实现方式，主要的区别是线程和内核的调度实体（kernel scheduling entities）之间映射的不同。</p>
+
+<p>内核调度实体（kernel scheduling entities）是内核分配CPU和其他资源的单元。在传统的UNIX系统下，内核调用实体与进程是同义的。</p>
+
+<h2>Many-to-one (M:1) 实现，用户级别线程</h2>
+
+<p>在M:1线程实现模式下，所有的线程创建、调度和同步细节都在用户空间下的线程lib包实现。内核不知道关于线程的任何细节。</p>
+
+<p>这种实现有以下几种好处：</p>
+
+<ul>
+<li>最大的好处是线程操作非常快速，因为这些全部在用户空间实现，不用切换到内核空间。</li>
+<li>移植性好，由于是在用户空间实现的，可以很容易从一个系统移植到另一个系统</li>
+</ul>
+
+
+<p>不好处是：</p>
+
+<ul>
+<li>当一个线程调用了一个系统调用（比如read()），控制从用户空间的线程包转到内核，这意味着read()被阻塞了，那么其它线程就全部被阻塞了。</li>
+<li>内核不能够调度线程。由于内核不知道线程的存在，因此内核不能调度线程到其它cpu上。</li>
+</ul>
+
+
+<h2>One-to-one (1:1)实现方式</h2>
+
+<p>在1:1实现方式下，一个线程对应一个内核的调度实体。内核单独的处理每个线程的调度。这样，就解决了M:1的重大调度问题。</p>
+
+<p>但是这种实现方式下，也有其它问题：</p>
+
+<ul>
+<li>线程的创建同步等操作就比较慢，因为需要切换到内核空间下。</li>
+<li>一对一的关系，内核需要为每一个线程维护一个内核调度实体，如果有大量的线程，会降低整体性能。</li>
+</ul>
+
+
+<p>尽管如此，1:1的方式是大多数pthread线程实现的方式。两个linux的pthread实现都是采用1:1的方式</p>
+
+<h2>linux的pthread实现方式</h2>
+
+<p>linux有两种pthread的实现：</p>
+
+<ul>
+<li>LinuxThreads: 这是linux的最初实现。Xavier Leroy开发</li>
+<li>NPTL (Native POSIX Threads Library): 新的linux下的pthread实现。Ulrich Dreppe（gun c也叫libc的管理者） 和 Ingo Molnar实现。性能比LinuxThreads好，也更符合pthread的规范。</li>
+</ul>
+
+
+<p>在glibc 2.4及其后续版本，不再支持LinuxThreads了。</p>
+
+<h3>LinuxThreads实现细节</h3>
+
+<ul>
+<li>使用clone() 系统调用创建一个线程，复制的资源是</li>
+</ul>
+
+
+<p>CLONE_VM | CLONE_FILES | CLONE_FS | CLONE_SIGHAND</p>
+
+<p>这意味着LinuxThreads线程共享虚拟内存、文件描述符、文件相关信息（umask, root directory, and current working directory）和信号处理。</p>
+
+<ul>
+<li><p>除了由应用创建的线程，LinuxThreads还创建了额外的管理线程，来处理线程的创建的销毁。</p></li>
+<li><p>实现采用了信号来进行内部的操作。</p></li>
+</ul>
+
+
+<p>当内核支持实时信号（Linux 2.2及其以后），前三个实时信号被使用；如果是老的内核，使用 SIGUSR1 and SIGUSR2，这样，应用不能够使用这几个信号。</p>
+
+<p>关于实时信号，参考：
+<a href="http://unixhelp.ed.ac.uk/CGI/man-cgi?signal+7">http://unixhelp.ed.ac.uk/CGI/man-cgi?signal+7</a></p>
+
+<h3>NPTL</h3>
+
+<ul>
+<li>使用clone() 创建线程，复制的资源是</li>
+</ul>
+
+
+<p>CLONE_VM | CLONE_FILES | CLONE_FS | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID | CLONE_SYSVSEM</p>
+
+<ul>
+<li><p>使用了前两个实时信号</p></li>
+<li><p>不像LinuxThreads，NPTL没有实现管理线程</p></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[取消线程]]></title>
+    <link href="http://baren.github.io/blog/2014/09/25/pthread-cancel/"/>
+    <updated>2014-09-25T20:56:04+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/25/pthread-cancel</id>
+    <content type="html"><![CDATA[<p>主要描述POSIX线程的取消机制和更进一步的线程细节，包括线程和信号，线程栈等。</p>
+
+<h1>取消一个线程</h1>
+
+<p>使用pthread_cancel函数取消特定的线程：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pthread_cancel</span><span class="p">(</span><span class="kt">pthread_t</span> <span class="kr">thread</span><span class="p">);</span>
+</span><span class='line'><span class="c1">// 返回0表示成功</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>pthread_cancel只是发送取消请求，然后立即返回。这意味着调用线程不用等待线程停止。目标线程什么时候停止，取决于目标线程的状态和类型。</p>
+
+<h1>取消状态和类型</h1>
+
+<p>使用pthread_setcancelstate()设置线程的取消状态；使用pthread_setcanceltype()设置线程的取消类型。这两个状态设置线程如何响应取消操作的。</p>
+
+<p>pthread_setcancelstate()函数可设置的状态是：</p>
+
+<ul>
+<li>PTHREAD_CANCEL_DISABLE。 线程是不可取消的。这种线程如果接收到一个取消请求，会保持未决（pending）状态直到成为可取消状态</li>
+<li>PTHREAD_CANCEL_ENABLE。线程是可取消的，这个状态也是默认的状态。</li>
+</ul>
+
+
+<p>线程在执行一段必须执行完的代码时，设置为不可取消状态，是非常有用的。</p>
+
+<p>pthread_setcanceltype()函数可以设置两种类型：</p>
+
+<ul>
+<li>PTHREAD_CANCEL_DEFERRED。线程一直执行直到遇到取消点（特殊函数）。默认类型。</li>
+<li>PTHREAD_CANCEL_ASYNCHRONOUS。线程可以在任意时间点取消，一般不大永。</li>
+</ul>
+
+
+<h1>取消点</h1>
+
+<p>当一个线程是可取消的并且是延迟的（PTHREAD_CANCEL_ENABLE和PTHREAD_CANCEL_DEFERRED）。取消操作会在线程执行到下一个取消点时起作用。</p>
+
+<p>SUSv3 定义了一组必须是取消点的函数，还定义了一组是可选取消点的函数。</p>
+
+<p>可取消函数列表（略）</p>
+
+<p>对于一个不是分离的线程，必须由其它函数调用pthread_join函数等待这个线程结束。如果这个线程接收了取消请求，并到达了一个取消点，则pthread_join返回的值是PTHREAD_CANCELED.</p>
+
+<p>取消线程的例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="cp">#include &quot;tlpi_hdr.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="o">*</span>
+</span><span class='line'><span class="nf">threadFunc</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">arg</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">j</span><span class="p">;</span>
+</span><span class='line'>  <span class="n">printf</span><span class="p">(</span><span class="s">&quot;New thread started</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Loop %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">j</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>    <span class="cm">/* NOTREACHED */</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span>
+</span><span class='line'><span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">pthread_t</span> <span class="n">thr</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">s</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">res</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">thr</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">threadFunc</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_create&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>      <span class="cm">/* Allow new thread to run a while */</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_cancel</span><span class="p">(</span><span class="n">thr</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_cancel&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_join</span><span class="p">(</span><span class="n">thr</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">res</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_join&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">res</span> <span class="o">==</span> <span class="n">PTHREAD_CANCELED</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Thread was canceled</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>      <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Thread was not canceled (should not happen!)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">exit</span><span class="p">(</span><span class="n">EXIT_SUCCESS</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>测试取消点</h1>
+
+<p>如果线程没有调用这些取消点函数（纯计算线程），为了也能够响应取消请求，可以使用pthread_testcancel()来当取消点。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">pthread_testcancel</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>清理处理器</h1>
+
+<p>如果一个线程接收到取消请求，执行到一个取消点，则会停止。有可能会导致共享的变量和pthread对象（比如锁）处在不一致状态，可能会导致剩下的线程死锁等异常状态。</p>
+
+<p>为了避免这个问题，需要定义线程结束的清理函数。</p>
+
+<p>每一个线程都有一个线程处理函数栈。当线程被取消时，从上到下依次开始执行清理处理程序。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">pthread_cleanup_push</span><span class="p">(</span><span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">routine</span><span class="p">)(</span><span class="kt">void</span><span class="o">*</span><span class="p">),</span> <span class="kt">void</span> <span class="o">*</span><span class="n">arg</span><span class="p">);</span>
+</span><span class='line'><span class="kt">void</span> <span class="nf">pthread_cleanup_pop</span><span class="p">(</span><span class="kt">int</span> <span class="n">execute</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>注意：
+当线程正常执行完成，不会触发清理处理函数。</p></blockquote>
+
+<p>一般来说，一个清理操作只有在执行一段特殊的代码时被取消时，才会用到。</p>
+
+<p>下面例子在主main函数中创建了一个线程，他分配了一块内存，并锁住了一个互斥锁mtx。因为线程有可能被取消，因此使用pthread_cleanup_push()来安装清理处理函数，这个清理函数主要作用是释放分配的内存，并对互斥锁解锁。</p>
+
+<p>安装完清理处理器后，线程进入所谓的特殊代码段（如果取消，需要走清理处理函数的）。</p>
+
+<p>如果特殊代码段正常执行完成，则调用pthread_cleanup_pop()去掉处理函数。</p>
+
+<p>例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;pthread.h&gt;</span>
+</span><span class='line'><span class="cp">#include &quot;tlpi_hdr.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">pthread_cond_t</span> <span class="n">cond</span> <span class="o">=</span> <span class="n">PTHREAD_COND_INITIALIZER</span><span class="p">;</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">pthread_mutex_t</span> <span class="n">mtx</span> <span class="o">=</span> <span class="n">PTHREAD_MUTEX_INITIALIZER</span><span class="p">;</span>
+</span><span class='line'><span class="k">static</span> <span class="kt">int</span> <span class="n">glob</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="cm">/* Predicate variable */</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">void</span>        <span class="cm">/* Free memory pointed to by &#39;arg&#39; and unlock mutex */</span> <span class="n">cleanupHandler</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">arg</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="kt">int</span> <span class="n">s</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">printf</span><span class="p">(</span><span class="s">&quot;cleanup: freeing block at %p</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">arg</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">free</span><span class="p">(</span><span class="n">arg</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">printf</span><span class="p">(</span><span class="s">&quot;cleanup: unlocking mutex</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mtx</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_mutex_unlock&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="kt">void</span> <span class="o">*</span>
+</span><span class='line'><span class="n">threadFunc</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">arg</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">s</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">buf</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span> <span class="cm">/* Buffer allocated by thread */</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="n">buf</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mh">0x10000</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">printf</span><span class="p">(</span><span class="s">&quot;thread: allocated memory at %p</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mtx</span><span class="p">);</span>  <span class="cm">/* Not a cancellation point */</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_mutex_lock&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">pthread_cleanup_push</span><span class="p">(</span><span class="n">cleanupHandler</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="k">while</span> <span class="p">(</span><span class="n">glob</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_cond_wait</span><span class="p">(</span><span class="o">&amp;</span><span class="n">cond</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">mtx</span><span class="p">);</span>   <span class="cm">/* A cancellation point */</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>      
+</span><span class='line'>          <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_cond_wait&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="n">printf</span><span class="p">(</span><span class="s">&quot;thread: condition wait loop completed</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">pthread_cleanup_pop</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span>
+</span><span class='line'><span class="n">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">pthread_t</span> <span class="n">thr</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="o">*</span><span class="n">res</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">s</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">thr</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">threadFunc</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_create&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>      <span class="cm">/* Give thread a chance to get started */</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>      <span class="cm">/* Cancel thread */</span>
+</span><span class='line'>      <span class="n">printf</span><span class="p">(</span><span class="s">&quot;main: about to cancel thread</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>      <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_cancel</span><span class="p">(</span><span class="n">thr</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_cancel&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>       <span class="cm">/* Signal condition variable */</span>
+</span><span class='line'>      <span class="n">printf</span><span class="p">(</span><span class="s">&quot;main: about to signal condition variable</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>      <span class="n">glob</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>      <span class="n">s</span> <span class="o">=</span> <span class="n">pthread_cond_signal</span><span class="p">(</span><span class="o">&amp;</span><span class="n">cond</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_cond_signal&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">s</span><span class="o">=</span> <span class="n">pthread_join</span><span class="p">(</span><span class="n">thr</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">res</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">errExitEN</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&quot;pthread_join&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="n">res</span> <span class="o">==</span> <span class="n">PTHREAD_CANCELED</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">printf</span><span class="p">(</span><span class="s">&quot;main: thread was canceled</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>      <span class="nf">printf</span><span class="p">(</span><span class="s">&quot;main: thread terminated normally</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">exit</span><span class="p">(</span><span class="n">EXIT_SUCCESS</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>  
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>注意：
+注意上面例子对pthread_cleanup_push()函数的的典型使用</p></blockquote>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[pthread control]]></title>
@@ -467,7 +1002,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>取消选项</h1>
+
 ]]></content>
   </entry>
   
@@ -7711,581 +8246,6 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 
 
 <p>当这样指定后，注释、字符串字面量，可以直接在识别unicode的编辑器中输入。但是其它的，包括标识符，都必须是ascii的字符。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[进程凭据(chapter 9 linux programming interface)]]></title>
-    <link href="http://baren.github.io/blog/2014/01/26/chapter-9-linux-programming-interface/"/>
-    <updated>2014-01-26T10:33:32+08:00</updated>
-    <id>http://baren.github.io/blog/2014/01/26/chapter-9-linux-programming-interface</id>
-    <content type="html"><![CDATA[<p>每一个进程，都有一组与之关联的数字的用户ID和组ID。有时候这些ID被成为进程凭据（process credentials），这些ID包含：</p>
-
-<ul>
-<li>实际用户ID和实际组ID</li>
-<li>有效用户ID和有效组ID</li>
-<li>保存的设置用户ID和保存的设置组ID</li>
-<li>文件系统用户ID和组ID（linux特定的）</li>
-<li>补充组ID（supplementary group IDs）</li>
-</ul>
-
-
-<!-- more -->
-
-
-<h2>实际用户ID和实际组ID</h2>
-
-<p>实际用户和组ID标记了进程属于哪个用户或者组ID。其值是登陆用户的id和组id。作为登陆进程的一部分，shell读取登陆口令中的用户ID和组ID。同时在shell执行的程序会继承这个实际用户ID和组ID。</p>
-
-<h2>有效用户ID和有效组ID</h2>
-
-<p>在大多数的Unix实现中，当进程执行这种操作时，有效用户id和有效组id加上补充的组id（supplementary group IDs）联合起来决定进程所具有的权限（linux稍微不同）。</p>
-
-<ul>
-<li>如果进程有效用户ID是0（root的id），拥有所有超级用户权限。这种进程被称为特权进程，许多系统进程只能被特权进程调用</li>
-<li>正常情况下，进程有效用户id和有效组id与实际用户id和实际组id是一样的。</li>
-</ul>
-
-
-<p>有两种方式可以修改进程的有效用户（组）id：</p>
-
-<ul>
-<li>通过系统调用。</li>
-<li>执行set-user-ID和set-group-ID的程序。</li>
-</ul>
-
-
-<h2>set-user-ID和set-group-ID的程序</h2>
-
-<p>通过把进程的有效用户id和有效组id设置为可执行文件的用户id和组id，可以使进程拥有正常情况下没有的权限。</p>
-
-<p>一般文件，除了表示文件拥有关系的用户id和组id外，还有两个特殊的权限位：<em>set-user-ID</em> 和 <em>set-group-ID</em>。可以通过chmod来修改这两个位：</p>
-
-<p>例子：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'># ls -l prog
-</span><span class='line'>-rwxr-xr-x 1 root root 
-</span><span class='line'># chmod u+s prog  打开set-user-ID权限位
-</span><span class='line'># chmod g+s prog  打开set-group-ID权限位
-</span><span class='line'># ls -l prog
-</span><span class='line'>-rwsr-sr-x 1 root root 302585 Jun 26 15:05 prog</span></code></pre></td></tr></table></div></figure>
-
-
-<p>修改密码程序passwd，mount和Unmount等都设置色set-user-id权限位。</p>
-
-<h2>保存的Set-User-ID和保存的Set-Group-ID</h2>
-
-<p>保存的Set-User-ID和保存的Set-Group-ID被设计成让设置了Set-User-ID和Set-Group-ID的程序用的。执行步骤：
-1. 如果执行文件的Set-User-ID和Set-Group-ID权限位被设置了。则进程有效用户id和有效组id改成改文件的用户id和组id。如果这个权限位没有设置，则没有任何改变。
-2. 保存的Set-Group-ID和保存的Set-User-ID值，拷贝自进程的有效用户id和有效组id。不管Set-User-ID和Set-Group-ID权限位设不设置，拷贝过程都会执行。</p>
-
-<p>如果一个进程的实际用户id、有效用户id和保存的设置用户id都是1000.当它执行了一个root拥有的set-user-ID的程序，执行后，进程的实际、有效和保存的设置用户id分别是：</p>
-
-<p>1000、0、0</p>
-
-<p>许多系统调用允许set-user-ID的程序在实际用户id和保存用户id之间进行切换。这时，程序可以临时性的获取或者抛弃与可执行文件相关联的用户id的特殊权限。这是一种安全的编程实践。</p>
-
-<h2>文件系统用户id和文件系统组id</h2>
-
-<p>在linux系统上，操作文件的权限，不是根据进程的有效用户（组）id来确定的，而是根据文件系统的用户（组）id判断，其它操作，仍然用有效用户（组）id来进行权限判断。</p>
-
-<p>正常情况下，文件系统用户（组）id与进程的有效用户（组）id是一样的。当进程的有效用户（组）id被修改时，不管是通过系统调用或者是通过执行set-user（group）-ID的程序，文件系统的用户（组）id也会跟着修改成同样的值。这意味着，linux与其它unix的实现，在行为上市一致的，除了在明确调用setfsuid() and setfsgid()两个系统调用的时候。</p>
-
-<p>由于在表现上，文件系统用户（组）id与进程有效的用户id和组id是一样的，因此虽然在底层，操作文件时，linux是用文件系统的用户（组）id来判断权限的，我们只关心进程的有效用户（组）id即可。</p>
-
-<h2>补充的组ids（Supplementary Group IDs）</h2>
-
-<p>补充的组ids是一个额外的进程所属于的组的集合。</p>
-
-<p>新进程会从父进程中继承这些组ids。一个登录shell进程从系统组文件（system group file）获取其补充组ids。这些ids与有效用户（组）id来检查进程的操作权限。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[linux文件io进一步描述]]></title>
-    <link href="http://baren.github.io/blog/2013/12/30/fileio-further-details/"/>
-    <updated>2013-12-30T13:15:19+08:00</updated>
-    <id>http://baren.github.io/blog/2013/12/30/fileio-further-details</id>
-    <content type="html"><![CDATA[<h2>原子性和条件竞争</h2>
-
-<p>所有系统调用都是原子执行的。原子执行避免了条件竞争。所谓条件竞争，指的是两个进程，在共享资源上操作，产生的结果依赖于两个进程的执行顺序。</p>
-
-<h3>排他性创建文件</h3>
-
-<p>在调用open系统调用函数时，如果文件存在，则如果指定O_EXCL和O_CREAT会导致open失败。这就为进程提供了一种确保是他创建了文件的方式。
-如果没有这个选项，则一般是先检查文件存在不存在，如果不存在，就创建一个文件。由于是check-if-absent方式，产生条件竞争。</p>
-
-<!-- more -->
-
-
-<h3>追加文件内容</h3>
-
-<p>如果多个进程往一个文件中追加数据（比如一个全局日志文件），通常的做法是lseek到文件末尾，然后write，比如：</p>
-
-<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">lseek</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">SEEK_END</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;lseek&quot;</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">write</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">len</span><span class="p">)</span> <span class="o">!=</span> <span class="n">len</span><span class="p">)</span> 
-        <span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Partial/failed write&quot;</span><span class="p">);</span></code></pre></div>
-
-
-<p>这也产生了条件竞争。</p>
-
-<p>解决这个问题的方法，就是使用open函数的O_APPEND设置。</p>
-
-<h2>fcntl()文件控制操作</h2>
-
-<p>函数定义：</p>
-
-<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include &lt;fcntl.h&gt;</span>
-    <span class="kt">int</span> <span class="nf">fcntl</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cmd</span><span class="p">,</span> <span class="p">...);</span></code></pre></div>
-
-
-<h3>获得打开文件的状态标记（flag）</h3>
-
-<p>open函数的定义是：</p>
-
-<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">open</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">path</span><span class="p">,</span> <span class="kt">int</span> <span class="n">oflag</span><span class="p">,</span> <span class="p">...</span> <span class="p">);</span></code></pre></div>
-
-
-<p>使用fcntl系统调用，可以获取文件或者修改文件的状态标记（标记的值是在open时由参数设置的）。</p>
-
-<p>比如下面代码：</p>
-
-<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="n">flags</span><span class="p">,</span> <span class="n">accessMode</span><span class="p">;</span>
-<span class="n">flags</span> <span class="o">=</span> <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_GETFL</span><span class="p">);</span> <span class="cm">/* Third argument is not required */</span> 
-<span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span></code></pre></div>
-
-
-<p>获得flags后，可以检查是否具有某种标记：</p>
-
-<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">O_SYNC</span><span class="p">)</span>
-    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;writes are synchronized</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span></code></pre></div>
-
-
-<p>但是，对于O_RDONLY (0), O_WRONLY (1), and O_RDWR (2)，使用上面这种方式判断就不行（O_RDONLY的值是0，怎么&amp;，都是0；写功能，两个值wronly和rdwr都具有写功能，读功能，rdonly和rdwr都具有读功能）。</p>
-
-<p>为了判断，可以使用O_ACCMODE(3),比如下面代码：</p>
-
-<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">accessMode</span> <span class="o">=</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="n">O_ACCMODE</span><span class="p">;</span>
-<span class="k">if</span> <span class="p">(</span><span class="n">accessMode</span> <span class="o">==</span> <span class="n">O_WRONLY</span> <span class="o">||</span> <span class="n">accessMode</span> <span class="o">==</span> <span class="n">O_RDWR</span><span class="p">)</span>
-    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;file is writable</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span></code></pre></div>
-
-
-<p>还可以使用F_SETFL来修改已打开文件的标记。可修改的标记为：O_APPEND, O_NONBLOCK, O_NOATIME, O_ASYNC, and O_DIRECT，试图修改其它会被忽略。</p>
-
-<p>设置标记的办法是先获取标记，再设置，比如：</p>
-
-<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="n">flags</span><span class="p">;</span>
-<span class="n">flags</span> <span class="o">=</span> <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_GETFL</span><span class="p">);</span>
-<span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span>
-<span class="n">flags</span> <span class="o">|=</span> <span class="n">O_APPEND</span><span class="p">;</span>
-<span class="k">if</span> <span class="p">(</span><span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_SETFL</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fcntl&quot;</span><span class="p">);</span></code></pre></div>
-
-
-<h2>文件描述符和打开文件的关系</h2>
-
-<p>内核维护的三个数据结构：</p>
-
-<ul>
-<li>一个进程一个文件描述符表(<a href="http://en.wikipedia.org/wiki/Array_data_structure">Array data type</a>)</li>
-<li>系统级别的打开的文件描述符的表</li>
-<li>文件系统的i-node表</li>
-</ul>
-
-
-<p>对于每一个进程，内核都维护了这个进程打开的文件描述符表。每一个表项包含的信息是：</p>
-
-<ul>
-<li>控制操作文件描述符的标记集。其实就是一个标记close-on-exec</li>
-<li>一个指向打开的文件描述符（存储在open file table中的记录，也就是系统级别的打开的文件描述符的表项）的引用。</li>
-</ul>
-
-
-<p>内核维护了一个系统级别的所有的打开文件描述符（通常叫做<em>open file table</em>，其表项一般被称做open file handles）的表。
-一个打开文件描述符存储了关于打开文件的所有信息，包括：</p>
-
-<ul>
-<li>当前文件的偏移（read()和write()会更新这个值，或者通过lseek()指定）</li>
-<li>当打开文件指定的状态标记（比如open()函数的flags参数）</li>
-<li>文件访问模式（read-only，write-only或者read-write）</li>
-<li>一个指向这个文件的i-node对象的引用</li>
-</ul>
-
-
-<blockquote><p> #include &lt;sys/stat.h></p>
-
-<p> #include &lt;fcntl.h></p>
-
-<p> int open(const char <em>pathname, int flags, &hellip; /</em> mode_t mode */);</p>
-
-<table>
-<thead>
-<tr>
-<th>Access mode </th>
-<th style="text-align:center;"> Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>O_RDONLY    </td>
-<td style="text-align:center;"> Open the file for reading only</td>
-</tr>
-<tr>
-<td>O_WRONLY    </td>
-<td style="text-align:center;"> Open the file for writing only</td>
-</tr>
-<tr>
-<td>O_RDWR      </td>
-<td style="text-align:center;"> Open the file for both reading and writing</td>
-</tr>
-</tbody>
-</table>
-
-
-<table>
-<thead>
-<tr>
-<th>File creation flags </th>
-<th style="text-align:center;"> Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>O_CLOEXEC    </td>
-<td style="text-align:center;"> Set the close-on-exec flag (since Linux 2.6.23)</td>
-</tr>
-<tr>
-<td>O_CREAT      </td>
-<td style="text-align:center;"> Create file if it doesn’t already exist </td>
-</tr>
-<tr>
-<td>O_DIRECT     </td>
-<td style="text-align:center;"> File I/O bypasses buffer cache</td>
-</tr>
-<tr>
-<td>O_DIRECTORY  </td>
-<td style="text-align:center;"> Fail if pathname is not a directory </td>
-</tr>
-<tr>
-<td>O_EXCL       </td>
-<td style="text-align:center;"> With O_CREAT: create file exclusively </td>
-</tr>
-<tr>
-<td>O_LARGEFILE  </td>
-<td style="text-align:center;"> Used on 32-bit systems to open large files </td>
-</tr>
-<tr>
-<td>O_NOATIME    </td>
-<td style="text-align:center;"> Don’t update file last access time on read() (since Linux 2.6.8) </td>
-</tr>
-<tr>
-<td>O_NOCTTY     </td>
-<td style="text-align:center;"> Don’t let pathname become the controlling terminal </td>
-</tr>
-<tr>
-<td>O_NOFOLLOW   </td>
-<td style="text-align:center;"> Don’t dereference symbolic links </td>
-</tr>
-<tr>
-<td>O_TRUNC      </td>
-<td style="text-align:center;"> Truncate existing file to zero length </td>
-</tr>
-</tbody>
-</table>
-
-
-<table>
-<thead>
-<tr>
-<th> file status flags </th>
-<th style="text-align:center;"> Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>O_APPEND    </td>
-<td style="text-align:center;"> Writes are always appended to end of file</td>
-</tr>
-<tr>
-<td>O_ASYNC    </td>
-<td style="text-align:center;"> Generate a signal when I/O is possible</td>
-</tr>
-<tr>
-<td>O_DSYNC     </td>
-<td style="text-align:center;"> Provide synchronized I/O data integrity (since Linux 2.6.33)</td>
-</tr>
-<tr>
-<td>O_NONBLOCK      </td>
-<td style="text-align:center;"> Open in nonblocking mode</td>
-</tr>
-<tr>
-<td>O_SYNC      </td>
-<td style="text-align:center;"> Make file writes synchronous</td>
-</tr>
-</tbody>
-</table>
-</blockquote>
-
-<p>每一个文件的i-node包含的信息有：</p>
-
-<ul>
-<li>文件类型（正常文件、socket或者FIFO）和文件权限</li>
-<li>一个指向加在这个文件上的锁列表的指针</li>
-<li>各种文件属性，包括文件大小，和不同操作相关的时间。</li>
-</ul>
-
-
-<blockquote><p>i-node在磁盘上的描述和在内存中的描述不一样。如果在磁盘上，则记录了一个文件的持久化属性。比如类型、大小和权限等。
-i-node在内存的描述，记录了打开的文件描述符指向这个i-node节点的数目、这个i-node所在的磁盘的主要（major）和次要（minor）的ID，还记录的一些短暂的属性，比如加在文件上的锁等。</p></blockquote>
-
-<p>如图：
-<img src="http://baren.github.io/images/assets/Figure5-2.png" title="Relationship between file descriptors, open file descriptions, and i-nodes" alt="alt text" /></p>
-
-<p>根据上面描述，得出下面几个隐含的意思来：</p>
-
-<ul>
-<li>两个不同的文件描述符引用同一个文件，则他们共享同一个文件偏移量。</li>
-<li>同样规则也适用于使用fcntl()函数获取或者修改文件状态标记（上面表格中的file status flags,比如O_APPEND, O_NONBLOCK, O_ASYNC）</li>
-<li>文件描述符标记（close-on-exec）则是私有的，修改它不会影响到其他的。</li>
-</ul>
-
-
-<h2>dup文件描述符</h2>
-
-<p>使用shell的I/O重定向语法 <em>2>&amp;1</em> 时，会通知shell，我们想要标准错误输出，输出到与标准输出到同一个地方。shell是从左到右计算I/O导向的。因此，下面的shell：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$ ./myscript &gt; results.log 2&gt;&1
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>会将标准输出输出到与标准输出同一个位置，也即results.log。</p>
-
-<p>为了实现这个效果，使用dup和dup2两个函数。</p>
-
-<blockquote><p>如果不使用这两个函数，简单的打开results.log两次，一次使用文件描述符1，一次使用文件描述符2.这是不够的。因为从上面图可以看出，打开两次文件，这两个文件描述符并不共享同一个文件的offset，因此两个会相互覆盖。另一个原因是打开文件不一定是磁盘文件，比如$ ./myscript  2>&amp;1 | less</p></blockquote>
-
-<p>下面是dup的声明：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>int dup(int oldfd);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>dup函数接收一个已经打开的文件描述符oldfd，返回一个指向同一个文件的新的文件描述符。如果失败，则返回-1.返回的新的文件描述符保证使用最小的未使用的文件描述符。</p>
-
-<p>为了实现上面shell的命令，可以这样：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>/*前提是文件描述符0已经被使用*/
-</span><span class='line'>close(2);
-</span><span class='line'>int newfd = dup(1)
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>为了方便实现这个功能，还有个dup2函数：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>int dup2(int oldfd, int newfd);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>dup2函数使用给定的newfd来复制已经打开的旧的文件描述符oldfd。返回的是新的文件描述符。</p>
-
-<p>还可以使用fcntl函数来完成dup命令，保证使用的新文件描述符大于等于指定的文件描述符：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>newfd = fcntl(oldfd, F_DUPFD, startfd);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这在保证在特定范围内dup文件描述符是有用的。</p>
-
-<h2>pread()和pwrite()在指定offset进行I/O操作</h2>
-
-<p>使用pread和pwrite，可以在指定的offset完成读和写操作，而不会影响文件的原始offset的值。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>/*返回读得字节数，如果到EOF，为0；如果错误，返回-1*/
-</span><span class='line'>ssize_t pread(int fd, void *buf, size_t count, off_t offset);
-</span><span class='line'>
-</span><span class='line'>/*返回写入的字节数，-1表示错误*/
-</span><span class='line'>ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<blockquote><p>使用pread和pwrite函数，传入的文件描述符必须是可seek的。</p>
-
-<p>注意：
-使用pread和pwrite在多线程环境下，可以避免条件竞争。如果使用lseek、write这种方式写文件，会产生条件竞争。使用pwrite，则多个线程会避免条件竞争。</p></blockquote>
-
-<h2>Scatter-Gather I/O: readv() 和 writev()</h2>
-
-<p>readv和writev函数定义：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/uio.h&gt;
-</span><span class='line'>
-</span><span class='line'>ssize_t readv(int fd, const struct iovec *iov, int iovcnt);
-</span><span class='line'>
-</span><span class='line'>ssize_t writev(int fd, const struct iovec *iov, int iovcnt);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>与read只读取数据到一个buffer不同，readv可以一次性把读取的数据分散（scatter）到多个buffer中。iov是一个数组，数组的每个元素是一个结构，结构类型是struct iovec。buffer的个数有iovcnt指定。</p>
-
-<p>struct iovec的定义是：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>struct iovec {
-</span><span class='line'>  void *iov_base; /* 缓存的起始地址 */
-</span><span class='line'>  size_t iov_len; /* Number of bytes to transfer to/from buffer */
-</span><span class='line'>};
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>下图描述了iov参数和iovcnt参数的关系：
-<img src="http://baren.github.io/images/assets/Figure5-3.png" title="Relationship between readv iov and iovcnt parameter" alt="alt text" /></p>
-
-<h3>分散输入（scatter input）</h3>
-
-<p>readv系统调用完成了<em>scatter input</em>，读取由fd指定的文件的持续的字节序列，然后顺序的把这些数据写入到由iov参数指定的buffer中。所有的这些buffer，从iov[0]开始，会被完全的写满之后，才会继续写入下一个buffer。</p>
-
-<p>注意：
-一个readv的重要的属性是，这些都是完全自动的。从调用者角度，内核会把一连续的字节序列写入到buffer中。意味着，如果从一个文件中读取数据时，能够确保读入的数据是连续的，即使在这其间，有其它线程试图修改同一个文件的offset，也不会影响。</p>
-
-<p>readv返回读取的数据的字节数。调用者需要自己检查一下。</p>
-
-<h3>聚集输出（gather output）</h3>
-
-<p>writev系统调用完成了<em>gather output</em>。参数意义与readv类似。</p>
-
-<p>与write一样，writev也可能只写入部分，因此需要检查是否请求的数据全部被写入了。</p>
-
-<h3>writev和readv的原因</h3>
-
-<p>主要原因还是</p>
-
-<pre><code>1. 易用性
-2. 性能
-</code></pre>
-
-<p>使用场景，比如：
-    * 如果需要调用一系列的write函数来输出buffer数据时</p>
-
-<h2>截断一个文件truncate()和ftruncate()</h2>
-
-<p>截断一个文件，两个函数定义如下：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>int truncate(const char *pathname, off_t length); 
-</span><span class='line'>
-</span><span class='line'>int ftruncate(int fd, off_t length);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这两个函数不会对文件的offset有影响。</p>
-
-<h2>非阻塞I/O</h2>
-
-<p>当打开一个文件，指定O_NONBLOCK标记时，主要有两种目的：</p>
-
-<ul>
-<li>如果文件不能立即被打开，open()函数会返回错误，而不是一直阻塞着。</li>
-<li>如果open()打开成功，随后的I/O操作仍然是非阻塞的。</li>
-</ul>
-
-
-<p>非阻塞模式可以用于设备、FIFO（命名管道，用于Linux进程通信）、socket。由于管道和socket的文件描述符
-不能够通过open()获得，因此我们必须使用 fcntl() F_SETFL操作来使这个标记可用。</p>
-
-<p>注意：</p>
-
-<blockquote><p>O_NONBLOCK对于普通文件是忽略的。因此linux的内核的buffer确保了普通文件的I/O是非阻塞的。</p></blockquote>
-
-<h2>I/O大文件</h2>
-
-<p>linux使用off_t数据类型来存储文件的offset，off_t使用有符号的长整型来描述（之所以有符号，是方便用-1表示失败）。
-因此在32位机器上，一个文件的最大限制是2<sup>31</sup>-1 byte。</p>
-
-<p>为了在32位机器上实现大文件操作，厂商提供了Large File Summit (LFS)概念。linux自从2.4开始支持LFS。为了支持大文件，文件系统也需要支持。大部分linux文件系统都支持（微软的VFAT and NFSv2都不支持）</p>
-
-<p>为了在linux操作大文件，有两种方法：</p>
-
-<ul>
-<li>采用支持大文件的替换的API，也就是ransitional LFS API。</li>
-<li>在编译我们代码时，定义宏_FILE_OFFSET_BITS的值为64.这种方式是推荐的方式。</li>
-</ul>
-
-
-<h3>使用LSF API</h3>
-
-<p>采用过渡的LFS API时，在编译时，需要测试_LARGEFILE64_SOURCE的宏（命令行或者源文件）。这组API可以处理64位的文件大小和offset。这组api的函数名字后面都有64.比如：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>fopen64(), open64(), lseek64(), truncate64(), stat64(), mmap64(), and setrlimit64()</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>使用_FILE_OFFSET_BITS</h3>
-
-<p>推荐的方式是定义_FILE_OFFSET_BITS宏的值为64.
-这会自动的替换32位函数和数据类型到64位的函数和数据类型。这意味这，我们可以重新编译以前写好的文件来支持大文件。</p>
-
-<p>只遗留了一个问题，就是打印off_t 的值的时候，需要使用lld%来正确的显示off_t的值。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#define _FILE_OFFSET_BITS 64
-</span><span class='line'>
-</span><span class='line'>off_t offset; /* Will be 64 bits, the size of 'long long' */ 
-</span><span class='line'>
-</span><span class='line'>/* Other code assigning a value to 'offset' */
-</span><span class='line'>printf("offset=%lld\n", (long long) offset);</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>/dev/fd 目录</h2>
-
-<p>对于每一个进程，内核提供了一个虚拟目录/dev/fd ，这个目录包含的文件形式是<em>/dev/fd/n</em>。n对应的进程中的打开的文件描述符。因此使用/dev/fd/n或者fd都可以指向一个文件。</p>
-
-<p>但是在程序内很少使用这种方式，一般只在shell中使用。</p>
 ]]></content>
   </entry>
   

@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: pthread | Baren Blog]]></title>
+  <link href="http://baren.github.io/blog/categories/pthread/atom.xml" rel="self"/>
+  <link href="http://baren.github.io/"/>
+  <updated>2014-10-14T22:14:12+08:00</updated>
+  <id>http://baren.github.io/</id>
+  <author>
+    <name><![CDATA[enwu]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[pthread 进一步细节]]></title>
+    <link href="http://baren.github.io/blog/2014/09/28/pthread-further-details/"/>
+    <updated>2014-09-28T20:43:21+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/28/pthread-further-details</id>
+    <content type="html"><![CDATA[<h1>线程和信号</h1>
+
+<p>信号的设计实现早于线程，导致线程与信号之间有许多冲突。冲突的地方主要在于：</p>
+
+<ul>
+<li>既要维护传统的在单线程进程环境下的信号语义</li>
+<li>同时又要开发符合多线程进程环境下的信号程序</li>
+</ul>
+
+
+<!-- more -->
+
+
+<h2>信号模式怎样映射到线程</h2>
+
+<p>需要弄清楚信号的哪些方面是进程级别的，哪些方面是针对特定线程的。说明：</p>
+
+<ul>
+<li>信号动作是<em>进程</em>级别的。这意味着一个默认动作是终止进程的信号被内核递送到进程的任意线程，所有的进程内的线程都会终止。</li>
+<li>信号处理是<em>进程</em>级别的。进程内的所有线程都共享同一个信号处理器。如果一个线程使用sigaction()建立的信号处理器，进程内的任意线程如果收到这个信号，都会调用这个处理器；如果一个线程设置了忽略某个信号，其它线程也自动忽略</li>
+<li>如果信号递送给一个多线程的进程时，内核会随机选取一个线程，用来递送信号和执行信号处理程序。</li>
+<li>屏蔽信号是基于线程的。线程可以使用pthread_sigmask()来屏蔽某些信号。</li>
+<li>内核维护了针对进程的一个全局的阻塞（pending）的信号集；也维护了针对每个线程的阻塞的信号集。sigpending()函数会返回进程的全局阻塞的信号集和调用这个函数的线程的阻塞信号集的并集。一个新创建的线程，阻塞的信号集是空。如果一个线程阻塞了一个信号，这个信号一直被阻塞，直到线程取消阻塞或者线程停止。</li>
+<li>如果一个信号处理中断了pthread_mutex_lock()调用，这个调用总是会自动启动。如果中断了pthread_cond_wait()，也会自动重启。</li>
+</ul>
+
+
+<p>以下几种情况，信号会递送给特定线程：</p>
+
+<ul>
+<li>在某个线程上下文中，执行了一个特定的硬件指令的直接结果，生成信号</li>
+<li>线程试图写入到一个终端的pipe文件时，生成一个SIGPIPE</li>
+<li>使用pthread_kill() 或 pthread_sigqueue()可以允许同一进程的线程给另一个线程发信号</li>
+</ul>
+
+
+<pre><code class="c">#include &lt;signal.h&gt;
+int pthread_kill(pthread_t thread, int sig);
+
+int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset);
+</code></pre>
+
+<h1>线程和进程控制</h1>
+
+<p>就像信号一样exec(), fork(), and exit()也是早于线程。</p>
+
+<h5>线程和exec()</h5>
+
+<p>当任意线程调用exec()函数时，调用的程序会被完全取代。所有的线程，除了调用线程外，都会被终止。不会去执行线程的终止处理函数，属于进程的锁和条件变量都会消失。</p>
+
+<h5>线程和fork()</h5>
+
+<p>多线程环境的进程调用fork()函数，只有调用进程在子进程中复制。其它线程在子进程中会消失，线程特定的析构或者清理函数都不会执行。这会导致严重问题：</p>
+
+<ul>
+<li><p>虽然只有调用线程被复制了，但是进程全局状态，还有pthread对象（比如锁和条件变量）等全局对象，都会被复制到子进程。这会导致，如果在fork的同时，有个线程锁住了mutex，并且部分更新了全局数据结构，这种情况下，子进程中的线程将不能够解锁这个mutex。更进一步，子进程中的全局状态可能处于不一致状态。</p></li>
+<li><p>由于线程的析构或者清理函数没有被调用，有可能导致子进程的内存泄露。</p></li>
+</ul>
+
+
+<p>由于在多线程环境下调用fork有这么多严重问题，通常的建议是：</p>
+
+<ul>
+<li>只有在后续立即调用exec函数的情况下，才会调用fork函数。否则不要调用。</li>
+</ul>
+
+
+<p>如果必须调用fork函数，但是后面不跟着调用exec函数，linux提供了一个这种情况下的解决办法：</p>
+
+<pre><code class="c">pthread_atfork(prepare_func, parent_func, child_func);
+</code></pre>
+
+<h1>线程实现模式</h1>
+
+<p>有许多线程实现方式，主要的区别是线程和内核的调度实体（kernel scheduling entities）之间映射的不同。</p>
+
+<p>内核调度实体（kernel scheduling entities）是内核分配CPU和其他资源的单元。在传统的UNIX系统下，内核调用实体与进程是同义的。</p>
+
+<h2>Many-to-one (M:1) 实现，用户级别线程</h2>
+
+<p>在M:1线程实现模式下，所有的线程创建、调度和同步细节都在用户空间下的线程lib包实现。内核不知道关于线程的任何细节。</p>
+
+<p>这种实现有以下几种好处：</p>
+
+<ul>
+<li>最大的好处是线程操作非常快速，因为这些全部在用户空间实现，不用切换到内核空间。</li>
+<li>移植性好，由于是在用户空间实现的，可以很容易从一个系统移植到另一个系统</li>
+</ul>
+
+
+<p>不好处是：</p>
+
+<ul>
+<li>当一个线程调用了一个系统调用（比如read()），控制从用户空间的线程包转到内核，这意味着read()被阻塞了，那么其它线程就全部被阻塞了。</li>
+<li>内核不能够调度线程。由于内核不知道线程的存在，因此内核不能调度线程到其它cpu上。</li>
+</ul>
+
+
+<h2>One-to-one (1:1)实现方式</h2>
+
+<p>在1:1实现方式下，一个线程对应一个内核的调度实体。内核单独的处理每个线程的调度。这样，就解决了M:1的重大调度问题。</p>
+
+<p>但是这种实现方式下，也有其它问题：</p>
+
+<ul>
+<li>线程的创建同步等操作就比较慢，因为需要切换到内核空间下。</li>
+<li>一对一的关系，内核需要为每一个线程维护一个内核调度实体，如果有大量的线程，会降低整体性能。</li>
+</ul>
+
+
+<p>尽管如此，1:1的方式是大多数pthread线程实现的方式。两个linux的pthread实现都是采用1:1的方式</p>
+
+<h2>linux的pthread实现方式</h2>
+
+<p>linux有两种pthread的实现：</p>
+
+<ul>
+<li>LinuxThreads: 这是linux的最初实现。Xavier Leroy开发</li>
+<li>NPTL (Native POSIX Threads Library): 新的linux下的pthread实现。Ulrich Dreppe（gun c也叫libc的管理者） 和 Ingo Molnar实现。性能比LinuxThreads好，也更符合pthread的规范。</li>
+</ul>
+
+
+<p>在glibc 2.4及其后续版本，不再支持LinuxThreads了。</p>
+
+<h3>LinuxThreads实现细节</h3>
+
+<ul>
+<li>使用clone() 系统调用创建一个线程，复制的资源是</li>
+</ul>
+
+
+<p>CLONE_VM | CLONE_FILES | CLONE_FS | CLONE_SIGHAND</p>
+
+<p>这意味着LinuxThreads线程共享虚拟内存、文件描述符、文件相关信息（umask, root directory, and current working directory）和信号处理。</p>
+
+<ul>
+<li><p>除了由应用创建的线程，LinuxThreads还创建了额外的管理线程，来处理线程的创建的销毁。</p></li>
+<li><p>实现采用了信号来进行内部的操作。</p></li>
+</ul>
+
+
+<p>当内核支持实时信号（Linux 2.2及其以后），前三个实时信号被使用；如果是老的内核，使用 SIGUSR1 and SIGUSR2，这样，应用不能够使用这几个信号。</p>
+
+<p>关于实时信号，参考：
+<a href="http://unixhelp.ed.ac.uk/CGI/man-cgi?signal+7">http://unixhelp.ed.ac.uk/CGI/man-cgi?signal+7</a></p>
+
+<h3>NPTL</h3>
+
+<ul>
+<li>使用clone() 创建线程，复制的资源是</li>
+</ul>
+
+
+<p>CLONE_VM | CLONE_FILES | CLONE_FS | CLONE_SIGHAND | CLONE_THREAD | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID | CLONE_SYSVSEM</p>
+
+<ul>
+<li><p>使用了前两个实时信号</p></li>
+<li><p>不像LinuxThreads，NPTL没有实现管理线程</p></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[取消线程]]></title>
+    <link href="http://baren.github.io/blog/2014/09/25/pthread-cancel/"/>
+    <updated>2014-09-25T20:56:04+08:00</updated>
+    <id>http://baren.github.io/blog/2014/09/25/pthread-cancel</id>
+    <content type="html"><![CDATA[<p>主要描述POSIX线程的取消机制和更进一步的线程细节，包括线程和信号，线程栈等。</p>
+
+<h1>取消一个线程</h1>
+
+<p>使用pthread_cancel函数取消特定的线程：</p>
+
+<pre><code class="c">
+#include &lt;pthread.h&gt;
+int pthread_cancel(pthread_t thread);
+// 返回0表示成功
+</code></pre>
+
+<p>pthread_cancel只是发送取消请求，然后立即返回。这意味着调用线程不用等待线程停止。目标线程什么时候停止，取决于目标线程的状态和类型。</p>
+
+<h1>取消状态和类型</h1>
+
+<p>使用pthread_setcancelstate()设置线程的取消状态；使用pthread_setcanceltype()设置线程的取消类型。这两个状态设置线程如何响应取消操作的。</p>
+
+<p>pthread_setcancelstate()函数可设置的状态是：</p>
+
+<ul>
+<li>PTHREAD_CANCEL_DISABLE。 线程是不可取消的。这种线程如果接收到一个取消请求，会保持未决（pending）状态直到成为可取消状态</li>
+<li>PTHREAD_CANCEL_ENABLE。线程是可取消的，这个状态也是默认的状态。</li>
+</ul>
+
+
+<p>线程在执行一段必须执行完的代码时，设置为不可取消状态，是非常有用的。</p>
+
+<p>pthread_setcanceltype()函数可以设置两种类型：</p>
+
+<ul>
+<li>PTHREAD_CANCEL_DEFERRED。线程一直执行直到遇到取消点（特殊函数）。默认类型。</li>
+<li>PTHREAD_CANCEL_ASYNCHRONOUS。线程可以在任意时间点取消，一般不大永。</li>
+</ul>
+
+
+<h1>取消点</h1>
+
+<p>当一个线程是可取消的并且是延迟的（PTHREAD_CANCEL_ENABLE和PTHREAD_CANCEL_DEFERRED）。取消操作会在线程执行到下一个取消点时起作用。</p>
+
+<p>SUSv3 定义了一组必须是取消点的函数，还定义了一组是可选取消点的函数。</p>
+
+<p>可取消函数列表（略）</p>
+
+<p>对于一个不是分离的线程，必须由其它函数调用pthread_join函数等待这个线程结束。如果这个线程接收了取消请求，并到达了一个取消点，则pthread_join返回的值是PTHREAD_CANCELED.</p>
+
+<p>取消线程的例子：</p>
+
+<pre><code class="c">
+#include &lt;pthread.h&gt;
+#include "tlpi_hdr.h"
+
+static void *
+threadFunc(void *arg)
+{
+    int j;
+    printf("New thread started\n");
+    for (j = 1; ; j++) {
+        printf("Loop %d\n", j);
+        sleep(1);
+    /* NOTREACHED */
+    return NULL;
+}
+
+int
+main(int argc, char *argv[])
+{
+    pthread_t thr;
+    int s;
+    void *res;
+
+    s = pthread_create(&amp;thr, NULL, threadFunc, NULL); 
+    if (s != 0)
+        errExitEN(s, "pthread_create"); 
+
+    sleep(3);       /* Allow new thread to run a while */
+
+    s = pthread_cancel(thr);
+    if (s != 0)
+        errExitEN(s, "pthread_cancel");
+
+    s = pthread_join(thr, &amp;res);
+    if (s != 0)
+        errExitEN(s, "pthread_join");
+
+    if (res == PTHREAD_CANCELED) 
+        printf("Thread was canceled\n");
+
+    else
+        printf("Thread was not canceled (should not happen!)\n");
+    exit(EXIT_SUCCESS);
+}
+</code></pre>
+
+<h1>测试取消点</h1>
+
+<p>如果线程没有调用这些取消点函数（纯计算线程），为了也能够响应取消请求，可以使用pthread_testcancel()来当取消点。</p>
+
+<pre><code class="c">#include &lt;pthread.h&gt;
+void pthread_testcancel(void);
+</code></pre>
+
+<h1>清理处理器</h1>
+
+<p>如果一个线程接收到取消请求，执行到一个取消点，则会停止。有可能会导致共享的变量和pthread对象（比如锁）处在不一致状态，可能会导致剩下的线程死锁等异常状态。</p>
+
+<p>为了避免这个问题，需要定义线程结束的清理函数。</p>
+
+<p>每一个线程都有一个线程处理函数栈。当线程被取消时，从上到下依次开始执行清理处理程序。</p>
+
+<pre><code class="c">
+#include &lt;pthread.h&gt;
+void pthread_cleanup_push(void (*routine)(void*), void *arg);
+void pthread_cleanup_pop(int execute);
+</code></pre>
+
+<blockquote><p>注意：
+当线程正常执行完成，不会触发清理处理函数。</p></blockquote>
+
+<p>一般来说，一个清理操作只有在执行一段特殊的代码时被取消时，才会用到。</p>
+
+<p>下面例子在主main函数中创建了一个线程，他分配了一块内存，并锁住了一个互斥锁mtx。因为线程有可能被取消，因此使用pthread_cleanup_push()来安装清理处理函数，这个清理函数主要作用是释放分配的内存，并对互斥锁解锁。</p>
+
+<p>安装完清理处理器后，线程进入所谓的特殊代码段（如果取消，需要走清理处理函数的）。</p>
+
+<p>如果特殊代码段正常执行完成，则调用pthread_cleanup_pop()去掉处理函数。</p>
+
+<p>例子：</p>
+
+<pre><code class="c">
+#include &lt;pthread.h&gt;
+#include "tlpi_hdr.h"
+
+static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+static int glob = 0; /* Predicate variable */
+
+static void         /* Free memory pointed to by 'arg' and unlock mutex */ cleanupHandler(void *arg)
+{
+    int s;
+
+    printf("cleanup: freeing block at %p\n", arg);
+    free(arg);
+
+    printf("cleanup: unlocking mutex\n");
+    s = pthread_mutex_unlock(&amp;mtx);
+    if (s != 0)
+        errExitEN(s, "pthread_mutex_unlock");
+}
+
+
+static void *
+threadFunc(void *arg)
+{
+    int s;
+    void *buf = NULL;   /* Buffer allocated by thread */
+
+    buf = malloc(0x10000);
+    printf("thread: allocated memory at %p\n", buf);
+
+    s = pthread_mutex_lock(&amp;mtx);   /* Not a cancellation point */ 
+    if (s != 0)
+        errExitEN(s, "pthread_mutex_lock");
+
+    pthread_cleanup_push(cleanupHandler, buf);
+
+    while (glob == 0) {
+        s = pthread_cond_wait(&amp;cond, &amp;mtx);     /* A cancellation point */
+        if (s != 0)     
+            errExitEN(s, "pthread_cond_wait"); 
+    }
+    printf("thread: condition wait loop completed\n");
+    pthread_cleanup_pop(1);
+    return NULL;
+}
+
+int
+main(int argc, char *argv[])
+{
+    pthread_t thr;
+    void *res;
+    int s;
+
+    s = pthread_create(&amp;thr, NULL, threadFunc, NULL); 
+    if (s != 0)
+        errExitEN(s, "pthread_create");
+
+    sleep(2);       /* Give thread a chance to get started */
+
+    if (argc == 1) {        /* Cancel thread */
+        printf("main: about to cancel thread\n");
+        s = pthread_cancel(thr);
+        if (s != 0)
+            errExitEN(s, "pthread_cancel");
+    } else {        /* Signal condition variable */
+        printf("main: about to signal condition variable\n");
+        glob = 1;
+        s = pthread_cond_signal(&amp;cond);
+        if (s != 0)
+            errExitEN(s, "pthread_cond_signal");
+    }
+
+    s= pthread_join(thr, &amp;res); 
+    if (s != 0)
+        errExitEN(s, "pthread_join"); 
+
+    if (res == PTHREAD_CANCELED)
+        printf("main: thread was canceled\n"); 
+    else
+        printf("main: thread terminated normally\n");
+
+    exit(EXIT_SUCCESS);
+}   
+</code></pre>
+
+<blockquote><p>注意：
+注意上面例子对pthread_cleanup_push()函数的的典型使用</p></blockquote>
+]]></content>
+  </entry>
+  
+</feed>

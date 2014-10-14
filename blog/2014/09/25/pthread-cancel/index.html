@@ -5,12 +5,16 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Baren Blog</title>
+  <title>取消线程 - Baren Blog</title>
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="线程和信号 信号的设计实现早于线程，导致线程与信号之间有许多冲突。冲突的地方主要在于： 既要维护传统的在单线程进程环境下的信号语义
-同时又要开发符合多线程进程环境下的信号程序 ">
+  <meta name="description" content="主要描述POSIX线程的取消机制和更进一步的线程细节，包括线程和信号，线程栈等。 取消一个线程 使用pthread_cancel函数取消特定的线程： 1
+2
+3
+#include &lt;pthread.h&gt;
+int pthread_cancel(pthread_t thread);
+// &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +23,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://baren.github.io/">
+  <link rel="canonical" href="http://baren.github.io/blog/2014/09/25/pthread-cancel/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -63,64 +67,12 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2014/09/28/pthread-further-details/">Pthread 进一步细节</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-28T20:43:21+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>线程和信号</h1>
-
-<p>信号的设计实现早于线程，导致线程与信号之间有许多冲突。冲突的地方主要在于：</p>
-
-<ul>
-<li>既要维护传统的在单线程进程环境下的信号语义</li>
-<li>同时又要开发符合多线程进程环境下的信号程序</li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/28/pthread-further-details/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/25/pthread-cancel/">取消线程</a></h1>
+      <h1 class="entry-title">取消线程</h1>
     
     
       <p class="meta">
@@ -143,7 +95,7 @@
   </header>
 
 
-  <div class="entry-content"><p>主要描述POSIX线程的取消机制和更进一步的线程细节，包括线程和信号，线程栈等。</p>
+<div class="entry-content"><p>主要描述POSIX线程的取消机制和更进一步的线程细节，包括线程和信号，线程栈等。</p>
 
 <h1>取消一个线程</h1>
 
@@ -496,74 +448,16 @@
 <blockquote><p>注意：
 注意上面例子对pthread_cleanup_push()函数的的典型使用</p></blockquote>
 </div>
-  
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/17/pthread-control/">Pthread Control</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
   
 
+<span class="byline author vcard">Posted by <span class="fn">enwu</span></span>
 
-<time datetime="2014-09-17T21:19:03+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>线程属性</h1>
-
-<p>在使用pthread_create函数：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">pthread_create</span><span class="p">(</span><span class="kt">pthread_t</span> <span class="o">*</span><span class="kr">thread</span><span class="p">,</span> <span class="k">const</span> <span class="kt">pthread_attr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">start</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="p">),</span> <span class="kt">void</span> <span class="o">*</span><span class="n">arg</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>创建线程时，第三个参数attr是线程属性。可以使用pthread_attr_t结构来修改线程默认属性。</p>
-
-<p>pthread_attr_t变量需要初始化，需要使用pthread_attr_init函数进行初始化。调用初始化函数后，pthread_attr_t结构所包含的内容就是操作系统实现支持的线程所有属性的默认值。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/17/pthread-control/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/14/per4-checpter6-decorator/">Python Decorator 深入理解</a></h1>
-    
-    
-      <p class="meta">
-        
 
 
 
@@ -575,463 +469,40 @@
   
 
 
-<time datetime="2014-09-14T11:38:09+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>装饰器介绍</h1>
-
-<p>装饰器是一个函数，其主要目的是包装另一个函数或类，来透明的修改或者增强被包装对象的功能。语法上，装饰器用<em>@</em>表示，比如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="nd">@trace</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-</span><span class='line'>  <span class="k">return</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>上面装饰器，类似于这样的：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-</span><span class='line'>  <span class="k">return</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">square</span> <span class="o">=</span> <span class="n">trace</span><span class="p">(</span><span class="n">square</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/14/per4-checpter6-decorator/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
+<time datetime="2014-09-25T20:56:04+08:00" pubdate data-updated="true"></time>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">Python 作用域规则</a></h1>
-    
-    
-      <p class="meta">
-        
 
-
-
-
-
-
-
-
+<span class="categories">
   
+    <a class='category' href='/blog/categories/linux/'>linux</a>, <a class='category' href='/blog/categories/pthread/'>pthread</a>
+  
+</span>
 
 
-<time datetime="2014-09-13T17:07:23+08:00" pubdate data-updated="true"></time>
-        
-      </p>
+    </p>
     
-  </header>
-
-
-  <div class="entry-content"><h1>作用域规则</h1>
-
-<p>每当一个函数执行，都会创建一个局部命名空间（local namespace）。这个命名空间代表了一个局部环境，这个环境包含了凡是参数的名字、在函数内定义的局部变量等。当解析一个名字时，解析器会：</p>
-
-<ul>
-<li>首先检查局部环境变量</li>
-<li>如果在局部命名空间中找不到，然后再往上寻找全局命名空间（global namespace），全局命名空间是函数定义所在的模块。</li>
-<li>如果在全局命名空间不存在，解释器会查找内置的命名空间，如果还找不到，则NameError异常抛出</li>
-</ul>
-
-
-<p>python的命名空间的一个特点就是：在函数内处理全局变量。</p>
-
-<p>比如：</p>
-
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2014/09/25/pthread-cancel/" data-via="" data-counturl="http://baren.github.io/blog/2014/09/25/pthread-cancel/" >Tweet</a>
+  
+  
+  
 </div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">Read on &rarr;</a>
-    </footer>
-  
 
-
-    </article>
-  
-  
-    <article>
+    
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-06T21:56:14+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>程序结构和执行</h1>
-
-<p>python程序被组织为一个语句序列。所有的语言特性，包括变量赋值、函数定义、类定义和模块导入等，都是语句，都是与其他语句具有相同状态。</p>
-
-<p>因此所有语句都可以放置在程序的任何地方。</p>
-
-<p>比如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-</span><span class='line'>      <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="nb">float</span><span class="p">):</span>
-</span><span class='line'>          <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Expected a float&quot;</span><span class="p">)</span>
-</span><span class='line'>      <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
-</span><span class='line'><span class="k">else</span><span class="p">:</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-</span><span class='line'>      <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>当加载文件时，python解释器顺序的执行每一条语句，知道不能执行为止。</p>
-
-<p>这种执行方式对于简单的作为主程序执行，或者经过import进行导入是一致的。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
+        <a class="basic-alignment left" href="/blog/2014/09/17/pthread-control/" title="Previous Post: pthread control">&laquo; pthread control</a>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/06/octopress-syntax/">Octopress Syntax</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-06T10:53:04+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>代码高亮语法</h1>
-
-<blockquote><p>{ % codeblock [lang:language] [title] [url] [link text] % }
-code snippet
-{ % endcodeblock % }</p></blockquote>
-
-<p>例子：</p>
-
-<figure class='code'><figcaption><span>Javascript Array Syntax</span><a href='http://j.mp/pPUUmW'>MDN Documentation </a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">arr1</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">arrayLength</span><span class="p">);</span>
-</span><span class='line'><span class="kd">var</span> <span class="nx">arr2</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">element0</span><span class="p">,</span> <span class="nx">element1</span><span class="p">,</span> <span class="p">...,</span> <span class="nx">elementN</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>图片语法</h1>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>{ % img [class names] /path/to/image [width] [height] [title text [alt text]] %}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>例子：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>{ % img /images/assets/linux.png %}
-</span><span class='line'>{ % img left /images/assets/linux.png Place Kitten #2 %}
-</span><span class='line'>{ % img right /images/assets/linux.png 150 250 Place Kitten #3 %}
-</span><span class='line'>{ % img right /images/assets/linux.png 150 250 'Place Kitten #4' 'An image of a very cute kitten' %}</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>多个分类</h1>
-
-<p>例子</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>categories:
-</span><span class='line'>- CSS3
-</span><span class='line'>- Sass
-</span><span class='line'>- Media Queries
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>显示部分内容</h1>
-
-<p>插入</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;!-- more --&gt;</span></code></pre></td></tr></table></div></figure>
-
-
-<p>会让文章下面的部分不显示，并会提示一个按钮，来查看未显示的内容。</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/06/linux-performance-observability-tools/">Linux Performance Observability Tools</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-06T10:42:48+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p><img src="/images/assets/linux.png" title="linux" alt="alt text" /></p>
-
-<p>链接：<a href="http://www.brendangregg.com/linuxperf.html">http://www.brendangregg.com/linuxperf.html</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
+        <a class="basic-alignment right" href="/blog/2014/09/28/pthread-further-details/" title="Next Post: pthread 进一步细节">pthread 进一步细节 &raquo;</a>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/08/28/pthread/">Apue(线程)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-08-28T20:00:53+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>线程概念</h1>
-
-<p>主要是POSIX线程，也就是pthread。</p>
-
-<p>正常情况下，unix的进程包括一个单一的线程执行，从main开始。有了线程后，一个进程可以有多个线程同时执行。</p>
-
-<p>判断系统是否支持pthread，可以使用宏<em>POSIX_THREADS进行测试，还可以把</em>SC_THREADS传递给sysconf函数来运行时判断。</p>
-
-<p>线程可以有多种好处，按照传统的多进程的实现方式，一般是在网络服务器环境下使用，多进程可以同时支持多个客户端的请求。但也有一些限制：</p>
-
-<ul>
-<li>进程之间共享数据非常困难</li>
-<li>使用fork创建一个进程是耗资源的。即使使用了copy-on-write技术，复制各种进程的属性（page表和fd表等）也意味着是耗时间的。</li>
-</ul>
-
-
-<p>使用线程，解决这上面这些问题：</p>
-
-<ul>
-<li>线程之间共享信息是容易和迅速的。仅仅拷贝数据到共享内存（global或heap）的消耗。</li>
-<li>线程创建比进程创建迅速多了。大约有10倍。linux创建线程使用clone系统调用，也还是比进程快。</li>
-</ul>
-
-
-<p>除了共享全局内存，线程还共享一些其他属性，包括</p>
-
-<ul>
-<li>进程id和父进程id</li>
-<li>进程组合session id</li>
-<li>控制终端</li>
-<li>进程凭证（用户和组id）</li>
-<li>打开的文件描述符（比较重要）</li>
-<li>信号处理</li>
-<li>文件系统相关信息：umask、当前工作目录和根目录</li>
-<li>等</li>
-</ul>
-
-
-<p>下面是各个线程不同的属性：</p>
-
-<ul>
-<li>线程id</li>
-<li>信号mask</li>
-<li>线程私有数据</li>
-<li>errno变量</li>
-<li>等</li>
-</ul>
-
+    </p>
+  </footer>
+</article>
 
 </div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/08/28/pthread/">Read on &rarr;</a>
-    </footer>
-  
 
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/24/signal/">Apue(信号)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-24T20:00:20+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>信号概念</h1>
-
-<p>信号是软中断，提供了一种处理异步事件的方法</p>
-
-<p>关于信号：</p>
-
-<ul>
-<li>每个信号都有一个唯一的整数定义，从1开始（不存在为0的信号，值为0可以利用kill函数有其它作用），顺序递增。并且还为每个信号定义了一个名字，以SIG开头。
-这些信号定义在signal.h中</li>
-<li>产生信号的条件
-
-<blockquote><ul>
-<li>用户按终端键，印发终端产生信号</li>
-<li>硬件异常产生信号，比如无效的内存引用，除数为0等</li>
-<li>进程调用kill函数，将信号发送给另一个进程（包括自己）或进程组（有权限限制）</li>
-<li>用户用kill命令给进程发送信号</li>
-<li>当检测到某种条件已经发生，并应将信号通知有关进程时，也产生信号。比如SIGURG（网络连接传来数据），SIGPIPE在管道的读进程终止后，一个进程写此管道时产生。</li>
-</ul>
-</blockquote></li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/06/24/signal/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  <div class="pagination">
-    
-      <a class="prev" href="2">&larr; Older</a>
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
 <aside class="sidebar">
   
     <section>
@@ -1079,6 +550,7 @@ code snippet
 
   
 </aside>
+
 
     </div>
   </div>

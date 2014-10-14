@@ -9,9 +9,8 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="实际上，每一个python函数都有返回值，如果有return，则返回return指定的值；没有就返回None。
-python的搜索路径是在sys.path中搜索，sys.path是一个list，可以修改这个list的值。
-python中，所有都是对象（函数是对象，模块是对象等）， &hellip;">
+  <meta name="description" content="终端登录 由终端登录至unix，这个过程是类似的，而与所使用的终端无关，终端可以是基于字符的终端、仿真简单的基于字符终端的图形终端，或者是运行窗口系统的图形终端。 终端登录步骤： 系统自举时，创建进程ID为1的init进程。使系统进入多用户状态。
+init进程读取文件/etc/ttys， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +65,156 @@ python中，所有都是对象（函数是对象，模块是对象等）， &hel
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/05/04/process-relate/">Apue(进程关系)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-04T20:00:26+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>终端登录</h1>
+
+<p>由终端登录至unix，这个过程是类似的，而与所使用的终端无关，终端可以是基于字符的终端、仿真简单的基于字符终端的图形终端，或者是运行窗口系统的图形终端。</p>
+
+<p>终端登录步骤：</p>
+
+<ol>
+<li>系统自举时，创建进程ID为1的init进程。使系统进入多用户状态。</li>
+<li>init进程读取文件/etc/ttys，对每一个允许登录的终端设备，init进程调用一次fork，fork后的子进程执行getty程序（exec getty程序）</li>
+<li>getty程序会调用open函数，以读写方式打开终端，一旦打开设备，则文件描述符0、1、2设置到该设备，输出login:之类的信息</li>
+<li>gettty调用login函数（<code>execle("/bin/login", "login", "-p", username, (char *) 0, envp);</code>）</li>
+<li>login执行多个工作
+
+<blockquote><p>验证用户、密码正确性，连续几次不对，则退出；父进程init知道子进程终止后，会再次调用fork，执行getty，重复上述动作。登录成功后：
+将当前工作目录改为该用户的起始目录（home目录）
+chown改变该终端的所有权，使登录用户成为它的所有者
+对该终端设备的访问权限改为用户读写
+调用setgid及initgroups设置进程的组id
+用login所得到的所有信息初始化环境
+调用该登录用户的登录shell</p></blockquote></li>
+</ol>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/05/04/process-relate/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/05/04/process-control/">Apue(进程控制)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-04T20:00:02+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>进程标识符</h1>
+
+<p>进程都有一个非负整数代表唯一的进程ID。</p>
+
+<p>当进程终止后，进程ID可以重用，为了防止将新进程视为使用同一个进程ID的旧的进程，系统采用了<em>延迟重用</em>算法来重用进程ID。</p>
+
+<p>系统启动后有一些专用进程：</p>
+
+<ul>
+<li>ID为0的进程——调度进程，也称为交换进程（swapper），这个进程是内核的一部分，不执行磁盘上的程序，被称为系统进程。</li>
+<li>ID为1的进程——init进程，自举结束时由内核调用；早期的进程文件是/etc/init，现在都是/sbin/init。init通常读取系统的配置文件来初始化系统（/etc/rc*或/etc/initab, /etc/init.d）。init进程不会终止，虽然是普通进程，但是以超级用户权限运行，还接收孤儿进程，是所有孤儿进程（子进程还活着，父进程终止了，称为孤儿进程）父进程。</li>
+</ul>
+
+
+<p>下面函数返回与进程相关的其他标识符：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>pid_t getpid(void);
+</span><span class='line'>
+</span><span class='line'>pid_t getppid(void);
+</span><span class='line'>
+</span><span class='line'>uid_t getuid(void);  // 实际用户id
+</span><span class='line'>
+</span><span class='line'>uid_t geteuid(void);  // 有效用户id
+</span><span class='line'>
+</span><span class='line'>gid_t getgid(void);  // 实际组id
+</span><span class='line'>
+</span><span class='line'>gid_t getegid(void);  // 有效组id
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/05/04/process-control/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -527,104 +676,6 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/01/26/chapter-9-linux-programming-interface/">进程凭据(chapter 9 Linux Programming Interface)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-01-26T10:33:32+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>每一个进程，都有一组与之关联的数字的用户ID和组ID。有时候这些ID被成为进程凭据（process credentials），这些ID包含：</p>
-
-<ul>
-<li>实际用户ID和实际组ID</li>
-<li>有效用户ID和有效组ID</li>
-<li>保存的设置用户ID和保存的设置组ID</li>
-<li>文件系统用户ID和组ID（linux特定的）</li>
-<li>补充组ID（supplementary group IDs）</li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/01/26/chapter-9-linux-programming-interface/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/12/30/fileio-further-details/">Linux文件io进一步描述</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-12-30T13:15:19+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>原子性和条件竞争</h2>
-
-<p>所有系统调用都是原子执行的。原子执行避免了条件竞争。所谓条件竞争，指的是两个进程，在共享资源上操作，产生的结果依赖于两个进程的执行顺序。</p>
-
-<h3>排他性创建文件</h3>
-
-<p>在调用open系统调用函数时，如果文件存在，则如果指定O_EXCL和O_CREAT会导致open失败。这就为进程提供了一种确保是他创建了文件的方式。
-如果没有这个选项，则一般是先检查文件存在不存在，如果不存在，就创建一个文件。由于是check-if-absent方式，产生条件竞争。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2013/12/30/fileio-further-details/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="3">&larr; Older</a>
@@ -640,6 +691,14 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/09/28/pthread-further-details/">pthread 进一步细节</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/25/pthread-cancel/">取消线程</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/09/17/pthread-control/">pthread control</a>
@@ -663,14 +722,6 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     
       <li class="post">
         <a href="/blog/2014/09/06/linux-performance-observability-tools/">linux performance observability tools</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/08/28/pthread/">apue(线程)</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/06/24/signal/">apue(信号)</a>
       </li>
     
   </ul>
