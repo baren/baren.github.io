@@ -58,3 +58,19 @@ categories:
 <!-- more -->
 ```
 会让文章下面的部分不显示，并会提示一个按钮，来查看未显示的内容。
+
+# 命令
+生成内容
+rake generate
+
+预览
+rake preview
+
+提交：
+git add .
+git commit -m "new"
+git push origin source
+
+发布：
+rake deploy
+
