@@ -1,0 +1,240 @@
+---
+layout: post
+title: "daemon简介"
+date: 2014-10-20 21:09:01 +0800
+comments: true
+categories: 
+- linux
+- daemon
+---
+
+[session]: /images/assets/session_crt.png "linux"
+[daemon-log]: /images/assets/daemon-log.png "linux"
+
+要理解daemon，需要了解
+
+* 进程组
+* 会话
+* 控制终端
+* SIGHUP信号（kill -HUP）
+* fg和bg命令
+* 使用nohup使进程变为后台进程
+* 一个命令后采用“&”使之在后台执行
+
+等这些相关知识。
+<!-- more -->
+# 外围知识
+
+## 进程组
+
+进程组是一个或多个具有共同进程组ID的进程集。
+进程组的特点是：
+
+* 进程组的首进程是创建了进程组的进程，并且进程组的进程ID与进程组ID相等
+* 子进程会继承父进程的进程组ID
+* 进程组有生命周期，从进程创建进程组开始，到最后一个进程离开进程组结束
+
+## 会话
+
+一个会话是进程组的集合。
+
+一个进程是否属于一个会话是靠进程的进程会话ID，
+
+* 一个会话头进程是创建会话的进程，会话ID与进程的进程ID一样
+* 子进程继承父进程的会话ID
+
+## 进程组、会话与控制终端
+
+* 所有的会话中的进程共享一个控制终端。
+* 控制终端的建立是当会话的首进程第一次打开控制终端时。
+* 如果一个会话有控制终端，那么在一个时刻，一个会话中，只有一个进程组是前台进程。其它进程组都是后台进程组
+* 只有前台进程组中的进程可以从控制终端中读取输入。
+* 当在控制终端输入终端字符（Control-C）生成SIGINT信号，并发送给前台进程组中的所有进程
+* 会话首进程对于控制终端来说是控制进程，如果与控制终端断开，内核会给控制进程发送SIGHUP信号。
+
+会话进程组控制终端之间关系的例子：
+
+```
+$ echo $$
+400
+$ find / 2> /dev/null | wc -l & 
+[1] 659
+$ sort < longlist | uniq -c
+```
+
+图示：
+![alt text][session]
+
+## SIGHUP信号
+
+当控制进程与控制终端连接断开时，内核会发送SIGHUP信号给控制进程。SIGHUP的默认动作是终止进程。
+
+会发生以下事情：
+
+* 如果控制进程是shell，他会建立处理SIGHUP信号的函数，在终止之前，会发送SIGHUP信号给它自己创建的每一个作业。
+* 控制终端的控制进程停止时，内核断开会话内的所有进程与控制终端的连接。
+
+# daemon进程
+
+一个daemon是一个进程，具有以下特征：
+
+* 长时间运行的
+* 在后台运行，并没有控制终端。没有控制终端，保证了内核不会为daemon进程生成任何作业控制或者终端相关信号（SIGINT, SIGTSTP, 和 SIGHUP）
+
+系统的一些daemon进程：
+
+* cron：在指定时间执行任务的后台进程
+* sshd: secure shell进程
+* inetd：后台进程，监听在特定TCP/IP端口进来的网络连接，并启动相应的程序处理连接
+
+## 创建一个daemon
+
+创建一个daemon有一些固定的步骤和流程。
+
+1. fork，然后父进程退出。
+> 这样的好处是：
+
+> 1 fork后的子进程的父进程的父进程就成了init。
+
+> 2 如果该守护进程是从shell启动，父进程退出，会让shell认为这条命令执行完成
+
+> 3 保证子进程不是组长进程
+
+2. 进程独立，调用setsid函数
+
+> 因为所有会话中的进程会共享同一个控制终端，（控制进程的子进程，都会继承这个控制终端），具有控制终端的进程都会收到控制终端发出的信号，因此，必须让daemon与控制终端分离。
+
+> 调用setsid()函数使daemon独立，这会让进程处在一个新的会话和进程组中，并与控制终端分离
+
+3. 关闭不需要的文件描述符。
+> 根据函数确认进程可拥有的最大进程描述符的值，一个个关闭，比如：
+
+> for (i=getdtablesize();i>=0;--i) close(i); /* close all descriptors */
+
+> 有些标准库程序会读或者写入标准IO，可能会发生在终端或者文件中，因此最好也重定向标准IO无害设备上，比如/dev/null。
+
+> i=open("/dev/null",O_RDWR); /* open stdin */
+
+> dup(i); /* stdout */
+
+> dup(i); /* stderr */
+
+4. 修改创建文件屏蔽字
+
+> 有时候daemon会保护他创建的文件，因此会回收组写和其它写功能，
+
+> umask(027)
+
+
+5. 将当前工作目录改成根目录
+
+> 好处方便查到程序的一些配置文件等
+
+> 如果进程的工作目录是“/”，那么将不能使用unmount来卸载文件系统，因为unmount两种条件下出错：有打开的文件和在有执行的后台进程，其工作目录处于文件系统中
+
+> 比如：chdir("/servers/");
+
+6. 设置排他性，只有一个进程运行
+
+> 比如cron进程，肯定只需要一个就够了。
+
+> 文件锁方法对于排他性执行是个好方法。
+
+7. 捕获信号
+
+> 进程可以从用户和进程收到信号，最好是捕获信号并做处理。
+
+> 子进程终止时，会给父进程发送SIGCHLD信号，daemon要么忽略要么处理这个信号
+
+> 许多服务进程使用hang-up信号来重启服务。用这个信号来重启是哥不错的主意。
+
+8. 记录日志
+> 可以指定一个日志文件
+
+> 使用log服务（syslogd守护进程提供）
+
+参考：http://www.enderunix.org/docs/eng/daemon.php
+
+## 使用SIGHUP重新初始化daemon进程
+
+大部分daemon都是一直执行直到系统关闭。
+但是，如果想重新初始化进程而又不想停止进程再重启（重新读取配置文件）。可以使用SIGHUP信号来实现。通过捕获这个信号来完成相应初始化逻辑。
+
+SIGHUP信号是当控制进程与控制终端断开时，发送给控制进程的。由于daemon没有控制终端，因此内核不会给daemon进程发送SIGHUP信号。因此daemon可以使用这个信号来完成这个处理功能。
+
+## daemon的日志
+
+只需要记住这个图就可以。
+
+
+![alt text][daemon-log]
+
+
+/etc/syslog.conf文件控制的syslogd的日志控制。格式是：
+
+***
+facility.level 	action
+***
+
+其中facility和level是选择器，action决定的消息被发送到的地方。
+
+facility可以是：
+
+| facility        | 
+| ------------- |
+| LOG_AUTH     | 
+| LOG_AUTHPRIV     | 
+| LOG_CRON     | 
+| LOG_DAEMON     | 
+| LOG_FTP     | 
+| LOG_MAIL     | 
+| LOG_NEWS     | 
+| LOG_SYSLOG     | 
+| LOG_USER     | 
+| LOG_KERN     | 
+| 等     | 
+
+
+level可以是：
+
+| level        | 
+| ------------- |
+| LOG_EMERG     | 
+| LOG_ALERT     | 
+| LOG_CRIT     | 
+| LOG_ERR     | 
+| LOG_WARNING     | 
+| LOG_NOTICE     | 
+| LOG_INFO     | 
+| LOG_DEBUG     | 
+
+
+比如
+```
+*.LOG_ERR						/dev/tty10 所有的错误发到控制终端
+auth.notice 					root # 发送到root登陆的控制台或终端
+*.debug;mail.none;news.none 	-/var/log/messages
+```
+
+一行可以包含多个选择器，用分号分割。*.debug;mail.none;news.
+
+none表示所有的debug信息，但是拍出mail和news的信息。-/var/log/messages前面有个“-”表示不需要每次写入都同步到磁盘，这使的写入速度快。
+
+
+       
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
