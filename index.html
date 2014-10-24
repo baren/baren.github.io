@@ -9,8 +9,13 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="线程和信号 信号的设计实现早于线程，导致线程与信号之间有许多冲突。冲突的地方主要在于： 既要维护传统的在单线程进程环境下的信号语义
-同时又要开发符合多线程进程环境下的信号程序 ">
+  <meta name="description" content="要理解daemon，需要了解 进程组
+会话
+控制终端
+SIGHUP信号（kill -HUP）
+fg和bg命令
+使用nohup使进程变为后台进程
+一个命令后采用“&amp;”使之在后台执行 等这些相关知识。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -65,6 +70,60 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/10/20/daemon/">Daemon简介</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-10-20T21:09:01+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>要理解daemon，需要了解</p>
+
+<ul>
+<li>进程组</li>
+<li>会话</li>
+<li>控制终端</li>
+<li>SIGHUP信号（kill -HUP）</li>
+<li>fg和bg命令</li>
+<li>使用nohup使进程变为后台进程</li>
+<li>一个命令后采用“&amp;”使之在后台执行</li>
+</ul>
+
+
+<p>等这些相关知识。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/10/20/daemon/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -633,67 +692,6 @@ rake deploy</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/24/signal/">Apue(信号)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-24T20:00:20+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>信号概念</h1>
-
-<p>信号是软中断，提供了一种处理异步事件的方法</p>
-
-<p>关于信号：</p>
-
-<ul>
-<li>每个信号都有一个唯一的整数定义，从1开始（不存在为0的信号，值为0可以利用kill函数有其它作用），顺序递增。并且还为每个信号定义了一个名字，以SIG开头。
-这些信号定义在signal.h中</li>
-<li>产生信号的条件
-
-<blockquote><ul>
-<li>用户按终端键，印发终端产生信号</li>
-<li>硬件异常产生信号，比如无效的内存引用，除数为0等</li>
-<li>进程调用kill函数，将信号发送给另一个进程（包括自己）或进程组（有权限限制）</li>
-<li>用户用kill命令给进程发送信号</li>
-<li>当检测到某种条件已经发生，并应将信号通知有关进程时，也产生信号。比如SIGURG（网络连接传来数据），SIGPIPE在管道的读进程终止后，一个进程写此管道时产生。</li>
-</ul>
-</blockquote></li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/06/24/signal/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="2">&larr; Older</a>
@@ -707,6 +705,10 @@ rake deploy</p>
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/10/20/daemon/">daemon简介</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/09/28/pthread-further-details/">pthread 进一步细节</a>
@@ -734,10 +736,6 @@ rake deploy</p>
     
       <li class="post">
         <a href="/blog/2014/09/06/octopress-syntax/">octopress syntax</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/06/linux-performance-observability-tools/">linux performance observability tools</a>
       </li>
     
   </ul>

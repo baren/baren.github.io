@@ -3,6 +3,12 @@
   
   
   <url>
+    <loc>http://baren.github.io/blog/2014/10/20/daemon/</loc>
+    <lastmod>2014-10-20T21:09:01+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://baren.github.io/blog/2014/09/28/pthread-further-details/</loc>
     <lastmod>2014-09-28T20:43:21+08:00</lastmod>
     <priority>0.8</priority>
@@ -149,14 +155,14 @@
   
   <url>
     <loc>http://baren.github.io/blog/archives/</loc>
-    <lastmod>2014-10-14T22:20:23+08:00</lastmod>
+    <lastmod>2014-10-24T21:10:41+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://baren.github.io/</loc>
-    <lastmod>2014-10-14T22:20:23+08:00</lastmod>
+    <lastmod>2014-10-24T21:10:41+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
