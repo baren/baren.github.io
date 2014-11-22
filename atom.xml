@@ -4,7 +4,7 @@
   <title><![CDATA[Baren Blog]]></title>
   <link href="http://baren.github.io/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-10-24T21:10:41+08:00</updated>
+  <updated>2014-11-22T11:25:24+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -12,6 +12,288 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Shared libraries简介]]></title>
+    <link href="http://baren.github.io/blog/2014/11/19/shared-libraries/"/>
+    <updated>2014-11-19T21:09:01+08:00</updated>
+    <id>http://baren.github.io/blog/2014/11/19/shared-libraries</id>
+    <content type="html"><![CDATA[<p>共享库是把库函数放到一个单元里，在运行时供多个进程共享的一种技术。可以节省磁盘空间和内存。</p>
+
+<p>主要讲静态链接和动态链接。</p>
+
+<!-- more -->
+
+
+<h1>目标库（Object Libraries）</h1>
+
+<p>平常，编译一个程序，就是用gcc，后面罗列这所有用到的单个文件来生成一个可执行程序：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ cc -g -c prog.c mod1.c mod2.c mod3.c
+</span><span class='line'>$ cc -g -o prog_nolib prog.o mod1.o mod2.o mod3.o</span></code></pre></td></tr></table></div></figure>
+
+
+<p>缺点：
+* 需要在后面指定大量文件，在生产环境不适用</p>
+
+<p>为了避免这个问题，可以把一些共用对象文件归到一个单一单元中，叫做目标库（object library）。</p>
+
+<p>目标库（object library）有两种类型：静态（static）的和共享（shared）的。相对来说，共享的更现代，也更具有优点。</p>
+
+<h1>静态库（static library）</h1>
+
+<p>静态库也叫archive，是unix最开始的库类型。优点：</p>
+
+<ul>
+<li>可以把预先编译好的文件放到一个单元中，避免了每次编译</li>
+<li>简化了链接命令</li>
+</ul>
+
+
+<h2>创建静态库</h2>
+
+<p>使用ar命令来生成静态库：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ ar options archive object-file...</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>使用静态库</h2>
+
+<p>两种使用静态库的方式：</p>
+
+<ol>
+<li>直接放到link的命令行里：</li>
+</ol>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ cc -g -c prog.c
+</span><span class='line'>$ cc -g -o prog prog.o libdemo.a
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ol>
+<li>静态库放到标准目录（比如/usr/lib）中，在命令行中使用“–l”选项：</li>
+</ol>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ cc -g -o prog prog.o -ldemo
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果静态库没有在标准目录中，可以指定目录：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ cc -g -o prog prog.o -Lmylibdir -ldemo</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>缺点</h2>
+
+<ul>
+<li>浪费内存，每个进程都会存有一份静态库的副本。</li>
+<li>如果静态库中的某个文件变动了，所有依赖这个静态库的程序，都需要重新编译。</li>
+</ul>
+
+
+<h1>共享库（Shared Libraries）</h1>
+
+<p>共享库解决了静态库的缺点，核心是所有依赖这个库的进程都共享同一份程序内存。当第一个依赖这个库程序运行时，会把这个库加载到内存；其它依赖这个库的程序运行时，它就已经加载到内存了。</p>
+
+<p>优点：</p>
+
+<ul>
+<li>由于程序小了，因此加载程序时快了</li>
+<li>库不是拷贝到每个进程，因此节省了内存</li>
+</ul>
+
+
+<p>不利点：</p>
+
+<ul>
+<li>比静态库复杂</li>
+<li>共享库必须被编译成位置无关代码（position-independent code）</li>
+<li>Symbol relocation必须在运行时定位，因此要稍微慢一点比静态库</li>
+</ul>
+
+
+<h1>创建和使用共享库</h1>
+
+<p>只考虑ELF类型的共享库</p>
+
+<h2>创建共享库</h2>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ gcc -g -c -fPIC -Wall mod1.c mod2.c mod3.c
+</span><span class='line'>$ gcc -g -shared -o libfoo.so mod1.o mod2.o mod3.o
+</span><span class='line'>
+</span><span class='line'># 或者一条命令
+</span><span class='line'>
+</span><span class='line'>$ gcc -g -fPIC -Wall mod1.c mod2.c mod3.c -shared -o libfoo.so
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>–fPIC 知道位置无关代码；</p>
+
+<p>-shared指定创建共享库。</p>
+
+<p>注意：
+* 按照惯例，共享库前缀是lib，后缀是.so</p>
+
+<h3>位置无关代码（Position-Independent Code ）</h3>
+
+<p>gcc -fPIC 指示编译器生成位置无关代码（<em>position-independent code</em>）。</p>
+
+<p>这对某些操作来说会改变编译器生成代码的方式。这些操作包括：访问全局、静态或者外部变量；访问字符串常量；获取函数地址等。</p>
+
+<p>这些改变允许可以在运行时在任意虚拟地址定位代码。这对于共享库来说是必要的，因为在链接时刻，是不知道共享库代码在内存的具体地址的。</p>
+
+<h2>使用共享库</h2>
+
+<p>要使用共享库，比起静态库来，额外需要两个步骤：</p>
+
+<ul>
+<li>由于最后的可执行文件，没有包含锁依赖的目标文件的拷贝，必须有个机制来在运行时标记它所依赖的共享库。这通过在链接阶段，把共享库的名字嵌入到可执行文件中。这个依赖的共享库列表叫做：dynamic dependency list。</li>
+</ul>
+
+
+<p>嵌入共享库名字到可执行文件，在链接阶段是自动的：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ gcc -g -Wall -o prog prog.c libfoo.so</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>在运行时，必须有个机制来解决嵌入的共享库名字，也就是根据名字找到共享库的文件，然后加载到内存。</li>
+</ul>
+
+
+<p>根据可执行文件中嵌入的共享库名字，来寻找共享库文件，需要动态链接（dynamic linking）步骤，这是通过动态链接器（dynamic linker）来实现。动态链接器本身就是一个共享库，名字是/lib/ld-linux.so.2，这个链接器也会被嵌入到使用共享库的执行文件中。</p>
+
+<p>动态链接器的任务是：根据一定预先定义的规则在文件系统中寻找共享库文件。这些规则指定了一些存放共享库的标准目录，比如，一般放在/lib和/usr/lib目录下。</p>
+
+<h3>LD_LIBRARY_PATH 环境变量</h3>
+
+<p>除了标准目录，还可以使用环境变量LD_LIBRARY_PATH指定其它目录来通知动态链接器去这些目录寻找共享库文件。如果指定了这个共享库，则动态链接器会先从这几个目录寻找，然后再去标准目录去寻找。</p>
+
+<h2>共享库的Soname</h2>
+
+<p>实际上，一般不会直接让共享库的实际名字嵌入到可执行文件中，而是，在创建一个共享库的时候，会创建一个共享库的soname（在ELF中的DT_SONAME标签）。</p>
+
+<p>一旦一个共享库创建了一个别名soname，那么在链接阶段，共享库的soname会被嵌入到可执行文件中。随后动态链接器会根据这个soname在运行时来寻找共享库的实际文件。</p>
+
+<p>soname的目的是：</p>
+
+<ol>
+<li>允许在运行时，可以使用一个与编译时不同的共享库版本</li>
+</ol>
+
+
+<h3>创建一个具有soname的共享库：</h3>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ gcc -g -c -fPIC -Wall mod1.c mod2.c mod3.c
+</span><span class='line'>$ gcc -g -shared -Wl,-soname,libbar.so -o libfoo.so mod1.o mod2.o mod3.o
+</span><span class='line'>
+</span><span class='line'># 共享库的soname是libbar.so</span></code></pre></td></tr></table></div></figure>
+
+
+<p>一旦共享库有了soname，那么使用共享库时：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ gcc -g -Wall -o prog prog.c libfoo.so</span></code></pre></td></tr></table></div></figure>
+
+
+<p>即使使用的是共享库的真实文件名，链接器也会发现，这个共享库实际上有soname，因此，会使用soname来替代。</p>
+
+<p>一旦创建了一个soname的共享库，还有一个重要步骤是创建一个soname到实际共享库的软链：</p>
+
+<blockquote><p>注意：
+这个软链必须创建在动态链接器的查找目录中</p></blockquote>
+
+<p>编译步骤图示：
+<img src="http://baren.github.io/images/assets/gcc-dl.png" title="linux" alt="alt text" /></p>
+
+<p>使用步骤图示：
+<img src="http://baren.github.io/images/assets/gcc-dl-u.png" title="linux" alt="alt text" /></p>
+
+<h1>共享库相关的工具</h1>
+
+<h2>ldd</h2>
+
+<p>ldd命令展示一个程序需要依赖的共享库：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ ldd prog
+</span><span class='line'>libdemo.so.1 =&gt; /usr/lib/libdemo.so.1 (0x40019000) libc.so.6 =&gt; /lib/tls/libc.so.6 (0x4017b000) /lib/ld-linux.so.2 =&gt; /lib/ld-linux.so.2 (0x40000000)</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>共享库版本和命名规范</h1>
+
+<ul>
+<li><p>minor versions：一般来说，如果如果随后的共享库的版本与上一个共享库的版本是兼容的，比如函数签名没有变，这种版本不一样但是兼容的情况，叫做共享库的 * minor versions *。</p></li>
+<li><p>如果共享库的两个版本是不兼容的，则是 * major version*。</p></li>
+</ul>
+
+
+<p>为了处理这两种差异，为共享库命名定义了一些规范。</p>
+
+<ul>
+<li>共享库的每一个不兼容版本，用唯一的major version 标识符标记，这是共享库实际名字的一部分。按照约定，使用数字累加来当做major version。</li>
+<li>共享库的兼容版本，使用minor version标识符来标记，minor version可以是任意字符串，但是，约定也是数字，也可以是两个数字，用句点隔开的。</li>
+</ul>
+
+
+<p>根据上面约定，一个共享库的名字组成是：</p>
+
+<p>libname.so.major-id.minor-id.</p>
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>libdemo.so.1.0.1
+</span><span class='line'>libdemo.so.1.0.2  # Minor version, compatible with version 1.0.1 
+</span><span class='line'>libdemo.so.2.0.0  # New major version, incompatible with version 1.* libreadline.so.5.0</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>soname命名规范</h2>
+
+<p>共享库的soname的命名规范，包括它对应的共享库实际文件的major version标识符，而不包括minor version标识符，因此soname的名字组成是：</p>
+
+<p>libname.so.major-id</p>
+
+<p>soname在共享库实际文件同一个目录下创建一个软链。</p>
+
+<p>一般情况下，因为共享库的minor version标记这是兼容版本，因此soname一般指向最新的最小版本文件。假如libdemo.so.1这个版本下的小版本最新的是0.2，那么：</p>
+
+<p>libdemo.so.1  -> libdemo.so.1.0.2</p>
+
+<h2>linker name</h2>
+
+<p>除了这两个外，还有个linker name，这个名字只包括主要名字，不包括版本，比如：</p>
+
+<p>libdemo.so -> libdemo.so.2</p>
+
+<p>libreadline.so -> libreadline.so.5</p>
+
+<p>linker name 既可以指向一个实际的共享库，也可以指向soname的软链。一般是指向soname</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[daemon简介]]></title>
@@ -7996,462 +8278,6 @@ opendir执行初始化操作，使第一个readdir读目录中的第一个目录
 <li>Btrfs，通常发音是butter FS。提供了一些现代的系统功能。</li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[类型和对象(PER4 chapter 3)]]></title>
-    <link href="http://baren.github.io/blog/2014/02/10/per4-chapter3-type-and-object/"/>
-    <updated>2014-02-10T19:33:16+08:00</updated>
-    <id>http://baren.github.io/blog/2014/02/10/per4-chapter3-type-and-object</id>
-    <content type="html"><![CDATA[<h1>对象身份和类型</h1>
-
-<p>内置函数 <em>id()</em> 以整数的方式返回对象的身份。这个整数通常指的是内存的位置，但并不保证，这依赖于实现。</p>
-
-<p><em>is</em> 操作符用来比较两个对象的<em>身份</em>的。</p>
-
-<p><em>type()</em> 返回对象的类型。</p>
-
-<p>使用例子：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># Compare two objects </span>
-</span><span class='line'><span class="k">def</span> <span class="nf">compare</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="n">b</span><span class="p">:</span>
-</span><span class='line'>        <span class="c"># a和b是同样的对象，也就是身份相同 </span>
-</span><span class='line'>        <span class="n">statements</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="p">:</span>
-</span><span class='line'>        <span class="c"># a和b具有同样的值，身份可以不一样，只要值一样 </span>
-</span><span class='line'>        <span class="n">statements</span>
-</span><span class='line'>  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
-</span><span class='line'>      <span class="c"># a和b具有同样的类型 </span>
-</span><span class='line'>      <span class="n">statements</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<!-- more -->
-
-
-<p>对象的类型：</p>
-
-<p>对象的类型本身就是一个对象。这个类型对象被称为对象的类。这个类型对象是被唯一定义的，并且给定类型的所有实例的类型都是一样的。因此类型对象之间进行比较，可以使用操作符 <em>is</em> 进行比较。</p>
-
-<p>所有的类型对象都赋予一个名字，可以用来进行类型检查。大多数这种名字都是内置的，比如list、dict等。例如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
-</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-</span><span class='line'><span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span class='line'>  <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>一个比较好的判断类型的方式是使用内置的<code>isinstance(object, type)</code>函数，因为这个函数是可以识别继承的。比如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
-</span><span class='line'>  <span class="n">s</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-</span><span class='line'><span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span><span class="nb">dict</span><span class="p">):</span>
-</span><span class='line'>  <span class="n">d</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>引用计数和垃圾回收</h1>
-
-<p>所有的对象都是引用计数的。</p>
-
-<p>只要把对象赋给一个新名字，或者存放在容器中（list、dict等），都会使引用数增加。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="mi">37</span> <span class="c"># Creates an object with value 37 </span>
-</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="n">a</span> <span class="c"># Increases reference count on 37 </span>
-</span><span class='line'><span class="n">c</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span class='line'><span class="n">c</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="c"># Increases reference count on 37</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>当a赋值给b的时候，值为37的对象的引用数加1；当b存放在容器c中，值为37的对象的引用数加1.</p>
-
-<p>整个例子中，只有一个对象保存了37的值，其它的操作仅仅是创建了一个新的指向这个对象的引用。</p>
-
-<p>这就是引用计数的概念。在考虑引用计数，一定要记住，所有都是对象。</p>
-
-<p>还可以通过操作来减少引用，比如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">del</span> <span class="n">a</span> <span class="c"># Decrease reference count of 37 </span>
-</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="mi">42</span> <span class="c"># Decrease reference count of 37 </span>
-</span><span class='line'><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="c"># Decrease reference count of 37</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>可以通过函数来查看对象的引用情况：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="mi">37</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">sys</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">getrefcount</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-</span><span class='line'><span class="mi">7</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">sys</span><span class="o">.</span><span class="n">getrefcount</span><span class="p">(</span><span class="mi">37</span><span class="p">)</span>
-</span><span class='line'><span class="mi">9</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>当对象的引用计数到0的时候，就会被垃圾回收。</p>
-
-<p>对于循环引用，其引用计数不为零，但是已经不被使用的对象，解释器会定期执行循环引用检查。发现就会回收。</p>
-
-<h1>引用和拷贝</h1>
-
-<p>拷贝分浅拷贝和深拷贝。</p>
-
-<p>copy模块提供了浅拷贝和深拷贝操作</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">Return</span> <span class="n">a</span> <span class="n">shallow</span> <span class="n">copy</span> <span class="n">of</span> <span class="n">x</span><span class="o">.</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">Return</span> <span class="n">a</span> <span class="n">deep</span> <span class="n">copy</span> <span class="n">of</span> <span class="n">x</span><span class="o">.</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>浅拷贝和深拷贝的区别只与组合对象相关（包含其它对象的对象，比如list等）</p>
-
-<ul>
-<li>浅拷贝构建了一个新的组合对象，然后把从原对象中发现的引用插入到新组合对象中</li>
-<li>深拷贝构建了一个新的组合对象，然后递归的把原对象的拷贝插入到新对象中</li>
-</ul>
-
-
-<p>浅拷贝创建一个引用，包含的元素是原对象包含的元素的引用。比如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]]</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="ow">is</span> <span class="n">a</span>
-</span><span class='line'><span class="bp">False</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span>
-</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="mi">100</span><span class="p">]</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span>
-</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]]</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span>
-</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="mi">100</span><span class="p">]</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span>
-</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">4</span><span class="p">]]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>对dict的浅拷贝，可以使用 dict.copy()，对于list的浅拷贝，可以使用<code>copied_list = original_list[:]</code></p>
-
-<p>深拷贝可以使用copy模块下的deepcopy函数实现：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">copy</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]]</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">b</span>
-</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">[</span><span class="o">-</span><span class="mi">100</span><span class="p">,</span> <span class="mi">4</span><span class="p">]]</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="c"># Notice that a is unchanged [1, 2, [3, 4]]</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>如果一个类想定义自己的浅拷贝和深拷贝实现，可以实现特殊方法<code>__copy__() and __deepcopy__()</code>。前者是在浅拷贝的时候调用（copy.copy(x)）。后者是在深拷贝的时候调用(copy.deepcopy(x))。</p>
-
-<h1>第一类对象</h1>
-
-<p>第一类对象是指可以在执行期创造并作为参数传递给其他函数或存入一个变量的实体。一般第一类对象具有的特征是：</p>
-
-<ul>
-<li>可以被存入变量或其他结构</li>
-<li>可以被作为参数传递给其他函数</li>
-<li>可以被作为函数的返回值</li>
-<li>以在执行期创造，而无需完全在设计期全部写出</li>
-</ul>
-
-
-<p>在python中，所有的对象都是第一类对象。</p>
-
-<p>所有对象都是第一类对象的好处是可以写出很紧凑简洁的代码。</p>
-
-<h1>表示数据的内置类型</h1>
-
-<p>略</p>
-
-<h1>表示程序结构的内置类型</h1>
-
-<h2>可调用类型</h2>
-
-<p>可调用类型表示对象支持函数调用操作。包括用户定义函数，内置函数、实例方法和<strong>类</strong>。</p>
-
-<h3>用户定义函数</h3>
-
-<p>在模块级别创建的，通过def或者lambda操作符创建的用户定义的函数，是可调用的对象。</p>
-
-<p>比如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
-</span><span class='line'>  <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">foo</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">:</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>用户定义函数的属性包括：</p>
-
-<table>
-<thead>
-<tr>
-<th>描述        </th>
-<th style="text-align:center;"> 描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>f.<em> </em>dict_ _ </td>
-<td style="text-align:center;"> 包含函数属性的dict</td>
-</tr>
-<tr>
-<td>f.<em> </em>defaults_ _ </td>
-<td style="text-align:center;"> 包含默认参数的元组</td>
-</tr>
-</tbody>
-</table>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-</span><span class='line'><span class="o">...</span>     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="n">__defaults__</span>
-</span><span class='line'><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>用户定义的函数的类型是<code>types.FunctionType</code></p>
-
-<p>比如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-</span><span class='line'><span class="o">...</span>     <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span>
-</span><span class='line'><span class="o">...</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">types</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span> <span class="ow">is</span> <span class="n">types</span><span class="o">.</span><span class="n">FunctionType</span>
-</span><span class='line'><span class="bp">True</span>
-</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="nb">type</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span> <span class="ow">is</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span>
-</span><span class='line'><span class="bp">False</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>方法</h3>
-
-<p>方法是定义在类内部的函数。有三种方法：</p>
-
-<ul>
-<li>实例方法——对对象实例上操作的函数</li>
-<li>类方法——类本身作为一个对象，类方法是在类本身操作的函数</li>
-<li>静态方法——仅仅是个函数，不接收类本身或类的实例作为参数</li>
-</ul>
-
-
-<p>比如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-</span><span class='line'>  <span class="c"># 实例方法，第一个参数self</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">instance_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
-</span><span class='line'>      <span class="n">statements</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c"># 类方法， 第一个参数cls</span>
-</span><span class='line'>  <span class="nd">@classmethod</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">class_method</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
-</span><span class='line'>      <span class="n">statements</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="c"># 静态方法，没有self或cls的参数</span>
-</span><span class='line'>  <span class="nd">@staticmethod</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">static_method</span><span class="p">(</span><span class="n">arg</span><span class="p">):</span>
-</span><span class='line'>      <span class="n">statements</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>实例方法和类方法都由types.MethodType来表示。</p>
-
-<p>详细了解对象查询属性操作（.）是如何工作的，对理解这种特殊类型是有好处的。</p>
-
-<p>在一个对象上查询什么（.）与函数调用总是分开的，当调用方法时，两个操作都会发生，只是步骤差别。</p>
-
-<ol>
-<li>在实例上查询</li>
-</ol>
-
-
-<p>例子：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">f</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span> <span class="c"># 创建一个实例</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">meth</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">instance_method</span> <span class="c"># 查询方法，注意，后面没有括号&quot;()&quot;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">meth</span><span class="p">(</span><span class="mi">37</span><span class="p">)</span> <span class="c"># 现在调用函数</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>上面例子中，meth被称为<strong>绑定方法</strong>。绑定函数是一个可调用对象，它包括了函数（method）和相关的实例。</p>
-
-<p>当调用绑定函数时，相关实例会作为第一个参数传递给函数（self）。</p>
-
-<ol>
-<li>在类上查询</li>
-</ol>
-
-
-<p>接上面例子：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">umeth</span> <span class="o">=</span> <span class="n">Foo</span><span class="o">.</span><span class="n">instance_method</span> <span class="c"># 在Foo上查询instance_method</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">umeth</span><span class="p">(</span><span class="n">f</span><span class="p">,</span><span class="mi">37</span><span class="p">)</span> <span class="c"># 明确提供self，并且调用</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>在这个例子中，umeth被称为未绑定方法。未绑定方法只包含了方法函数，但是需要明确传递正确类型的实例对象作为第一个参数。</p>
-
-<p>在这个例子中，传了Foo的实例f作为第一个参数。</p>
-
-<p>对用户定义的类，绑定方法和未绑定方法都是作为types.MethodType的对象。</p>
-
-<p>下面是方法对象的属性</p>
-
-<table>
-<thead>
-<tr>
-<th>描述        </th>
-<th style="text-align:center;"> 描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>m.<strong>class</strong> </td>
-<td style="text-align:center;"> 函数定义的类</td>
-</tr>
-<tr>
-<td>m.<strong>func</strong> </td>
-<td style="text-align:center;"> 实现方法的函数对象</td>
-</tr>
-<tr>
-<td>m.<strong>self</strong> </td>
-<td style="text-align:center;"> 与方法相关的实例，如果没有，返回None</td>
-</tr>
-</tbody>
-</table>
-
-
-<h3>内置函数和方法</h3>
-
-<p>对象types.BuiltinFunctionType用来描述用c或c++实现的函数和方法。属性和上面类似。</p>
-
-<h3>类和实例作为可调用对象</h3>
-
-<p>类对象和实例也可以作为可调用对象。一个类对象被<code>class</code>创建，可以作为一个函数来调用，用来创建类的实例。这种情况下，传递的参数会传递给<strong>init</strong>方法中，用来初始化实例对象。</p>
-
-<p>如果一个实例实现了<strong>call</strong>方法，那么这个实例也可以模拟函数调用。如果对象x定义了<strong>call</strong>函数，那么x(args)会调用x.<strong>call</strong>(args)。</p>
-
-<h2>类、类型和实例</h2>
 ]]></content>
   </entry>
   

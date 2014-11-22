@@ -1,0 +1,505 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Shared libraries简介 - Baren Blog</title>
+  <meta name="author" content="enwu">
+
+  
+  <meta name="description" content="共享库是把库函数放到一个单元里，在运行时供多个进程共享的一种技术。可以节省磁盘空间和内存。 主要讲静态链接和动态链接。 目标库（Object Libraries） 平常，编译一个程序，就是用gcc，后面罗列这所有用到的单个文件来生成一个可执行程序： 1
+2
+$ cc -g -c prog.c &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://baren.github.io/blog/2014/11/19/shared-libraries/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Baren Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Baren Blog</a></h1>
+  
+    <h2>A blogging for baren.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:baren.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Shared Libraries简介</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-19T21:09:01+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>共享库是把库函数放到一个单元里，在运行时供多个进程共享的一种技术。可以节省磁盘空间和内存。</p>
+
+<p>主要讲静态链接和动态链接。</p>
+
+<!-- more -->
+
+
+<h1>目标库（Object Libraries）</h1>
+
+<p>平常，编译一个程序，就是用gcc，后面罗列这所有用到的单个文件来生成一个可执行程序：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ cc -g -c prog.c mod1.c mod2.c mod3.c
+</span><span class='line'>$ cc -g -o prog_nolib prog.o mod1.o mod2.o mod3.o</span></code></pre></td></tr></table></div></figure>
+
+
+<p>缺点：
+* 需要在后面指定大量文件，在生产环境不适用</p>
+
+<p>为了避免这个问题，可以把一些共用对象文件归到一个单一单元中，叫做目标库（object library）。</p>
+
+<p>目标库（object library）有两种类型：静态（static）的和共享（shared）的。相对来说，共享的更现代，也更具有优点。</p>
+
+<h1>静态库（static library）</h1>
+
+<p>静态库也叫archive，是unix最开始的库类型。优点：</p>
+
+<ul>
+<li>可以把预先编译好的文件放到一个单元中，避免了每次编译</li>
+<li>简化了链接命令</li>
+</ul>
+
+
+<h2>创建静态库</h2>
+
+<p>使用ar命令来生成静态库：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ ar options archive object-file...</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>使用静态库</h2>
+
+<p>两种使用静态库的方式：</p>
+
+<ol>
+<li>直接放到link的命令行里：</li>
+</ol>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ cc -g -c prog.c
+</span><span class='line'>$ cc -g -o prog prog.o libdemo.a
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ol>
+<li>静态库放到标准目录（比如/usr/lib）中，在命令行中使用“–l”选项：</li>
+</ol>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ cc -g -o prog prog.o -ldemo
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果静态库没有在标准目录中，可以指定目录：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ cc -g -o prog prog.o -Lmylibdir -ldemo</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>缺点</h2>
+
+<ul>
+<li>浪费内存，每个进程都会存有一份静态库的副本。</li>
+<li>如果静态库中的某个文件变动了，所有依赖这个静态库的程序，都需要重新编译。</li>
+</ul>
+
+
+<h1>共享库（Shared Libraries）</h1>
+
+<p>共享库解决了静态库的缺点，核心是所有依赖这个库的进程都共享同一份程序内存。当第一个依赖这个库程序运行时，会把这个库加载到内存；其它依赖这个库的程序运行时，它就已经加载到内存了。</p>
+
+<p>优点：</p>
+
+<ul>
+<li>由于程序小了，因此加载程序时快了</li>
+<li>库不是拷贝到每个进程，因此节省了内存</li>
+</ul>
+
+
+<p>不利点：</p>
+
+<ul>
+<li>比静态库复杂</li>
+<li>共享库必须被编译成位置无关代码（position-independent code）</li>
+<li>Symbol relocation必须在运行时定位，因此要稍微慢一点比静态库</li>
+</ul>
+
+
+<h1>创建和使用共享库</h1>
+
+<p>只考虑ELF类型的共享库</p>
+
+<h2>创建共享库</h2>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ gcc -g -c -fPIC -Wall mod1.c mod2.c mod3.c
+</span><span class='line'>$ gcc -g -shared -o libfoo.so mod1.o mod2.o mod3.o
+</span><span class='line'>
+</span><span class='line'># 或者一条命令
+</span><span class='line'>
+</span><span class='line'>$ gcc -g -fPIC -Wall mod1.c mod2.c mod3.c -shared -o libfoo.so
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>–fPIC 知道位置无关代码；</p>
+
+<p>-shared指定创建共享库。</p>
+
+<p>注意：
+* 按照惯例，共享库前缀是lib，后缀是.so</p>
+
+<h3>位置无关代码（Position-Independent Code ）</h3>
+
+<p>gcc -fPIC 指示编译器生成位置无关代码（<em>position-independent code</em>）。</p>
+
+<p>这对某些操作来说会改变编译器生成代码的方式。这些操作包括：访问全局、静态或者外部变量；访问字符串常量；获取函数地址等。</p>
+
+<p>这些改变允许可以在运行时在任意虚拟地址定位代码。这对于共享库来说是必要的，因为在链接时刻，是不知道共享库代码在内存的具体地址的。</p>
+
+<h2>使用共享库</h2>
+
+<p>要使用共享库，比起静态库来，额外需要两个步骤：</p>
+
+<ul>
+<li>由于最后的可执行文件，没有包含锁依赖的目标文件的拷贝，必须有个机制来在运行时标记它所依赖的共享库。这通过在链接阶段，把共享库的名字嵌入到可执行文件中。这个依赖的共享库列表叫做：dynamic dependency list。</li>
+</ul>
+
+
+<p>嵌入共享库名字到可执行文件，在链接阶段是自动的：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ gcc -g -Wall -o prog prog.c libfoo.so</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>在运行时，必须有个机制来解决嵌入的共享库名字，也就是根据名字找到共享库的文件，然后加载到内存。</li>
+</ul>
+
+
+<p>根据可执行文件中嵌入的共享库名字，来寻找共享库文件，需要动态链接（dynamic linking）步骤，这是通过动态链接器（dynamic linker）来实现。动态链接器本身就是一个共享库，名字是/lib/ld-linux.so.2，这个链接器也会被嵌入到使用共享库的执行文件中。</p>
+
+<p>动态链接器的任务是：根据一定预先定义的规则在文件系统中寻找共享库文件。这些规则指定了一些存放共享库的标准目录，比如，一般放在/lib和/usr/lib目录下。</p>
+
+<h3>LD_LIBRARY_PATH 环境变量</h3>
+
+<p>除了标准目录，还可以使用环境变量LD_LIBRARY_PATH指定其它目录来通知动态链接器去这些目录寻找共享库文件。如果指定了这个共享库，则动态链接器会先从这几个目录寻找，然后再去标准目录去寻找。</p>
+
+<h2>共享库的Soname</h2>
+
+<p>实际上，一般不会直接让共享库的实际名字嵌入到可执行文件中，而是，在创建一个共享库的时候，会创建一个共享库的soname（在ELF中的DT_SONAME标签）。</p>
+
+<p>一旦一个共享库创建了一个别名soname，那么在链接阶段，共享库的soname会被嵌入到可执行文件中。随后动态链接器会根据这个soname在运行时来寻找共享库的实际文件。</p>
+
+<p>soname的目的是：</p>
+
+<ol>
+<li>允许在运行时，可以使用一个与编译时不同的共享库版本</li>
+</ol>
+
+
+<h3>创建一个具有soname的共享库：</h3>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ gcc -g -c -fPIC -Wall mod1.c mod2.c mod3.c
+</span><span class='line'>$ gcc -g -shared -Wl,-soname,libbar.so -o libfoo.so mod1.o mod2.o mod3.o
+</span><span class='line'>
+</span><span class='line'># 共享库的soname是libbar.so</span></code></pre></td></tr></table></div></figure>
+
+
+<p>一旦共享库有了soname，那么使用共享库时：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ gcc -g -Wall -o prog prog.c libfoo.so</span></code></pre></td></tr></table></div></figure>
+
+
+<p>即使使用的是共享库的真实文件名，链接器也会发现，这个共享库实际上有soname，因此，会使用soname来替代。</p>
+
+<p>一旦创建了一个soname的共享库，还有一个重要步骤是创建一个soname到实际共享库的软链：</p>
+
+<blockquote><p>注意：
+这个软链必须创建在动态链接器的查找目录中</p></blockquote>
+
+<p>编译步骤图示：
+<img src="/images/assets/gcc-dl.png" title="linux" alt="alt text" /></p>
+
+<p>使用步骤图示：
+<img src="/images/assets/gcc-dl-u.png" title="linux" alt="alt text" /></p>
+
+<h1>共享库相关的工具</h1>
+
+<h2>ldd</h2>
+
+<p>ldd命令展示一个程序需要依赖的共享库：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ ldd prog
+</span><span class='line'>libdemo.so.1 =&gt; /usr/lib/libdemo.so.1 (0x40019000) libc.so.6 =&gt; /lib/tls/libc.so.6 (0x4017b000) /lib/ld-linux.so.2 =&gt; /lib/ld-linux.so.2 (0x40000000)</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>共享库版本和命名规范</h1>
+
+<ul>
+<li><p>minor versions：一般来说，如果如果随后的共享库的版本与上一个共享库的版本是兼容的，比如函数签名没有变，这种版本不一样但是兼容的情况，叫做共享库的 * minor versions *。</p></li>
+<li><p>如果共享库的两个版本是不兼容的，则是 * major version*。</p></li>
+</ul>
+
+
+<p>为了处理这两种差异，为共享库命名定义了一些规范。</p>
+
+<ul>
+<li>共享库的每一个不兼容版本，用唯一的major version 标识符标记，这是共享库实际名字的一部分。按照约定，使用数字累加来当做major version。</li>
+<li>共享库的兼容版本，使用minor version标识符来标记，minor version可以是任意字符串，但是，约定也是数字，也可以是两个数字，用句点隔开的。</li>
+</ul>
+
+
+<p>根据上面约定，一个共享库的名字组成是：</p>
+
+<p>libname.so.major-id.minor-id.</p>
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>libdemo.so.1.0.1
+</span><span class='line'>libdemo.so.1.0.2  # Minor version, compatible with version 1.0.1 
+</span><span class='line'>libdemo.so.2.0.0  # New major version, incompatible with version 1.* libreadline.so.5.0</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>soname命名规范</h2>
+
+<p>共享库的soname的命名规范，包括它对应的共享库实际文件的major version标识符，而不包括minor version标识符，因此soname的名字组成是：</p>
+
+<p>libname.so.major-id</p>
+
+<p>soname在共享库实际文件同一个目录下创建一个软链。</p>
+
+<p>一般情况下，因为共享库的minor version标记这是兼容版本，因此soname一般指向最新的最小版本文件。假如libdemo.so.1这个版本下的小版本最新的是0.2，那么：</p>
+
+<p>libdemo.so.1  -> libdemo.so.1.0.2</p>
+
+<h2>linker name</h2>
+
+<p>除了这两个外，还有个linker name，这个名字只包括主要名字，不包括版本，比如：</p>
+
+<p>libdemo.so -> libdemo.so.2</p>
+
+<p>libreadline.so -> libreadline.so.5</p>
+
+<p>linker name 既可以指向一个实际的共享库，也可以指向soname的软链。一般是指向soname</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">enwu</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-19T21:09:01+08:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/ld/'>ld</a>, <a class='category' href='/blog/categories/linux/'>linux</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2014/11/19/shared-libraries/" data-via="" data-counturl="http://baren.github.io/blog/2014/11/19/shared-libraries/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/10/20/daemon/" title="Previous Post: daemon简介">&laquo; daemon简介</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/19/shared-libraries/">Shared libraries简介</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/10/20/daemon/">daemon简介</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/28/pthread-further-details/">pthread 进一步细节</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/25/pthread-cancel/">取消线程</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/17/pthread-control/">pthread control</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/14/per4-checpter6-decorator/">python decorator 深入理解</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">python 作用域规则</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - enwu -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
+  <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

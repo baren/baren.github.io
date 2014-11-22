@@ -9,9 +9,18 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="行结构和缩进 python中，每一行用换行符来结束，如果一行太长，可以使用行继续操作符“\”来分割，比如： 1
+  <meta name="description" content="对象身份和类型 内置函数 id() 以整数的方式返回对象的身份。这个整数通常指的是内存的位置，但并不保证，这依赖于实现。 is 操作符用来比较两个对象的身份的。 type() 返回对象的类型。 使用例子： 1
 2
-a = math.cos(3 * (x - n)) + \ math.sin(3 * (y - n)) 在(&hellip;), [&hellip;], {&hellip;}, & &hellip;">
+3
+4
+5
+6
+7
+8
+9
+10
+11
+# Compare two objects &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +75,82 @@ a = math.cos(3 * (x - n)) + \ math.sin(3 * (y - n)) 在(&hellip;), [&hellip;], {
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/02/10/per4-chapter3-type-and-object/">类型和对象(PER4 Chapter 3)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-02-10T19:33:16+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>对象身份和类型</h1>
+
+<p>内置函数 <em>id()</em> 以整数的方式返回对象的身份。这个整数通常指的是内存的位置，但并不保证，这依赖于实现。</p>
+
+<p><em>is</em> 操作符用来比较两个对象的<em>身份</em>的。</p>
+
+<p><em>type()</em> 返回对象的类型。</p>
+
+<p>使用例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># Compare two objects </span>
+</span><span class='line'><span class="k">def</span> <span class="nf">compare</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="n">b</span><span class="p">:</span>
+</span><span class='line'>        <span class="c"># a和b是同样的对象，也就是身份相同 </span>
+</span><span class='line'>        <span class="n">statements</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="p">:</span>
+</span><span class='line'>        <span class="c"># a和b具有同样的值，身份可以不一样，只要值一样 </span>
+</span><span class='line'>        <span class="n">statements</span>
+</span><span class='line'>  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+</span><span class='line'>      <span class="c"># a和b具有同样的类型 </span>
+</span><span class='line'>      <span class="n">statements</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/02/10/per4-chapter3-type-and-object/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -372,6 +457,10 @@ a = math.cos(3 * (x - n)) + \ math.sin(3 * (y - n)) 在(&hellip;), [&hellip;], {
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/11/19/shared-libraries/">Shared libraries简介</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/10/20/daemon/">daemon简介</a>
       </li>
     
@@ -397,10 +486,6 @@ a = math.cos(3 * (x - n)) + \ math.sin(3 * (y - n)) 在(&hellip;), [&hellip;], {
     
       <li class="post">
         <a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/06/octopress-syntax/">octopress syntax</a>
       </li>
     
   </ul>

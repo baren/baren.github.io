@@ -9,13 +9,7 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="要理解daemon，需要了解 进程组
-会话
-控制终端
-SIGHUP信号（kill -HUP）
-fg和bg命令
-使用nohup使进程变为后台进程
-一个命令后采用“&amp;”使之在后台执行 等这些相关知识。 ">
+  <meta name="description" content="共享库是把库函数放到一个单元里，在运行时供多个进程共享的一种技术。可以节省磁盘空间和内存。 主要讲静态链接和动态链接。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -70,6 +64,49 @@ fg和bg命令
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/19/shared-libraries/">Shared Libraries简介</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-19T21:09:01+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>共享库是把库函数放到一个单元里，在运行时供多个进程共享的一种技术。可以节省磁盘空间和内存。</p>
+
+<p>主要讲静态链接和动态链接。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/11/19/shared-libraries/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -604,94 +641,6 @@ rake deploy</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/08/28/pthread/">Apue(线程)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-08-28T20:00:53+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>线程概念</h1>
-
-<p>主要是POSIX线程，也就是pthread。</p>
-
-<p>正常情况下，unix的进程包括一个单一的线程执行，从main开始。有了线程后，一个进程可以有多个线程同时执行。</p>
-
-<p>判断系统是否支持pthread，可以使用宏<em>POSIX_THREADS进行测试，还可以把</em>SC_THREADS传递给sysconf函数来运行时判断。</p>
-
-<p>线程可以有多种好处，按照传统的多进程的实现方式，一般是在网络服务器环境下使用，多进程可以同时支持多个客户端的请求。但也有一些限制：</p>
-
-<ul>
-<li>进程之间共享数据非常困难</li>
-<li>使用fork创建一个进程是耗资源的。即使使用了copy-on-write技术，复制各种进程的属性（page表和fd表等）也意味着是耗时间的。</li>
-</ul>
-
-
-<p>使用线程，解决这上面这些问题：</p>
-
-<ul>
-<li>线程之间共享信息是容易和迅速的。仅仅拷贝数据到共享内存（global或heap）的消耗。</li>
-<li>线程创建比进程创建迅速多了。大约有10倍。linux创建线程使用clone系统调用，也还是比进程快。</li>
-</ul>
-
-
-<p>除了共享全局内存，线程还共享一些其他属性，包括</p>
-
-<ul>
-<li>进程id和父进程id</li>
-<li>进程组合session id</li>
-<li>控制终端</li>
-<li>进程凭证（用户和组id）</li>
-<li>打开的文件描述符（比较重要）</li>
-<li>信号处理</li>
-<li>文件系统相关信息：umask、当前工作目录和根目录</li>
-<li>等</li>
-</ul>
-
-
-<p>下面是各个线程不同的属性：</p>
-
-<ul>
-<li>线程id</li>
-<li>信号mask</li>
-<li>线程私有数据</li>
-<li>errno变量</li>
-<li>等</li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/08/28/pthread/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="2">&larr; Older</a>
@@ -705,6 +654,10 @@ rake deploy</p>
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/19/shared-libraries/">Shared libraries简介</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/10/20/daemon/">daemon简介</a>
@@ -732,10 +685,6 @@ rake deploy</p>
     
       <li class="post">
         <a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/06/octopress-syntax/">octopress syntax</a>
       </li>
     
   </ul>

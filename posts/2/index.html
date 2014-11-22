@@ -9,9 +9,7 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="信号概念 信号是软中断，提供了一种处理异步事件的方法 关于信号： 每个信号都有一个唯一的整数定义，从1开始（不存在为0的信号，值为0可以利用kill函数有其它作用），顺序递增。并且还为每个信号定义了一个名字，以SIG开头。
-这些信号定义在signal.h中
-产生信号的条件 用户按终端键， &hellip;">
+  <meta name="description" content="线程概念 主要是POSIX线程，也就是pthread。 正常情况下，unix的进程包括一个单一的线程执行，从main开始。有了线程后，一个进程可以有多个线程同时执行。 判断系统是否支持pthread，可以使用宏POSIX_THREADS进行测试， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +64,94 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/08/28/pthread/">Apue(线程)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-28T20:00:53+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>线程概念</h1>
+
+<p>主要是POSIX线程，也就是pthread。</p>
+
+<p>正常情况下，unix的进程包括一个单一的线程执行，从main开始。有了线程后，一个进程可以有多个线程同时执行。</p>
+
+<p>判断系统是否支持pthread，可以使用宏<em>POSIX_THREADS进行测试，还可以把</em>SC_THREADS传递给sysconf函数来运行时判断。</p>
+
+<p>线程可以有多种好处，按照传统的多进程的实现方式，一般是在网络服务器环境下使用，多进程可以同时支持多个客户端的请求。但也有一些限制：</p>
+
+<ul>
+<li>进程之间共享数据非常困难</li>
+<li>使用fork创建一个进程是耗资源的。即使使用了copy-on-write技术，复制各种进程的属性（page表和fd表等）也意味着是耗时间的。</li>
+</ul>
+
+
+<p>使用线程，解决这上面这些问题：</p>
+
+<ul>
+<li>线程之间共享信息是容易和迅速的。仅仅拷贝数据到共享内存（global或heap）的消耗。</li>
+<li>线程创建比进程创建迅速多了。大约有10倍。linux创建线程使用clone系统调用，也还是比进程快。</li>
+</ul>
+
+
+<p>除了共享全局内存，线程还共享一些其他属性，包括</p>
+
+<ul>
+<li>进程id和父进程id</li>
+<li>进程组合session id</li>
+<li>控制终端</li>
+<li>进程凭证（用户和组id）</li>
+<li>打开的文件描述符（比较重要）</li>
+<li>信号处理</li>
+<li>文件系统相关信息：umask、当前工作目录和根目录</li>
+<li>等</li>
+</ul>
+
+
+<p>下面是各个线程不同的属性：</p>
+
+<ul>
+<li>线程id</li>
+<li>信号mask</li>
+<li>线程私有数据</li>
+<li>errno变量</li>
+<li>等</li>
+</ul>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/08/28/pthread/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -599,82 +685,6 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/02/10/per4-chapter3-type-and-object/">类型和对象(PER4 Chapter 3)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-02-10T19:33:16+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>对象身份和类型</h1>
-
-<p>内置函数 <em>id()</em> 以整数的方式返回对象的身份。这个整数通常指的是内存的位置，但并不保证，这依赖于实现。</p>
-
-<p><em>is</em> 操作符用来比较两个对象的<em>身份</em>的。</p>
-
-<p><em>type()</em> 返回对象的类型。</p>
-
-<p>使用例子：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># Compare two objects </span>
-</span><span class='line'><span class="k">def</span> <span class="nf">compare</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="n">b</span><span class="p">):</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="n">b</span><span class="p">:</span>
-</span><span class='line'>        <span class="c"># a和b是同样的对象，也就是身份相同 </span>
-</span><span class='line'>        <span class="n">statements</span>
-</span><span class='line'>    <span class="k">if</span> <span class="n">a</span> <span class="o">==</span> <span class="n">b</span><span class="p">:</span>
-</span><span class='line'>        <span class="c"># a和b具有同样的值，身份可以不一样，只要值一样 </span>
-</span><span class='line'>        <span class="n">statements</span>
-</span><span class='line'>  <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">type</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
-</span><span class='line'>      <span class="c"># a和b具有同样的类型 </span>
-</span><span class='line'>      <span class="n">statements</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/02/10/per4-chapter3-type-and-object/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="3">&larr; Older</a>
@@ -690,6 +700,10 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/11/19/shared-libraries/">Shared libraries简介</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/10/20/daemon/">daemon简介</a>
@@ -717,10 +731,6 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     
       <li class="post">
         <a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/06/octopress-syntax/">octopress syntax</a>
       </li>
     
   </ul>
