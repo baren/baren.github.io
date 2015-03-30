@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: yield | Baren Blog]]></title>
+  <link href="http://baren.github.io/blog/categories/yield/atom.xml" rel="self"/>
+  <link href="http://baren.github.io/"/>
+  <updated>2015-03-30T20:49:23+08:00</updated>
+  <id>http://baren.github.io/</id>
+  <author>
+    <name><![CDATA[enwu]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[yield（generator和coroutine）]]></title>
+    <link href="http://baren.github.io/blog/2015/03/22/python-yield/"/>
+    <updated>2015-03-22T15:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2015/03/22/python-yield</id>
+    <content type="html"><![CDATA[<p>主要介绍python中yield的用法。在python中，与yield关键字相关的语法有generator和coroutine，这里会分别介绍这两种语法。</p>
+
+<!-- more -->
+
+
+<h1>generator</h1>
+
+<p>一个函数，正常情况下，会返回一个值，但是generator，返回的是值的序列，而不是一个值。在python中，用yield来实现，比如：</p>
+
+<pre><code class="python">
+def countdown(n):
+    print("Counting down from %d" % n) 
+    while n &gt; 0:
+        yield n
+        print 'after yield'
+        n -= 1 
+    return
+</code></pre>
+
+<p>函数内使用yield关键字的函数，跟普通函数不一样，函数的调用并不会执行函数体，而是返回一个generator对象，比如：</p>
+
+<pre><code class="python">&gt;&gt;&gt; a = countdown(10)  # 没有执行第一行的print语句
+&gt;&gt;&gt; print a
+&lt;generator object countdown at 0x10695ba00&gt;
+</code></pre>
+
+<p>要想执行函数体，可以使用</p>
+
+<ul>
+<li>generator的next()函数或者</li>
+<li>for语句，sum()或者其它消费集合的操作。</li>
+</ul>
+
+
+<h2>next()函数</h2>
+
+<p>generator的调用过程：</p>
+
+<ol>
+<li>当在generator上调用next()函数，会执行函数体，直到遇到yield关键字。然后</li>
+<li>yield生成一个值，</li>
+<li>并且在这点，函数被挂起，直到下一个next()函数调用。然后，</li>
+<li>函数继续从yield语句后面执行。</li>
+</ol>
+
+
+<p>比如：</p>
+
+<pre><code class="python">&gt;&gt;&gt; a = countdown(10)
+&gt;&gt;&gt; print a
+&lt;generator object countdown at 0x10695ba00&gt;
+&gt;&gt;&gt;
+&gt;&gt;&gt; a.next()
+Counting down from 10
+10
+&gt;&gt;&gt; a.next()
+after yidle
+9
+</code></pre>
+
+<p>当generator返回时（return），迭代停止，这时候，再调用next()函数，抛出StopIteration异常。</p>
+
+<pre><code class="python">&gt;&gt;&gt; a.next()
+after yidle
+1
+&gt;&gt;&gt; a.next()
+after yidle
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+StopIteration
+</code></pre>
+
+<h2>迭代generator</h2>
+
+<p>还可以使用for语句迭代generator，比如：</p>
+
+<p>for n in countdown(10):
+    print n</p>
+
+<pre><code class="python">&gt;&gt;&gt; for n in countdown(10):
+...     print n
+...
+Counting down from 10
+10
+after yidle
+9
+.
+.
+.
+1
+after yidle
+&gt;&gt;&gt;
+</code></pre>
+
+<h2>停止generator</h2>
+
+<p>停止一个generator，通过：</p>
+
+<ul>
+<li>return语句返回</li>
+<li>抛出一个StopIteration异常</li>
+</ul>
+
+
+<p>如果generator停止了，继续调用next()函数，会抛出StopIteration异常。</p>
+
+<h2>close()函数</h2>
+
+<p>为了防止一个generator没有停止，提供了close()函数来主动停止generator，比如：</p>
+
+<pre><code class="python">for n in countdown(10): 
+    if n == 2: 
+        break
+    statements
+</code></pre>
+
+<p>上面程序中，for循环在生成2的时候停止了，这时候countdown并没有完全执行完成，当生成器不再调用时，调用close关闭它。</p>
+
+<pre><code class="python">&gt;&gt;&gt; c = countdown(10)
+&gt;&gt;&gt;
+&gt;&gt;&gt; c.next()
+Counting down from 10
+10
+&gt;&gt;&gt; c.close()
+&gt;&gt;&gt; c.next()
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+StopIteration
+</code></pre>
+
+<p>在generator内部，close函数调用会导致在yield语句上抛出GeneratorExit异常，因此可以在generator内部捕获这个异常，来做一些清理工作：</p>
+
+<pre><code class="python">def countdown(n):
+    print("Counting down from %d" % n) 
+
+    try:
+        while n &gt; 0: 
+            yield n
+            n=n-1 
+    except GeneratorExit:
+        print("Only made it to %d" % n)
+</code></pre>
+
+<h1>协程和yield表达式</h1>
+
+<h1>参考资料</h1>
+
+<ol>
+<li><a href="http://www.dabeaz.com/coroutines/Coroutines.pdf">http://www.dabeaz.com/coroutines/Coroutines.pdf</a></li>
+<li><a href="https://www.python.org/dev/peps/pep-0342/">https://www.python.org/dev/peps/pep-0342/</a></li>
+<li><a href="http://www.jeffknupp.com/blog/2013/04/07/improve-your-python-yield-and-generators-explained/">http://www.jeffknupp.com/blog/2013/04/07/improve-your-python-yield-and-generators-explained/</a></li>
+<li>python essential reference chapter 5</li>
+<li><a href="http://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do-in-python/231855#231855">http://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do-in-python/231855#231855</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+</feed>

@@ -4,7 +4,7 @@
   <title><![CDATA[Baren Blog]]></title>
   <link href="http://baren.github.io/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-11-22T11:25:24+08:00</updated>
+  <updated>2015-03-30T20:49:23+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -12,6 +12,397 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[yield（generator和coroutine）]]></title>
+    <link href="http://baren.github.io/blog/2015/03/22/python-yield/"/>
+    <updated>2015-03-22T15:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2015/03/22/python-yield</id>
+    <content type="html"><![CDATA[<p>主要介绍python中yield的用法。在python中，与yield关键字相关的语法有generator和coroutine，这里会分别介绍这两种语法。</p>
+
+<!-- more -->
+
+
+<h1>generator</h1>
+
+<p>一个函数，正常情况下，会返回一个值，但是generator，返回的是值的序列，而不是一个值。在python中，用yield来实现，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Counting down from </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">yield</span> <span class="n">n</span>
+</span><span class='line'>        <span class="k">print</span> <span class="s">&#39;after yield&#39;</span>
+</span><span class='line'>        <span class="n">n</span> <span class="o">-=</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">return</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>函数内使用yield关键字的函数，跟普通函数不一样，函数的调用并不会执行函数体，而是返回一个generator对象，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">countdown</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>  <span class="c"># 没有执行第一行的print语句</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span> <span class="n">a</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">generator</span> <span class="nb">object</span> <span class="n">countdown</span> <span class="n">at</span> <span class="mh">0x10695ba00</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>要想执行函数体，可以使用</p>
+
+<ul>
+<li>generator的next()函数或者</li>
+<li>for语句，sum()或者其它消费集合的操作。</li>
+</ul>
+
+
+<h2>next()函数</h2>
+
+<p>generator的调用过程：</p>
+
+<ol>
+<li>当在generator上调用next()函数，会执行函数体，直到遇到yield关键字。然后</li>
+<li>yield生成一个值，</li>
+<li>并且在这点，函数被挂起，直到下一个next()函数调用。然后，</li>
+<li>函数继续从yield语句后面执行。</li>
+</ol>
+
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">countdown</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">print</span> <span class="n">a</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">generator</span> <span class="nb">object</span> <span class="n">countdown</span> <span class="n">at</span> <span class="mh">0x10695ba00</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Counting</span> <span class="n">down</span> <span class="kn">from</span> <span class="mi">10</span>
+</span><span class='line'><span class="mi">10</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">after</span> <span class="n">yidle</span>
+</span><span class='line'><span class="mi">9</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当generator返回时（return），迭代停止，这时候，再调用next()函数，抛出StopIteration异常。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">after</span> <span class="n">yidle</span>
+</span><span class='line'><span class="mi">1</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">after</span> <span class="n">yidle</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'><span class="ne">StopIteration</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>迭代generator</h2>
+
+<p>还可以使用for语句迭代generator，比如：</p>
+
+<p>for n in countdown(10):
+    print n</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">countdown</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">print</span> <span class="n">n</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="n">Counting</span> <span class="n">down</span> <span class="kn">from</span> <span class="mi">10</span>
+</span><span class='line'><span class="mi">10</span>
+</span><span class='line'><span class="n">after</span> <span class="n">yidle</span>
+</span><span class='line'><span class="mi">9</span>
+</span><span class='line'><span class="o">.</span>
+</span><span class='line'><span class="o">.</span>
+</span><span class='line'><span class="o">.</span>
+</span><span class='line'><span class="mi">1</span>
+</span><span class='line'><span class="n">after</span> <span class="n">yidle</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>停止generator</h2>
+
+<p>停止一个generator，通过：</p>
+
+<ul>
+<li>return语句返回</li>
+<li>抛出一个StopIteration异常</li>
+</ul>
+
+
+<p>如果generator停止了，继续调用next()函数，会抛出StopIteration异常。</p>
+
+<h2>close()函数</h2>
+
+<p>为了防止一个generator没有停止，提供了close()函数来主动停止generator，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">countdown</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">break</span>
+</span><span class='line'>    <span class="n">statements</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面程序中，for循环在生成2的时候停止了，这时候countdown并没有完全执行完成，当生成器不再调用时，调用close关闭它。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span> <span class="o">=</span> <span class="n">countdown</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Counting</span> <span class="n">down</span> <span class="kn">from</span> <span class="mi">10</span>
+</span><span class='line'><span class="mi">10</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'><span class="ne">StopIteration</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在generator内部，close函数调用会导致在yield语句上抛出GeneratorExit异常，因此可以在generator内部捕获这个异常，来做一些清理工作：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">countdown</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Counting down from </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">try</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">while</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="n">n</span>
+</span><span class='line'>            <span class="n">n</span><span class="o">=</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span>
+</span><span class='line'>    <span class="k">except</span> <span class="ne">GeneratorExit</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Only made it to </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>协程和yield表达式</h1>
+
+<h1>参考资料</h1>
+
+<ol>
+<li><a href="http://www.dabeaz.com/coroutines/Coroutines.pdf">http://www.dabeaz.com/coroutines/Coroutines.pdf</a></li>
+<li><a href="https://www.python.org/dev/peps/pep-0342/">https://www.python.org/dev/peps/pep-0342/</a></li>
+<li><a href="http://www.jeffknupp.com/blog/2013/04/07/improve-your-python-yield-and-generators-explained/">http://www.jeffknupp.com/blog/2013/04/07/improve-your-python-yield-and-generators-explained/</a></li>
+<li>python essential reference chapter 5</li>
+<li><a href="http://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do-in-python/231855#231855">http://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do-in-python/231855#231855</a></li>
+</ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Shared libraries简介]]></title>
+    <link href="http://baren.github.io/blog/2014/12/08/process-ipc/"/>
+    <updated>2014-12-08T19:55:01+08:00</updated>
+    <id>http://baren.github.io/blog/2014/12/08/process-ipc</id>
+    <content type="html"><![CDATA[<p>本篇主要说明进程间通信，也就是IPC（interProcess Communication）。UNIX系统IPC是各种进程通信方式的统称。这里主要讲PIPE和FIFO两种进程间通信的方式。</p>
+
+<h1>PIPE</h1>
+
+<p>PIPE是UNIX一开始就支持的进程间通信的方式，有以下限制：</p>
+
+<ul>
+<li>半双工的，通道的一端，要么写，要么读，不能支持读和写两个操作（虽然现代系统有的支持全双工，但是不可移植）</li>
+<li>管道是字节流，这意味着没有消息块或者消息边界的概念。可以读或者写任意大小的数据。</li>
+<li>使用PIPE进行进程通信的条件是“只能在具有公共祖先的进程之间使用”</li>
+<li>PIPE的容量是有限的。PIPE的实现实际上就是内核在内核空间开辟了一块内存，因此是有容量限制的。一旦空间满了，后续写入的就会被阻塞。</li>
+</ul>
+
+
+<h2>创建和使用管道</h2>
+
+<p>使用这个函数创建一个pipe。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;unistd.h&gt;</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pipe</span><span class="p">(</span><span class="kt">int</span> <span class="n">filedes</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这个函数会通过参数filedes返回两个文件描述符。一个filedes[0]用来读，一个filedes[1]用来写。</p>
+
+<p>因为是文件描述符，因此可以使用read()和write()系统调用来完成正常的I/O操作。</p>
+
+<p>为了实现进程间通信，需要在调用pipe函数之前，调用fork来创建子进程，图示：</p>
+
+<p><img src="http://baren.github.io/images/assets/pipe-1.png" title="linux" alt="alt text" /></p>
+
+<p>典型例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="n">filedes</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="n">pipe</span><span class="p">(</span><span class="n">filedes</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;pipe&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="k">switch</span> <span class="p">(</span><span class="n">fork</span><span class="p">())</span> <span class="p">{</span>
+</span><span class='line'><span class="k">case</span> <span class="o">-</span><span class="mi">1</span><span class="o">:</span>
+</span><span class='line'>    <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;fork&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="k">case</span> <span class="mi">0</span><span class="o">:</span>  <span class="cm">/* Child */</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">close</span><span class="p">(</span><span class="n">filedes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;close&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="cm">/* Child now reads from pipe */</span>
+</span><span class='line'>    <span class="k">break</span><span class="p">;</span>
+</span><span class='line'><span class="k">default</span><span class="o">:</span> <span class="cm">/* Parent */</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="n">close</span><span class="p">(</span><span class="n">filedes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">errExit</span><span class="p">(</span><span class="s">&quot;close&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="cm">/* Parent now writes to pipe */</span>
+</span><span class='line'><span class="k">break</span><span class="p">;</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>管道在不使用的时候需要关掉，这对正确使用管道来说是非常必要的。</p>
+
+<p>当管道的一端关闭后，下列两条规则起作用：</p>
+
+<ul>
+<li>当读一个写端已被关闭的管道时，在所有数据被读取后，read返回0，表示到达文件末尾。</li>
+<li>如果写一个读端已关闭的管道，则产生信号SIGPIPE，如果忽略或者捕捉改信号并从其处理程序返回，则write返回-1，errno设置为EPIPE。</li>
+</ul>
+
+
+<h2>与shell打交道的popen()函数</h2>
+
+<p>常见的操作是创建一个管道连接到另一个进程，然后读其输出或向其输入端发送数据，为此，标准IO库提供了两个函数popen和pclose</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;stdio.h&gt;</span>
+</span><span class='line'><span class="n">FIFE</span> <span class="o">*</span><span class="nf">popen</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">cmdstring</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">type</span><span class="p">);</span>
+</span><span class='line'><span class="kt">int</span> <span class="nf">pclose</span><span class="p">(</span><span class="n">FIFE</span> <span class="o">*</span><span class="n">fp</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>FIFO</h1>
+
+<p>FIFO被称为命名管道，PIPE只能是具有共同祖先的进程之间的通信。通过FIFO，不相关进程也可以通信。</p>
+
+<p>FIFO是一种文件类型，可以通过stat结构成员st_mode来指示是否是FIFO类型，可以用宏S_ISFIFO对此进行测试。</p>
+
+<p>创建一个FIFO：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &lt;sys/stat.h&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">int</span> <span class="nf">mkfifo</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pathname</span><span class="p">,</span> <span class="kt">mode_t</span> <span class="n">mode</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>参数mode与open函数的mode相同。</p>
+
+<p>一旦创建了FIFO文件，就可以用open打开，一般的文件I/O函数（close、write、read、unlink）都可用。</p>
+
+<p>当打开一个FIFO时，非阻塞标志（O_NONBLOCK）产生下列影响：</p>
+
+<ul>
+<li>如果没有指定O_NONBLOCK，只读open要阻塞到某个其它进程为写而打开此FIFO。类似，只写open要阻塞到某个其他进程为读而打开。</li>
+<li>如果指定了O_NONBLOCK，则只读open立即返回。但是如果没有进程已经为读而打开一个FIFO，则open将出错并返回-1，error是ENXIO。</li>
+</ul>
+
+
+<p>FIFO有两种用途：</p>
+
+<ul>
+<li>FIFO由shell命令使用，以便将数据从一条管道线传送到另一条，为此无需创建中间临时文件</li>
+<li>FIFO用于客户进程-服务器进程应用程序中。</li>
+</ul>
+
+
+<p>FIFO可以被用于复制串行管道命令之间的输出流，于是也就不需要写数据到中间磁盘文件。管道只能用于进程间的<em>线性连接</em>。因为FIFO具有名字，因此可以用于非线性连接。</p>
+
+<p>比如：</p>
+
+<pre><code>            |-------------&gt;prog3
+            |
+</code></pre>
+
+<p>输入文件&mdash;&ndash;> prog1
+                |
+                |&mdash;&mdash;&mdash;&mdash;->prog2</p>
+
+<p>实现这种过程，而不需要使用临时文件，可以使用FIFO以及tee命令（tee程序将其标准输入同时复制到其标准暑促以及其命令行中包含的文件名中）。</p>
+
+<p>mkfifo  fifo1
+prog3 &lt; fifo1 &amp;
+prog1 &lt; infile | tee fifo1 | prog2</p>
+
+<h1>XSI IPC</h1>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Shared libraries简介]]></title>
@@ -7502,780 +7893,6 @@ sprintf有潜在的错误，缓存区大小不是一个参数，因此，如果�
 <li>如果作用的是d、i、u、o、x和X类型转换符，精度字段指定将出现在结果中的最小数子个数。如果转换后的值的位数小于宽度，就在它签名插入零。如果值为零，精度也为零，则不输出数字。</li>
 <li>如果作用于e，E和f类型转换符，精度决定将要出现在小数点后的数字位数</li>
 <li>如果作用于s，精度指定将被转换的最多字符数。</li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[apue(文件和目录)]]></title>
-    <link href="http://baren.github.io/blog/2014/03/03/file-and-dir/"/>
-    <updated>2014-03-03T23:06:23+08:00</updated>
-    <id>http://baren.github.io/blog/2014/03/03/file-and-dir</id>
-    <content type="html"><![CDATA[<h1>stat系列函数</h1>
-
-<p>3个stat函数，位于sys/stat.h头文件中，其声明：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/stat.h&gt;
-</span><span class='line'>
-</span><span class='line'>int stat(const char *restrict path, struct stat *restrict buf);
-</span><span class='line'>int lstat(const char *restrict path, struct stat *restrict buf);
-</span><span class='line'>int fstat(int fildes, struct stat *buf);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>stat函数返回path指定的文件信息，fstat与stat一样，只是接收fd作为参数。
-lstat如果参数是符号链接，返回符号链接的信息，而不是返回符号链接引用的文件的信息。</p>
-
-<p>结构体struct stat成员类型是基本系统数据类型（定义了某些与实现相关的数据），其中字段的定义位于sys/types.h中。</p>
-
-<!-- more -->
-
-
-<p>一般struct stat的定义是：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>dev_t     st_dev     Device ID of device containing file. 
-</span><span class='line'>ino_t     st_ino     File serial number. 
-</span><span class='line'>mode_t    st_mode    文件类型和mode（权限） 
-</span><span class='line'>nlink_t   st_nlink   指向这个文件的链接数
-</span><span class='line'>uid_t     st_uid     文件的uid. 
-</span><span class='line'>gid_t     st_gid     文件的组id. 
-</span><span class='line'>[XSI][Option Start]
-</span><span class='line'>dev_t     st_rdev    Device ID (if file is character or block special). 
-</span><span class='line'>[Option End]
-</span><span class='line'>off_t     st_size    For regular files, the file size in bytes. 
-</span><span class='line'>                     For symbolic links, the length in bytes of the 
-</span><span class='line'>                     pathname contained in the symbolic link. 
-</span><span class='line'>[SHM][Option Start]
-</span><span class='line'>                     For a shared memory object, the length in bytes. 
-</span><span class='line'>[Option End]
-</span><span class='line'>[TYM][Option Start]
-</span><span class='line'>                     For a typed memory object, the length in bytes. 
-</span><span class='line'>[Option End]
-</span><span class='line'>                     For other file types, the use of this field is 
-</span><span class='line'>                     unspecified. 
-</span><span class='line'>time_t    st_atime   Time of last access. 
-</span><span class='line'>time_t    st_mtime   Time of last data modification. 
-</span><span class='line'>time_t    st_ctime   Time of last status change. 
-</span><span class='line'>[XSI][Option Start]
-</span><span class='line'>blksize_t st_blksize A file system-specific preferred I/O block size for 
-</span><span class='line'>                     this object. In some file system types, this may 
-</span><span class='line'>                     vary from file to file. 
-</span><span class='line'>blkcnt_t  st_blocks  Number of blocks allocated for this object. </span></code></pre></td></tr></table></div></figure>
-
-
-<h1>mode_t    st_mode字段</h1>
-
-<p>mode_t    st_mode成员包含：
- * 文件类型
- * 文件权限</p>
-
-<h2>st_mode判断文件类型</h2>
-
-<p>unix文件类型包括：</p>
-
-<ul>
-<li>普通文件、目录文件（stat.h中的宏S_ISREG()和S_ISDIR()判断）</li>
-<li>块特殊文件，提供对设备（磁盘）带缓冲的访问，每次以固定长度为单位访问（S_ISBLK()）</li>
-<li>字符特殊文件，提供对设备不带缓冲的访问，每次访问长度可变。系统中的所有设备，要么是块特殊文件，要么是字符特殊文件。S_ISCHR()</li>
-<li>FIFO，命名管道，用于进程间通信S_ISFIFO()</li>
-<li>符号链接，S_ISLINK()</li>
-</ul>
-
-
-<h2>文件权限信息</h2>
-
-<p>每个文件有9个权限位，分成三类：</p>
-
-<ul>
-<li>用户（读、写、执行）</li>
-<li>组（读、写、执行）</li>
-<li>其它（读、写、执行）</li>
-</ul>
-
-
-<p>chmod命令可以修改文件权限，其中u、g、o分别代表用户、组和其它。</p>
-
-<p>可以使用宏来判断是否有某种权限：
-* S_I(R|W|X)USR
-* S_I(R|W|X)GRP
-* S_I(R|W|X)OTH</p>
-
-<h1>进程相关ID</h1>
-
-<p>介绍进程相关ID，主要用于内核对进程进行权限验证使用。</p>
-
-<p>进程相关联ID有6个或者更多：</p>
-
-<ul>
-<li>实际用户ID和组ID
-
-<blockquote><p>标识究竟是谁，曲子登陆时口令文件的登陆项</p></blockquote></li>
-<li>有效用户ID和组ID
-
-<blockquote><p>内核使用这两个来进行权限验证；一般等于实际用户ID和实际组ID</p></blockquote></li>
-<li>保存的设置用户（组）ID
-
-<blockquote><p>执行一个程序时，保存了有效用户和组ID的副本，一般用在执行文件时，文件设置了set-user-id和set-group-id位时，保存有效用户ID和组ID
-方便进程在两个用户之间切换权限
-对于set-user-id和set-group-id位，stat结构体中的st_mode包含了这两位。
-如果设置了文件的set-uid和set-gid，则进程的有效用户ID设置为文件的用户ID（组类似）</p></blockquote></li>
-</ul>
-
-
-<p>对文件的“设置用户ID”和“设置组ID”，可以使用S_ISUID和S_ISGID进行测试</p>
-
-<h1>文件权限验证规则</h1>
-
-<h2>对文件进行权限测试</h2>
-
-<p>这几个文件权限，验证规则是：</p>
-
-<ul>
-<li>使用名字打开一个文件时，路径中的所有目录（包括隐含的当前目录），都应该具有执行权限（目录的执行权限位通常称为搜索位）
-
-<blockquote><p>目录读权限和执行权限是不一样的，读权限允许读取目录中的文件列表。当一个目录是访问路径中的组成部分时，具有执行权限可通过该目录找到文件。</p></blockquote></li>
-<li>文件读权限决定了我们可以打开文件进行读操作</li>
-<li>文件写权限决定了我们可以打开文件进行写操作</li>
-<li>如果open函数指定了O_TRUNC,必须具有写权限</li>
-<li>删除一个文件，需对文件所在目录具有写和执行权限，对删除的文件本身，则不需要</li>
-<li>6个exec函数中任何一个执行某个文件，都必须对文件有执行权限</li>
-</ul>
-
-
-<p>以上权限验证发生在每当进程打开、创建和删除一个文件时，内核就进行文件访问权限测试，这种验证涉及到</p>
-
-<ul>
-<li>文件所有者（st_uid, st_gid，属于文件性质）</li>
-<li>进程有效ID（有效用户和组ID，属于进程性质）</li>
-<li>进程附加组ID（如果支持，属于进程性质）</li>
-</ul>
-
-
-<h2>对进程进行权限测试</h2>
-
-<ul>
-<li>进程是超级用户（有效用户ID是0），允许访问</li>
-<li>进程有效ID等于文件所有者ID，则进行上面的文件权限验证（若<em>所有者</em>适当的权限位被设置，则允许；否则拒绝）</li>
-<li>进程有效组ID等于文件的组ID，则进行上面的文件权限验证（若<em>组</em>适当的权限位被设置，则允许；否则拒绝）</li>
-<li>若文件其它用户适当权限位被设置，则允许；否则拒绝</li>
-</ul>
-
-
-<p>以上按顺序进行验证。</p>
-
-<h1>以上，基本讲述了stat结构中的st_mode字段涉及到的知识。</h1>
-
-<h1>文件所有权相关</h1>
-
-<h2>新文件和目录所有权</h2>
-
-<p>在对进程进行权限验证时，用到了文件的用户ID和组ID，这里讲一下，创建一个新文件，赋予文件的用户ID和组ID是什么。
-创建文件夹和创建文件一样。</p>
-
-<ul>
-<li>新文件的用户ID设置为进程的有效用户ID</li>
-</ul>
-
-
-<p>对于组ID，可以选择下列之一作为组ID：</p>
-
-<ul>
-<li>新文件的组ID可以是进程的有效用户ID</li>
-<li>新文件的组ID可以是它所在的目录的组ID</li>
-</ul>
-
-
-<blockquote><p>对于FreeBSD 和Mac OS X，使用的是目录组ID作为新文件的组ID
-对于linux 2.4.22，新文件的组ID取决于它所在的目录的设置组ID是否设置，
-如果设置组ID设置了，则为组ID，如果没设置，则为进程的有效组ID。</p></blockquote>
-
-<h2>修改文件所有权</h2>
-
-<p>下面这几个函数修改文件的用户ID和组ID</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>int chown(const char *pathname, uid_t owner, gid_t group);
-</span><span class='line'>int fchown(int filedes, uid_t owner, gid_t group);
-</span><span class='line'>int lchown(const char * pathname, uid_t owner, gid_t group);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>access函数</h2>
-
-<p>操作文件时，默认是按照进程的有效用户ID和有效组ID进行权限验证。也可以对进程实际用户ID和实际组ID进行验证，使用access函数</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>int access(const char * pathname, int mode);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>其中，mode参数常量，取自unistd.h</p>
-
-<p>R_OK 测试读权限
-W_OK 测试写权限
-X_OK 测试执行权限
-F_OK 测试文件是否存在</p>
-
-<h1>文件权限位相关</h1>
-
-<h2>文件屏蔽字</h2>
-
-<p>创建文件时，文件默认的权限是多少，是由文件屏蔽字来确定的。</p>
-
-<p>文件屏蔽字是与文件模式一样的，只不多，屏蔽字的权限位为1的，创建文件时，文件的对应权限位为0（关闭对应权限）。</p>
-
-<p>可以使用umask函数设置进程的文件屏蔽字</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/stat.h&gt;
-</span><span class='line'>
-</span><span class='line'>mode_t umask(mode_t cmask);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>cmask是</p>
-
-<ul>
-<li>S_I(R|W|X)USR</li>
-<li>S_I(R|W|X)GRP</li>
-<li>S_I(R|W|X)OTH</li>
-</ul>
-
-
-<p>这九个常量的若干个按位“或”构成的。</p>
-
-<p>对于屏蔽字，有以下几点：</p>
-
-<ul>
-<li>进程创建一个文件或目录时，一定会使用屏蔽字</li>
-<li>对于任何屏蔽字中为1的位，文件相应的权限位一定会被关闭（即使在open、create函数中指定了响应权限位也会被关）</li>
-</ul>
-
-
-<p>同时，还需注意：</p>
-
-<ul>
-<li>unix系统一般不处理umask的值，在登陆是，有shell的启动文件设置一次，然后从不改变。</li>
-<li>但是当创建文件时，如果想确保文件的某种权限，必须在运行时修改umask的值。</li>
-<li>shell的umask命令可以查看和修改shell的umask的值</li>
-<li>子进程修改屏蔽字的值，不影响父进程的屏蔽字的值</li>
-</ul>
-
-
-<p>shell的umask命令的值，三位八进制值，从左到右，分别代表用户、组和其它权限位。4表示读，2表示写，1表示执行。
-三个权限经过“或”操作，最大值是7，表示读写执行权限都有。</p>
-
-<p>最常用的是002、022和027等。</p>
-
-<p>umask命令可以使用-S选项打印符号形式的屏蔽字。</p>
-
-<h2>修改文件权限</h2>
-
-<p>除了创建文件时，根据屏蔽字和指定的权限位为文件赋予特定权限外，还可以使用修改权限函数动态修改文件权限：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#include &lt;sys/stat.h&gt;
-</span><span class='line'>
-</span><span class='line'>int chmod(const char *pathname, mode_t mode);
-</span><span class='line'>int fchmod(int fileds, mode_t mode);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>chmod中的mode参数取值于<code>sys/stat.h</code>中，除了上面那九种权限，还有两个设置ID常量（S_ISUID和S_ISGID）,保存正文常量（S_ISVTX）
-以及三个组合常量（S_IRWX(U|G|O)），一共15种：</p>
-
-<ul>
-<li>S_I(R|W|X)(USR|GRP|OTH)
-——九种</li>
-<li>S_IRWX(U|G|O)  ——三种</li>
-<li>S_ISUID，S_ISGID，S_ISVTX ——三种</li>
-</ul>
-
-
-<h2>粘住位</h2>
-
-<p>如果一个执行文件设置了粘住位(sticky bit)，则该程序在第一次执行并结束时，其程序正文部分（机器指令部分）的一个副本仍被保存在交换区。</p>
-
-<p>这样的好处是：</p>
-
-<ul>
-<li>该程序下次执行时，可快速装入内存。</li>
-</ul>
-
-
-<p>这么做的原因是：
-* 交换区占用连续磁盘空间，可以认为是连续文件（而一般文件是分散放在磁盘各处的）
-* 因此程序的正文也是连续存放的</p>
-
-<p>粘住位也被称为<em>保存正文位（saved-text bit）</em>，因此也就有了S_ISVTX常量。</p>
-
-<p>随着现代系统进化，这个粘住位的功能也被扩展了使用范围。</p>
-
-<p>Single UNIX Specification允许设置目录的粘住位，如果对目录设置了粘住位，则只有对该目录具有写权限的用户，在满足下列条件之一时，才能
-删除或更名该目录下的文件：</p>
-
-<ul>
-<li>拥有此文件</li>
-<li>拥有此目录</li>
-<li>超级用户</li>
-</ul>
-
-
-<p>/tmp目录是设置粘住位的典型候选。</p>
-
-<h1>文件长度</h1>
-
-<p>结构体stat中，st_size表示的是文件长度，单位是字节，这个字段只对普通文件、目录文件和符号链接有意义。</p>
-
-<p>对于文件大小：</p>
-
-<ul>
-<li>对于目录，文件长度通常是一个数（16或512）的倍数</li>
-<li>对于符号链接，文件长度是文件名中的实际字节数，比如lib
-&ndash;> usr/lib,lib的长度是7</li>
-</ul>
-
-
-<p>除了st_size字段外，还有st_blksize和st_blocks两个字段。其中：</p>
-
-<ul>
-<li>st_blksize：是读写这个文件的最佳的块大小，用这个块大小来读文件时，所用的时间最小，标准I/O也尝试一次读写st_blksize个字节。</li>
-<li>st_blocks: 所分配的实际的512（系统依赖）的数量</li>
-</ul>
-
-
-<h2>文件空洞</h2>
-
-<p>普通文件可以包含空洞，造成文件空洞的原因是：</p>
-
-<ul>
-<li>设置文件偏移量超过文件尾端</li>
-<li>并写了数据</li>
-</ul>
-
-
-<p>这两个会导致文件空洞。</p>
-
-<p>如果文件有空洞存在，则ll和du显示的文件大小是不一样的。</p>
-
-<h1>文件截短</h1>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>int truncate(const char *pathname, off_t length);
-</span><span class='line'>int ftruncate(int filedes, off_t length);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>link,unlink,remove和rename函数</h1>
-
-<p>任何一个文件可以有多个目录项指向其i节点，创建一个指向现有文件的链接的方法：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>int link(const char *existingpath, const char *newpath);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这是创建一个硬链接的方法。</p>
-
-<ul>
-<li>link这个函数包括两个步骤：1），创建新目录项；2）增加链接计数，这两个操作原子操作</li>
-<li>现在大多数的实现都不支持跨文件系统创建硬链接，也即这两个目录项应在同一个文件系统内</li>
-<li>大部分实现也不支持创建目录的硬链接</li>
-</ul>
-
-
-<p>为了删除一个现有的目录项，使用unlink函数：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>int unlink(const char *pathname); // 如果pathname是一个符号链接，则取消符号链接</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这个<code>unlink</code>函数删除此目录项，并将pathname所引用的文件的链接数减1.</p>
-
-<p>当链接计数达到0，该文件内容才可被删除，若有进程打开了文件，即使其计数为0，内容也不能删除，进程退出后，才可删除。</p>
-
-<p>关闭一个文件时，内核：</p>
-
-<ul>
-<li>先检查打开文件的进程数</li>
-<li>若进程为0，再检查链接数，若为0，则删除</li>
-</ul>
-
-
-<h2>解释i节点、目录项等</h2>
-
-<p>i-node节点包含了大部分文件信息，比如类型、权限什么的，单并没有包含文件名，因此</p>
-
-<p>一个普通文件，具有 ：一个i-node项，一个目录项（包含文件名和i-node编号）和n个数据块。
-如图：</p>
-
-<p><img src="http://baren.github.io/images/assets/file.png" title="file system file detail" alt="alt text" /></p>
-
-<p>一个目录，则包含一个数据块，其数据库实际上是一个目录块，目录块中包含目录下的文件的目录项信息（目录项包括i节点和文件名）
-如图：
-<img src="http://baren.github.io/images/assets/dir.png" title="file system dir detail" alt="alt text" /></p>
-
-<h1>符号链接</h1>
-
-<p>符号链接是指向一个文件的间接指针，主要是避开硬链接的一些限制：</p>
-
-<ul>
-<li>硬链接要求链接和文件位于一个文件系统中</li>
-<li>只有超级用户才能创建指向目录的硬链接</li>
-</ul>
-
-
-<p>符号链接则无此限制。</p>
-
-<blockquote><p>注意：
-当使用以名字引用文件的函数时，应当了解函数是否处理符号链接，也就是是否会自动跟随符号链接到达它所指向的文件。
-若open函数参数是一个符号链接，open会跟随符号链接到达指向的文件，若符号链接指向的文件不存在，则返回错误。</p></blockquote>
-
-<p>创建一个符号链接：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'># include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>int symlink(const char *actualpath, const char *sympath);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>open函数打开文件时，会跟随符号链接，若想打开符号链接本身，则使用：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ssize_t readlink(const char *restrict pathname, char *restrict buf, size_t bufsize);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>解除一个符号链接，可以使用unlink函数。因为unlink不跟随符号链接。</p>
-
-<h1>文件时间</h1>
-
-<p>与文件相关的三个时间值：</p>
-
-<ul>
-<li>st_atime. 文件数据的最后访问时间 比如read函数
-， ls命令用-u选项查看</li>
-<li>st_mtime。文件数据的最后修改时间 比如write函数， ls的默认选项就是查看这个时间</li>
-<li>st_ctime。文件i节点状态的最后更改时间 比如chmod，chown函数， ls的-c选项查看这个时间</li>
-</ul>
-
-
-<h1>utime函数</h1>
-
-<p>对文件访问和修改时间，可以用utime函数进行修改</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>int utime(const char *pathname, const struct utimebuf * times);
-</span><span class='line'>
-</span><span class='line'>struct utimebuf{
-</span><span class='line'>time_t actime; /*访问时间*/
-</span><span class='line'>time_t modtime; /*修改时间*/
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<blockquote><p>注意：
-utime并不修改st_ctime时间，当调用utime时，会自动更新</p></blockquote>
-
-<h1>目录相关</h1>
-
-<h2>mkdir和rmdir函数</h2>
-
-<p>mkdir创建目录，rmdir删除目录</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>int mkdir(const char *pathname, mode_t mode);
-</span><span class='line'>int rmdir(const char *pathname);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>对于mkdir，常见的错误是忘记设置其执行权限位，以便能访问目录中的文件名。
-rmdir函数只删除空目录，空目录只包含.和..两个目录</p>
-
-<blockquote><p>注意：
-创建目录时，目录的用户ID和组ID与文件创建时的规则一样。</p></blockquote>
-
-<h2>读目录</h2>
-
-<ul>
-<li>对目录具有访问权限的用户都可读目录</li>
-<li>但只有内核才能写目录。一个目录的写权限位和执行权限位决定了在该目录中能否创建新文件以及删除文件，它们并不代表能否写目录本身</li>
-</ul>
-
-
-<p>虽然目录的实际格式依赖于具体文件系统的实现。但posix.1定义了读目录的相关接口，一般系统实现都组织read函数读目录内容</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;dirent.h&gt;
-</span><span class='line'>
-</span><span class='line'>DIR *opendir(const char *pathname);
-</span><span class='line'>
-</span><span class='line'>struct dirent *readdir(DIR * dp);
-</span><span class='line'>int clostdir(DIR *dp)</span></code></pre></td></tr></table></div></figure>
-
-
-<p>dirent.h中定义的dirent结构与实现相关，但至少会包含下列两个成员：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>struct dirent{
-</span><span class='line'>ino_t d_ino;  /*i-node数*/
-</span><span class='line'>char d_name[NAME_MAX+1];
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>其中，NAME_MAX依赖于具体实现，并没有规定一个常量。</p>
-
-<p>opendir函数返回的指向DIR结构的指针，由另外其它函数使用。
-opendir执行初始化操作，使第一个readdir读目录中的第一个目录项，目录项的顺序与实现有关，通常不按照字母顺序排列。</p>
-
-<h2>工作目录</h2>
-
-<p>每个进程都有一个当前工作目录，此目录是搜索所有相对路径名的起点。</p>
-
-<p>进程可以通过chdir和fchdir函数更改当前工作目录</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>int chdir(const char *pathname);
-</span><span class='line'>int fchdir(int fd);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>当前工作目录是进程的一个属性，所以调用chdir只影响当前进程本身，不影响其它进程。</p>
-
-<p>内核保持有当前工作目录的信息，按理应该能取其当前值，但是，内核为进程保存了指向该目录v节点的指针等目录信息，并不保存完整的路径名。</p>
-
-<p>有个函数提供了获取工作目录的功能：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>char *getcwd(char *buf, size_t size);</span></code></pre></td></tr></table></div></figure>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[linxu 文件系统笔记]]></title>
-    <link href="http://baren.github.io/blog/2014/02/10/linux-file-system/"/>
-    <updated>2014-02-10T19:33:17+08:00</updated>
-    <id>http://baren.github.io/blog/2014/02/10/linux-file-system</id>
-    <content type="html"><![CDATA[<h1>设备特殊文件</h1>
-
-<p>设备可以划分成两种类型：</p>
-
-<ul>
-<li>字符设备。一个字符一个字符的处理数据，终端和键盘就是例子。</li>
-<li>块设备。一次处理一块数据。块大小依赖于设备类型。一般都是512字节的倍数。磁盘就是这种设备。</li>
-</ul>
-
-
-<!-- more -->
-
-
-<h2>设备ID</h2>
-
-<p>每一个设备文件都有一个主ID号和副ID号。主ID号标记设备的一般类型，内核使用这个主ID来寻找这种类型设备对应的驱动。副ID号唯一的标记这个设备类型下得特殊设备了。ls -l可以显示主ID和副ID</p>
-
-<h1>磁盘和分区</h1>
-
-<ul>
-<li>一个磁盘可以分成多个分区。</li>
-<li>信息都放在磁盘的磁道上，磁道被划分成扇区，每一个扇区都由一系列的物理块组成。物理块的大小一般时512或者其倍数个字节，代表了最小的信息单元。</li>
-</ul>
-
-
-<h2>分区</h2>
-
-<p>一个分区可以包含以下信息：</p>
-
-<ul>
-<li>文件系统，也即每个分区可以包含一个文件系统</li>
-<li>数据区域</li>
-<li>swap区域</li>
-</ul>
-
-
-<h1>文件系统</h1>
-
-<p>linux支持广泛的文件系统，包括
-* 传统的ext2文件系统
-* 原生的unix文件系统，包括 Minix, System V和 BSD文件系统
-* 微软的FAT, FAT32, 和 NTFS
-* apple的HFS
-* 网络文件系统，包括sun的NFS等
-* 一系列日志文件系统，包括xt3, ext4, Reiserfs, JFS, XFS, 和 Btrfs</p>
-
-<p>以ext2文件系统为例，介绍文件系统，ext2文件系统源代码很小，大约5000行c程序（<a href="http://e2fsprogs.sourceforge.net/ext2.html.%EF%BC%89">http://e2fsprogs.sourceforge.net/ext2.html.%EF%BC%89</a></p>
-
-<h2>文件系统结构</h2>
-
-<p>磁盘分成多个逻辑分区，每一个分区可拥有一个文件系统，比如：
-<img src="http://baren.github.io/images/assets/Figure14-1.png" title="layout of disk partitions and a file system" alt="alt text" /></p>
-
-<ul>
-<li>boot块，总是文件系统的第一个块，文件系统不会使用这个块，boot块是用来重启操作系统的。虽然每个分区的文件系统都有一个boot块，但只有一个会被使用。</li>
-<li><p>superblock，紧随boot块后的一个单一块，包含如下信息</p>
-
-<blockquote><ul>
-<li>i-nod表的大小</li>
-<li>此文件系统的逻辑块大小</li>
-<li>文件系统的大小</li>
-</ul>
-</blockquote></li>
-<li><p>inode表。文件系统的每一个文件或者目录都在inode表中对应一个唯一的表项。这个表项记录了文件的各种信息。</p></li>
-<li>数据块，磁盘的最主要的文件数据存储区域。</li>
-</ul>
-
-
-<h2>i-node</h2>
-
-<p>对于所有的文件系统内的文件，文件系统的i-node表都有一个唯一的i-node表项与之对应。i-node使用i-node在表中的顺序号来引用（数组实现？）。
-<em>i-node number</em>是ls -li命令的第一个字段.</p>
-
-<p>i-node包含的信息有：</p>
-
-<ul>
-<li>文件类型，比如目录、普通文件、符号链接等</li>
-<li>拥有者</li>
-<li>所属组</li>
-<li>访问权限</li>
-<li>三个文件相关时间（最后读时间、最后修改内容时间和最后修改i-node时间）</li>
-<li>指向这个文件的硬链接数</li>
-<li>文件大小</li>
-<li>分配的块数</li>
-<li>指向数据块的指针</li>
-</ul>
-
-
-<h2>ext2的i-node的数据块指针</h2>
-
-<p>为了满足一下需求：</p>
-
-<ul>
-<li>i-node结构是固定大小的，同时又文件大小是任意的（因此，i-node的数据指针是任意的）</li>
-<li>允许文件的数据库不是连续存储的，同时又允许文件数据任意的通过lseek()访问</li>
-</ul>
-
-
-<p>基于以上几点，ext2设计了i-node的指针结构:</p>
-
-<p><img src="http://baren.github.io/images/assets/Figure14-2.png" title="Structure of file blocks for a file in an ext2 file system" alt="alt text" /></p>
-
-<p>每一个i-node包含十五个pointer。前12个指针指向文件数据块的前十二个块。下一个指针指向一个指针块，指针块中指针的个数依赖块的大小。
-每个指针需要4个字节，如果块大小是1024字节，则存放256个指针，如果是4096字节，则存放1024个指针。
-为了能容纳更大数据，第13个指针，是一个双重间接指针（double indirect pointer），它指向一个指针块，块中的指针又指向一个指针块。
-如果需要真正大的文件，还可以使用最后一个triple-indirect pointer。</p>
-
-<p>这样设计的一个好处是，允许文件存在黑洞。对于具有hole的文件，他可以仅仅把指针赋值为0，而不需要为其分配数据位null的块。</p>
-
-<h1>虚拟文件系统（vfs）</h1>
-
-<p>linux支持各种文件系统，文件系统实现各不一样，但是对文件的操作，不会涉及到具体的文件系统实现，而是可以跨文件系统的。这是因为linux定义了一个抽象层，各种文件系统需要实现的。一般称为Virtual File System（vfs）。</p>
-
-<p>vfs是linux的内核特征，定义一个抽象的文件操作层，也就是一系列操作文件的接口。一般包括：open(), read(), write(), lseek(), close(), truncate(), stat(), mount(), umount(), mmap(), mkdir(), link(), unlink(), symlink(), and rename().</p>
-
-<p>如图所示：</p>
-
-<p><img src="http://baren.github.io/images/assets/Figure14-3.png" title="he virtual file system" alt="alt text" /></p>
-
-<h1>日志文件系统（ournaling File Systems）</h1>
-
-<p>ext2文件系统是典型的传统unix文件系统的例子，也遭受经典的这种文件系统的限制：当down机后，在重启后需要进行一致性检查，来确保文件系统的完整性。这是因为，当系统崩溃时，文件系统的更新有可能只完成了部分操作。文件系统的元数据，包括目录下，i-node信息和数据库指针，可能会处于不一致状态。
-如果不进行修复，文件系统会进一步被破坏。</p>
-
-<p>但是一致性检查需要扫描所有文件，如果文件系统很大，花费时间也会大。</p>
-
-<p>日志文件系统消除了当系统挂了后的漫长的一致性检查。日志文件系统在进行实际的操作时，先把更新的元数据记录到一个日志文件的磁盘文件中。
-写入元数据到日志文件是事务性写入相关的数据。一旦系统崩溃，在重启后，只需要快速的重做未完成的更新，是系统进入一个一致性状态。</p>
-
-<p>这有个缺点是延长了更新文件的时间。</p>
-
-<p>linux的日志文件系统包括：</p>
-
-<ul>
-<li>Reiserfs是第一个整合到linux内核的日志文件系统（2.4.1）。</li>
-<li>ext3是在ext2上增加了日志功能的系统。</li>
-<li>JFS系统是IBM开发的，在2.4.20上整合到内核</li>
-<li>ext4，在2.6.19加入到内核</li>
-<li>Btrfs，通常发音是butter FS。提供了一些现代的系统功能。</li>
 </ul>
 
 ]]></content>

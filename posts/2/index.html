@@ -9,7 +9,10 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="线程概念 主要是POSIX线程，也就是pthread。 正常情况下，unix的进程包括一个单一的线程执行，从main开始。有了线程后，一个进程可以有多个线程同时执行。 判断系统是否支持pthread，可以使用宏POSIX_THREADS进行测试， &hellip;">
+  <meta name="description" content="代码高亮语法 { % codeblock [lang:language] [title] [url] [link text] % }
+code snippet
+{ % endcodeblock % } 例子： Javascript Array SyntaxMDN Documentation 1
+2 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -64,6 +67,152 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/06/octopress-syntax/">Octopress Syntax</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-06T10:53:04+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>代码高亮语法</h1>
+
+<blockquote><p>{ % codeblock [lang:language] [title] [url] [link text] % }
+code snippet
+{ % endcodeblock % }</p></blockquote>
+
+<p>例子：</p>
+
+<figure class='code'><figcaption><span>Javascript Array Syntax</span><a href='http://j.mp/pPUUmW'>MDN Documentation </a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">arr1</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">arrayLength</span><span class="p">);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">arr2</span> <span class="o">=</span> <span class="k">new</span> <span class="nb">Array</span><span class="p">(</span><span class="nx">element0</span><span class="p">,</span> <span class="nx">element1</span><span class="p">,</span> <span class="p">...,</span> <span class="nx">elementN</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>图片语法</h1>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{ % img [class names] /path/to/image [width] [height] [title text [alt text]] %}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{ % img /images/assets/linux.png %}
+</span><span class='line'>{ % img left /images/assets/linux.png Place Kitten #2 %}
+</span><span class='line'>{ % img right /images/assets/linux.png 150 250 Place Kitten #3 %}
+</span><span class='line'>{ % img right /images/assets/linux.png 150 250 'Place Kitten #4' 'An image of a very cute kitten' %}</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>多个分类</h1>
+
+<p>例子</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>categories:
+</span><span class='line'>- CSS3
+</span><span class='line'>- Sass
+</span><span class='line'>- Media Queries
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>显示部分内容</h1>
+
+<p>插入</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;!-- more --&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<p>会让文章下面的部分不显示，并会提示一个按钮，来查看未显示的内容。</p>
+
+<h1>命令</h1>
+
+<p>生成内容
+rake generate</p>
+
+<p>预览
+rake preview</p>
+
+<p>提交：
+git add .
+git commit -m &ldquo;new&rdquo;
+git push origin source</p>
+
+<p>发布：
+rake deploy</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/06/linux-performance-observability-tools/">Linux Performance Observability Tools</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-06T10:42:48+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><img src="/images/assets/linux.png" title="linux" alt="alt text" /></p>
+
+<p>链接：<a href="http://www.brendangregg.com/linuxperf.html">http://www.brendangregg.com/linuxperf.html</a></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -575,116 +724,6 @@ chown改变该终端的所有权，使登录用户成为它的所有者
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/03/file-and-dir/">Apue(文件和目录)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-03T23:06:23+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>stat系列函数</h1>
-
-<p>3个stat函数，位于sys/stat.h头文件中，其声明：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/stat.h&gt;
-</span><span class='line'>
-</span><span class='line'>int stat(const char *restrict path, struct stat *restrict buf);
-</span><span class='line'>int lstat(const char *restrict path, struct stat *restrict buf);
-</span><span class='line'>int fstat(int fildes, struct stat *buf);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>stat函数返回path指定的文件信息，fstat与stat一样，只是接收fd作为参数。
-lstat如果参数是符号链接，返回符号链接的信息，而不是返回符号链接引用的文件的信息。</p>
-
-<p>结构体struct stat成员类型是基本系统数据类型（定义了某些与实现相关的数据），其中字段的定义位于sys/types.h中。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/03/03/file-and-dir/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/02/10/linux-file-system/">Linxu 文件系统笔记</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-02-10T19:33:17+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>设备特殊文件</h1>
-
-<p>设备可以划分成两种类型：</p>
-
-<ul>
-<li>字符设备。一个字符一个字符的处理数据，终端和键盘就是例子。</li>
-<li>块设备。一次处理一块数据。块大小依赖于设备类型。一般都是512字节的倍数。磁盘就是这种设备。</li>
-</ul>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/02/10/linux-file-system/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="3">&larr; Older</a>
@@ -700,6 +739,14 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/python-yield/">yield（generator和coroutine）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/08/process-ipc/">Shared libraries简介</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2014/11/19/shared-libraries/">Shared libraries简介</a>
@@ -725,14 +772,6 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
         <a href="/blog/2014/09/14/per4-checpter6-decorator/">python decorator 深入理解</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">python 作用域规则</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a>
-      </li>
-    
   </ul>
 </section>
 
@@ -746,7 +785,7 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2014 - enwu -
+  Copyright &copy; 2015 - enwu -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
   <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>

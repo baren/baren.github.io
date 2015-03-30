@@ -4,7 +4,7 @@
   <title><![CDATA[Category: linux | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2014-11-22T11:25:24+08:00</updated>
+  <updated>2015-03-30T20:49:23+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -12,6 +12,136 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Shared libraries简介]]></title>
+    <link href="http://baren.github.io/blog/2014/12/08/process-ipc/"/>
+    <updated>2014-12-08T19:55:01+08:00</updated>
+    <id>http://baren.github.io/blog/2014/12/08/process-ipc</id>
+    <content type="html"><![CDATA[<p>本篇主要说明进程间通信，也就是IPC（interProcess Communication）。UNIX系统IPC是各种进程通信方式的统称。这里主要讲PIPE和FIFO两种进程间通信的方式。</p>
+
+<h1>PIPE</h1>
+
+<p>PIPE是UNIX一开始就支持的进程间通信的方式，有以下限制：</p>
+
+<ul>
+<li>半双工的，通道的一端，要么写，要么读，不能支持读和写两个操作（虽然现代系统有的支持全双工，但是不可移植）</li>
+<li>管道是字节流，这意味着没有消息块或者消息边界的概念。可以读或者写任意大小的数据。</li>
+<li>使用PIPE进行进程通信的条件是“只能在具有公共祖先的进程之间使用”</li>
+<li>PIPE的容量是有限的。PIPE的实现实际上就是内核在内核空间开辟了一块内存，因此是有容量限制的。一旦空间满了，后续写入的就会被阻塞。</li>
+</ul>
+
+
+<h2>创建和使用管道</h2>
+
+<p>使用这个函数创建一个pipe。</p>
+
+<pre><code class="c">#include &lt;unistd.h&gt;
+int pipe(int filedes[2]);
+</code></pre>
+
+<p>这个函数会通过参数filedes返回两个文件描述符。一个filedes[0]用来读，一个filedes[1]用来写。</p>
+
+<p>因为是文件描述符，因此可以使用read()和write()系统调用来完成正常的I/O操作。</p>
+
+<p>为了实现进程间通信，需要在调用pipe函数之前，调用fork来创建子进程，图示：</p>
+
+<p><img src="/images/assets/pipe-1.png" title="linux" alt="alt text" /></p>
+
+<p>典型例子：</p>
+
+<pre><code class="c">int filedes[2];
+if (pipe(filedes) == -1)
+    errExit("pipe");
+switch (fork()) {
+case -1:
+    errExit("fork");
+case 0:  /* Child */
+    if (close(filedes[1]) == -1)
+        errExit("close");
+    /* Child now reads from pipe */
+    break;
+default: /* Parent */
+    if (close(filedes[0]) == -1)
+        errExit("close");
+    /* Parent now writes to pipe */
+break; }
+</code></pre>
+
+<p>管道在不使用的时候需要关掉，这对正确使用管道来说是非常必要的。</p>
+
+<p>当管道的一端关闭后，下列两条规则起作用：</p>
+
+<ul>
+<li>当读一个写端已被关闭的管道时，在所有数据被读取后，read返回0，表示到达文件末尾。</li>
+<li>如果写一个读端已关闭的管道，则产生信号SIGPIPE，如果忽略或者捕捉改信号并从其处理程序返回，则write返回-1，errno设置为EPIPE。</li>
+</ul>
+
+
+<h2>与shell打交道的popen()函数</h2>
+
+<p>常见的操作是创建一个管道连接到另一个进程，然后读其输出或向其输入端发送数据，为此，标准IO库提供了两个函数popen和pclose</p>
+
+<pre><code class="c">
+#include &lt;stdio.h&gt;
+FIFE *popen(const char *cmdstring, const char *type);
+int pclose(FIFE *fp);
+</code></pre>
+
+<h1>FIFO</h1>
+
+<p>FIFO被称为命名管道，PIPE只能是具有共同祖先的进程之间的通信。通过FIFO，不相关进程也可以通信。</p>
+
+<p>FIFO是一种文件类型，可以通过stat结构成员st_mode来指示是否是FIFO类型，可以用宏S_ISFIFO对此进行测试。</p>
+
+<p>创建一个FIFO：</p>
+
+<pre><code class="c">#include &lt;sys/stat.h&gt;
+
+int mkfifo(const char *pathname, mode_t mode);
+</code></pre>
+
+<p>参数mode与open函数的mode相同。</p>
+
+<p>一旦创建了FIFO文件，就可以用open打开，一般的文件I/O函数（close、write、read、unlink）都可用。</p>
+
+<p>当打开一个FIFO时，非阻塞标志（O_NONBLOCK）产生下列影响：</p>
+
+<ul>
+<li>如果没有指定O_NONBLOCK，只读open要阻塞到某个其它进程为写而打开此FIFO。类似，只写open要阻塞到某个其他进程为读而打开。</li>
+<li>如果指定了O_NONBLOCK，则只读open立即返回。但是如果没有进程已经为读而打开一个FIFO，则open将出错并返回-1，error是ENXIO。</li>
+</ul>
+
+
+<p>FIFO有两种用途：</p>
+
+<ul>
+<li>FIFO由shell命令使用，以便将数据从一条管道线传送到另一条，为此无需创建中间临时文件</li>
+<li>FIFO用于客户进程-服务器进程应用程序中。</li>
+</ul>
+
+
+<p>FIFO可以被用于复制串行管道命令之间的输出流，于是也就不需要写数据到中间磁盘文件。管道只能用于进程间的<em>线性连接</em>。因为FIFO具有名字，因此可以用于非线性连接。</p>
+
+<p>比如：</p>
+
+<pre><code>            |-------------&gt;prog3
+            |
+</code></pre>
+
+<p>输入文件&mdash;&ndash;> prog1
+                |
+                |&mdash;&mdash;&mdash;&mdash;->prog2</p>
+
+<p>实现这种过程，而不需要使用临时文件，可以使用FIFO以及tee命令（tee程序将其标准输入同时复制到其标准暑促以及其命令行中包含的文件名中）。</p>
+
+<p>mkfifo  fifo1
+prog3 &lt; fifo1 &amp;
+prog1 &lt; infile | tee fifo1 | prog2</p>
+
+<h1>XSI IPC</h1>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Shared libraries简介]]></title>
@@ -978,339 +1108,6 @@ main(int argc, char *argv[])
 
 <blockquote><p>注意：
 注意上面例子对pthread_cleanup_push()函数的的典型使用</p></blockquote>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[pthread control]]></title>
-    <link href="http://baren.github.io/blog/2014/09/17/pthread-control/"/>
-    <updated>2014-09-17T21:19:03+08:00</updated>
-    <id>http://baren.github.io/blog/2014/09/17/pthread-control</id>
-    <content type="html"><![CDATA[<h1>线程属性</h1>
-
-<p>在使用pthread_create函数：</p>
-
-<pre><code class="c">int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start)(void *), void *arg);
-</code></pre>
-
-<p>创建线程时，第三个参数attr是线程属性。可以使用pthread_attr_t结构来修改线程默认属性。</p>
-
-<p>pthread_attr_t变量需要初始化，需要使用pthread_attr_init函数进行初始化。调用初始化函数后，pthread_attr_t结构所包含的内容就是操作系统实现支持的线程所有属性的默认值。</p>
-
-<!-- more -->
-
-
-<p>pthread_attr_t属性的初始化和销毁接口：</p>
-
-<pre><code class="c">
-#include &lt;pthread.h&gt;
-int pthread_attr_init(ptread_attr_t *attr);
-int pthread_attr_destory(pthread_attr_t *attr);
-</code></pre>
-
-<p>POSIX.1支持的线程属性包括：</p>
-
-<ul>
-<li>线程的分离状态属性</li>
-<li>线程栈末尾的警戒缓冲区大小</li>
-<li>线程栈的最低地址</li>
-<li>线程栈的大小</li>
-</ul>
-
-
-<p>如果创建的线程不需要知道线程的终止状态，可以在创建的时候，以分离状态启动。通过设置pthread_attr_t的值为分离状态。设置pthread_attr_t的函数是：</p>
-
-<pre><code class="c">#include &lt;pthread.h&gt;
-int pthread_attr_getdetachstate(pthread_attr_t *attr, int *detachstate);
-int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
-</code></pre>
-
-<p>设置分离状态的属性值是：PTHREAD_CREATE_DETACHED</p>
-
-<h1>同步属性</h1>
-
-<p>互斥量、读写锁和条件变量的属性</p>
-
-<h2>互斥量属性</h2>
-
-<p>主要讲互斥量属性的类型属性。类型属性有以下几种：</p>
-
-<ul>
-<li>PTHREAD_MUTEX_NORMAL——不检查死锁错误，如果一个线程试图去lock一个他已经锁住的互斥量，则发生死锁。</li>
-<li>PTHREAD_MUTEX_ERRORCHECK——提供错误检查</li>
-<li>PTHREAD_MUTEX_RECURSIVE——允许同一个线程多同一个互斥量多次加锁。会维持一个加锁计数量。</li>
-</ul>
-
-
-<p>对互斥量，属性初始化和销毁函数是：</p>
-
-<pre><code class="c">#include &lt;pthread.h&gt;
-int pthread_mutex_init(pthread_mutex_t *mutex, const pthread_mutexattr_t *attr);
-
-int pthread_mutex_destroy(pthread_mutex_t *mutex);
-</code></pre>
-
-<p>可以通过下面函数设置互斥量属性：</p>
-
-<pre><code class="c">int pthread_mutexattr_gettype(pthread_mutexattr_t *attr, int *type);
-int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
-</code></pre>
-
-<h2>读写锁属性</h2>
-
-<p>支持进程共享属性</p>
-
-<h2>条件变量属性</h2>
-
-<p>支持进程共享属性</p>
-
-<h1>重入</h1>
-
-<p>在信号处理时，可重入的函数是指函数没有访问静态数据结构，或者没有调用malloc和free等。在线程处理时，函数同样也有重用的概念。</p>
-
-<p>在多线程环境下，一个函数是可重入的，意思是：一个函数在同一时刻可以被多个线程安全调用。</p>
-
-<p>注意与信号的区别
-* 一个函数对多线程来说是可重入的，意思是这个函数是线程安全的。
-* 但并不意味着对信号处理程序来说该函数是可重入的（比如标准io函数，是线程安全的，会对流加锁保证，但是对信号处理是不可重入的，因为会修改全局数据结构）。</p>
-
-<p>有一个列表，列出了posix.1中不能保证线程安全的函数：</p>
-
-<p><img src="/images/assets/pthread-1.png" title="linux" alt="alt text" /></p>
-
-<p>如果操作系统实现线程安全这一特性时，会同时提供一个对应的线程安全版本。</p>
-
-<p>比如asctime，对应的就是asctime_r，后缀是_r表示可重入。</p>
-
-<p>posix.1还提供了以线程按方式管理FILE对象的方法。</p>
-
-<p>标准IO流的实现，会对流加锁解锁操作，如果频繁调用getc函数，会有性能下降，因为会有频繁的加锁解锁。</p>
-
-<p>为了解决这个问题，posix1.c引入非可重入版本的流函数：</p>
-
-<pre><code class="c">
-#include &lt;stdio.h&gt;
-int getchar_unlocked(void); 
-int getc_unlocked(FILE *fp);
-
-putchar_unlocked(int c);
-int putc_unlocked(int c, FILE *fp);
-</code></pre>
-
-<p>同时提供了线程安全的方式管理FILE对象的方法：</p>
-
-<pre><code class="c">
-#include &lt;stdio.h&gt;
-int ftrylockfile(FILE *fp);
-void flockfile(FILE *fp); 
-void funlockfile(FILE *fp);
-</code></pre>
-
-<p>使用非线程安全的流函数版本时，需要用flockfile和funlockfile包围，否则会出现不可预测的问题（因为是非线程安全的）。</p>
-
-<p>好处：</p>
-
-<ul>
-<li>一旦对FILE对象进行加锁，就可以在释放锁之前对这些函数进行多次调用。这样就可以在多次数据读写上分摊总的加解锁开销。</li>
-</ul>
-
-
-<h1>线程私有数据</h1>
-
-<p>让一个函数是线程安全的最有效的方式就是让函数是可重入的。新的函数最好这么实现。尽管如此，
-一些老的函数，不是线程安全的，如果要将其改造成线程安全函数，需要满足：</p>
-
-<ul>
-<li>实现线程安全的</li>
-<li>不能改变函数的签名，也就是不需要调用这个函数的程序去修改</li>
-</ul>
-
-
-<p>使用线程私有（thread-specific）数据可以实现。</p>
-
-<blockquote><p>注意：
-要理解线程私有数据，以函数的角度考虑问题。</p></blockquote>
-
-<p>线程私有数据允许函数为每一个线程维持一个单独的数据拷贝。如图所示：</p>
-
-<p><img src="/images/assets/pthread-psd.png" title="linux" alt="alt text" /></p>
-
-<p>线程A调用函数myfunc时，myfunc函数为线程A维持一个单独数据，线程B调用myfunc函数时，myfunc为线程B维持一个线程B单独的数据。</p>
-
-<p>线程私有数据有个特点：</p>
-
-<ul>
-<li>存储的数据是持久化的，每一份数据会一直存在，这允许函数间共享数据（虽然不推荐）。</li>
-</ul>
-
-
-<h2>从函数角度考虑线程私有数据</h2>
-
-<p>为了更好的理解线程私有数据，需要从函数角度（实现角度）考虑如何使用线程私有数据</p>
-
-<ul>
-<li>在线程第一次调用函数时，函数为线程分配独立的存储块。存储块只分配一次，就是在线程第一次调用此函数时。</li>
-<li>同一个线程对这个函数的随后的调用，函数能够获取这个第一次调用而分配存储块。因此不能用局部变量存储指向存储块的key；也不能用static变量存储，因为在进程内，只有一个static的实例。</li>
-<li>不同的函数可能都需要线程私有数据，因此每个函数都得需要自己的线程私有数据key</li>
-<li>当线程停止时，函数不需要控制私有数据，因为停止时，代码有可能已经执行到函数外了。因此需要有个地方来执行清理操作。</li>
-</ul>
-
-
-<h2>线程私有数据 API</h2>
-
-<h3>创建私有数据key</h3>
-
-<p>创建一个key，两个用处：</p>
-
-<ul>
-<li>用来获取函数分配的存储块</li>
-<li>用来区分其它函数的线程私有数据对应的key</li>
-</ul>
-
-
-<p>使用pthread_key_create函数</p>
-
-<pre><code class="c">#include &lt;pthread.h&gt;
-int pthread_key_create(pthread_key_t *key, void (*destructor)(void *));
-</code></pre>
-
-<p>destructor指向一个清理函数，用来释放函数内分配的存储块。</p>
-
-<p>其签名是：</p>
-
-<pre><code class="c">void dest(void *value)
-{
-/* Release storage pointed to by 'value' */ 
-}
-</code></pre>
-
-<p>线程停止时，并且这个key关联的数据不是NULL时，就会自动调用这个函数来清理。</p>
-
-<p>一般，线程私有数据的实现，使用一个全局数组来存储这个key，这个key有两个状态：</p>
-
-<ul>
-<li>是否使用的标记</li>
-<li>清理函数指针</li>
-</ul>
-
-
-<p>如图：</p>
-
-<p><img src="/images/assets/pthread-psd-key.png" title="linux" alt="alt text" /></p>
-
-<p>根据图，pthread_key_create()返回的一般是全局数组的索引，数组元素包含两个字段，是否使用字段和清理函数地址字段。</p>
-
-<h3>关联函数分配内存与key</h3>
-
-<p>使用函数pthread_setspecific函数来关联函数分配的存储和pthread_key_create创建的key。</p>
-
-<pre><code class="c">#include &lt;pthread.h&gt;
-int pthread_setspecific(pthread_key_t key, const void *value);
-// value参数是一个分配的内存的指针
-// 当线程停止时，这个值会传给create函数指定的清理函数。
-void *pthread_getspecific(pthread_key_t key);
-</code></pre>
-
-<p>为了维护线程私有数据，Pthreads API 为每一个线程维护了一个指针数组，数据元素是函数分配的存储的指针。</p>
-
-<p>如下图，假设pthread_keys[1]是函数myfunc分配的key，对于每一个线程，pthread api维护了一个指针数组，
-数组元素指向函数内分配的内存，</p>
-
-<p><img src="/images/assets/pthread-psd-key-2.png" title="linux" alt="alt text" /></p>
-
-<h2>例子</h2>
-
-<h3>非线程安全的</h3>
-
-<p>下面是一个非线程安全的strerror()的实现：</p>
-
-<pre><code class="c">#define _GNU_SOURCE  /* Get '_sys_nerr' and '_sys_errlist' declarations from &lt;stdio.h&gt; */
-#include &lt;stdio.h&gt;
-#include &lt;string.h&gt;   /* Get declaration of strerror() */
-#define MAX_ERROR_LEN 256  /* Maximum length of string returned by strerror() */
-static char buf[MAX_ERROR_LEN];  /* Statically allocated return buffer */
-char *
-strerror(int err)
-{
-
-    if (err &lt; 0 || err &gt;= _sys_nerr || _sys_errlist[err] == NULL) {
-        snprintf(buf, MAX_ERROR_LEN, "Unknown error %d", err);
-    } else {
-        strncpy(buf, _sys_errlist[err], MAX_ERROR_LEN - 1);
-
-        buf[MAX_ERROR_LEN - 1] = '\0'; /* Ensure null termination */
-    }
-    return buf; 
-}
-</code></pre>
-
-<h3>线程安全例子</h3>
-
-<pre><code class="c">
-#define _GNU_SOURCE     /* Get '_sys_nerr' and '_sys_errlist' declarations from &lt;stdio.h&gt; */
-#include &lt;stdio.h&gt;
-#include &lt;string.h&gt;     /* Get declaration of strerror() */
-#include &lt;pthread.h&gt;
-#include "tlpi_hdr.h"
-
-
-static pthread_once_t once = PTHREAD_ONCE_INIT; 
-static pthread_key_t strerrorKey;
-
-
-#define MAX_ERROR_LEN 256       /* Maximum length of string in per-thread buffer returned by strerror() */
-
-static void
-destructor(void *buf)       /* Free thread-specific data buffer */
-{
-    free(buf);
-}
-
-static void
-createKey(void)     /* One-time key creation function */
-{
-    int s;
-    /* Allocate a unique thread-specific data key and save the address of the destructor for thread-specific data buffers */
-
-    s = pthread_key_create(&amp;strerrorKey, destructor);
-    if (s != 0)
-        errExitEN(s, "pthread_key_create");
-}
-
-char *
-strerror(int err)
-{
-    int s;
-    char *buf;
-
-    /* Make first caller allocate key for thread-specific data */
-
-    s = pthread_once(&amp;once, createKey); 
-    if (s != 0)
-        errExitEN(s, "pthread_once");
-
-    buf = pthread_getspecific(strerrorKey);
-    if (buf == NULL) { /* If first call from this thread, allocate buffer for thread, and save its location */
-
-        buf = malloc(MAX_ERROR_LEN);
-        if (buf == NULL)
-            errExit("malloc");
-
-        s = pthread_setspecific(strerrorKey, buf); 
-        if (s != 0)
-            errExitEN(s, "pthread_setspecific");
-    }
-
-    if (err &lt; 0 || err &gt;= _sys_nerr || _sys_errlist[err] == NULL) { 
-        snprintf(buf, MAX_ERROR_LEN, "Unknown error %d", err);
-    } else {
-        strncpy(buf, _sys_errlist[err], MAX_ERROR_LEN - 1);
-        buf[MAX_ERROR_LEN - 1] = '\0'; /* Ensure null termination */
-    }
-
-    return buf; 
-}
-</code></pre>
 ]]></content>
   </entry>
   

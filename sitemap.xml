@@ -3,6 +3,18 @@
   
   
   <url>
+    <loc>http://baren.github.io/blog/2015/03/22/python-yield/</loc>
+    <lastmod>2015-03-22T15:32:01+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2014/12/08/process-ipc/</loc>
+    <lastmod>2014-12-08T19:55:01+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://baren.github.io/blog/2014/11/19/shared-libraries/</loc>
     <lastmod>2014-11-19T21:09:01+08:00</lastmod>
     <priority>0.8</priority>
@@ -161,14 +173,14 @@
   
   <url>
     <loc>http://baren.github.io/blog/archives/</loc>
-    <lastmod>2014-11-22T11:25:24+08:00</lastmod>
+    <lastmod>2015-03-30T20:49:23+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://baren.github.io/</loc>
-    <lastmod>2014-11-22T11:25:24+08:00</lastmod>
+    <lastmod>2015-03-30T20:49:23+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
