@@ -1,0 +1,20 @@
+---
+layout: post
+title: "man bash 解释"
+date: 2016-01-20 15:32:01 +0800
+comments: true
+categories: 
+- base
+---
+
+### bash -c string 用法
+
+如果指定-c，表示命令从string中读取，如果string后面带着参数，则将参数赋值给位置参数（posi-tional parameters），从$0开始。
+
+例子：
+
+```
+sh -c 'echo $0' a
+```
+
+
