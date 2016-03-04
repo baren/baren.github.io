@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: base | Baren Blog]]></title>
+  <link href="http://baren.github.io/blog/categories/base/atom.xml" rel="self"/>
+  <link href="http://baren.github.io/"/>
+  <updated>2016-03-04T16:11:12+08:00</updated>
+  <id>http://baren.github.io/</id>
+  <author>
+    <name><![CDATA[enwu]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[man bash 解释]]></title>
+    <link href="http://baren.github.io/blog/2016/01/20/man-bash/"/>
+    <updated>2016-01-20T15:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2016/01/20/man-bash</id>
+    <content type="html"><![CDATA[<h3>bash -c string 用法</h3>
+
+<p>如果指定-c，表示命令从string中读取，如果string后面带着参数，则将参数赋值给位置参数（posi-tional parameters），从$0开始。</p>
+
+<p>例子：</p>
+
+<pre><code>sh -c 'echo $0' a
+</code></pre>
+]]></content>
+  </entry>
+  
+</feed>

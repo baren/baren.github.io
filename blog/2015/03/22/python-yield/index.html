@@ -281,7 +281,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>在generator内部，close函数调用会导致在yield语句上抛出GeneratorExit异常，因此可以在generator内部捕获这个异常，来做一些清理工作：</p>
+<p>在generator内部，close函数调用会导致在yield语句上抛出GeneratorExit异常，因此可以在generator内部可选择的捕获这个异常（不捕获也不会抛出异常，就像上面例子中c.close()并没有出错），来做一些清理工作：</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -305,6 +305,376 @@
 
 
 <h1>协程和yield表达式</h1>
+
+<p>yield关键字还可以作为表达式，出现在赋值表达式右边。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">receiver</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Ready to receive&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Got </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>以这样的方式使用yield的函数，被称作协程。</p>
+
+<p>与generator一样，执行这种协程函数时，调用函数并不会执行，必须先调用next()函数或者send(None)才可以执行函数，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span> <span class="o">=</span> <span class="n">receiver</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Ready</span> <span class="n">to</span> <span class="n">receive</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="n">Got</span> <span class="mi">1</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span class='line'><span class="n">Got</span> <span class="mi">2</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&#39;Hello&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">Got</span> <span class="n">Hello</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>协程函数执行步骤是：</p>
+
+<ol>
+<li>先调用next()，执行协程函数，函数执行到yield表达式后挂起，等待接收send函数发给它的数据</li>
+<li>调用send函数，传递给send函数的值会被协程函数内的&#8221;(yield)&ldquo;表达式返回</li>
+<li>协程接收到数据，恢复执行，直到遇到下一个yield表达式</li>
+</ol>
+
+
+<blockquote><p>注意：
+对协程函数来说，在接收数据之前，需要先执行函数体，可以使用next()和send(None)来执行。
+如果调用send(非None值)，则会抛出TypeError错误：
+c.send(1)
+Traceback (most recent call last):
+ File &ldquo;<stdin>&rdquo;, line 1, in <module>
+ypeError: can&rsquo;t send non-None value to a just-started generator
+.</p></blockquote>
+
+<p>与generator一样，关闭一个协程，有两种方式：</p>
+
+<ul>
+<li>调用close函数</li>
+<li>自己返回</li>
+</ul>
+
+
+<p>一个关闭的协程函数，如果再发送数据给它，则会抛出StopIteration异常，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'><span class="ne">StopIteration</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>调用close()函数，会在协程函数内部生成GeneratorExit异常。因此，可以捕获这个异常来做一些清理工作：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">receiver</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Ready to receive&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">try</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Got </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">except</span> <span class="ne">GeneratorExit</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Receiver done&quot;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>throw函数</h1>
+
+<p>generator和协程函数，都有throw函数。原型是：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">throw</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span> <span class="o">=</span> <span class="n">countdown</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Counting</span> <span class="n">down</span> <span class="kn">from</span> <span class="mi">10</span>
+</span><span class='line'><span class="mi">10</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span> <span class="o">=</span> <span class="n">receiver</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Ready</span> <span class="n">to</span> <span class="n">receive</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="n">Got</span> <span class="mi">1</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">4</span><span class="p">,</span> <span class="ow">in</span> <span class="n">countdown</span>
+</span><span class='line'><span class="ne">RuntimeError</span><span class="p">:</span> <span class="mi">3</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">4</span><span class="p">,</span> <span class="ow">in</span> <span class="n">receiver</span>
+</span><span class='line'><span class="ne">RuntimeError</span><span class="p">:</span> <span class="mi">3</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>g.throw(type, value, traceback)会抛出特定的异常（参数传的异常类型），抛出异常点是函数的挂起地点，也就是yield表达式地方，或者是当还没有调用next()函数时的函数的起始点。</p>
+
+<p>如果：</p>
+
+<ul>
+<li>函数捕获了throw抛出的异常，并用yield生成了另一个值，那么这个值就是throw的返回值，比如：</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">receiver</span><span class="p">():</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">print</span><span class="p">(</span><span class="s">&quot;Ready to receive&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">try</span><span class="p">:</span>
+</span><span class='line'><span class="o">...</span>             <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'><span class="o">...</span>                     <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>                     <span class="k">print</span><span class="p">(</span><span class="s">&quot;Got </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+</span><span class='line'><span class="o">...</span>             <span class="k">print</span><span class="p">(</span><span class="s">&quot;Receiver done&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>             <span class="k">yield</span> <span class="s">&#39;here&#39;</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">receiver</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Ready</span> <span class="n">to</span> <span class="n">receive</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">Got</span> <span class="n">a</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">Exception</span><span class="p">,</span> <span class="s">&#39;exc&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">Receiver</span> <span class="n">done</span>
+</span><span class='line'><span class="s">&#39;here&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>throw函数与next和send一样，只是throw会抛出参数指定的异常。</p>
+
+<h1>使用yield既生成值，又接收值</h1>
+
+<p>函数内，可以使用yield同时接收和生成值，比如这样：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">line_splitter</span><span class="p">(</span><span class="n">delimiter</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">print</span><span class="p">(</span><span class="s">&quot;Ready to split&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>     <span class="n">result</span> <span class="o">=</span> <span class="bp">None</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'><span class="o">...</span>             <span class="n">line</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span> <span class="n">result</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>             <span class="n">result</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">delimiter</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">line_splitter</span><span class="p">(</span><span class="s">&quot;,&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Ready</span> <span class="n">to</span> <span class="n">split</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&quot;a,b&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>其执行步骤：
+1、第一个next()调用，使函数开始执行
+2、到yield语句后，返回None语句，也就是result的初始值。
+3、调用send函数，接收到的值赋值给line，并继续执行语句，send()的返回值是下一个yield生成的结果。</p>
+
+<h1>使用generator和coroutine</h1>
+
+<p>开发一个例子，tail -f的例子，把开头为#号的过滤掉，其它原样打印。</p>
+
+<h2>generator使用例子：</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">g_tail</span><span class="p">(</span><span class="n">the_file</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">the_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">line</span> <span class="o">=</span> <span class="n">the_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">continue</span>
+</span><span class='line'>        <span class="k">yield</span> <span class="n">line</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">g_filter_line</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;#&quot;</span><span class="p">):</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="n">line</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">g_print_line</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">print</span> <span class="n">line</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;/tmp/thefile&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">g_print_line</span><span class="p">(</span><span class="n">g_filter_line</span><span class="p">(</span><span class="n">g_tail</span><span class="p">(</span><span class="n">f</span><span class="p">)))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用generator，每个函数，都需要接收一个iterator或者叫generator数据，来驱动整个进程执行。</p>
+
+<h2>coroutine例子</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">functools</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">crontine</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+</span><span class='line'>    <span class="nd">@functools.wraps</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">a</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">a</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">a</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">wrapper</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">c_tail</span><span class="p">(</span><span class="n">the_file</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">the_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">line</span> <span class="o">=</span> <span class="n">the_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">continue</span>
+</span><span class='line'>        <span class="n">target</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@crontine</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">c_filter_line</span><span class="p">(</span><span class="n">target</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">line</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;#&quot;</span><span class="p">):</span>
+</span><span class='line'>            <span class="n">target</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@crontine</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">c_print_line</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">line</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">print</span> <span class="n">line</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用coroutine，不需要每个函数都加参数，流程驱动是通过send函数来实现。</p>
 
 <h1>参考资料</h1>
 
@@ -361,8 +731,10 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2014/12/08/process-ipc/" title="Previous Post: Shared libraries简介">&laquo; Shared libraries简介</a>
+        <a class="basic-alignment left" href="/blog/2015/03/22/python-tornado-source/" title="Previous Post: tornado源代码研究笔记">&laquo; tornado源代码研究笔记</a>
       
+      
+        <a class="basic-alignment right" href="/blog/2015/03/22/statis-udp/" title="Next Post: 统计系统设计">统计系统设计 &raquo;</a>
       
     </p>
   </footer>
@@ -377,7 +749,27 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2016/03/02/python-function/">python 函数知识</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/02/26/python-model/">python 模块知识</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/01/20/man-bash/">man bash 解释</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/statis-udp/">统计系统设计</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/03/22/python-yield/">yield（generator和coroutine）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/python-tornado-source/">tornado源代码研究笔记</a>
       </li>
     
       <li class="post">
@@ -386,26 +778,6 @@
     
       <li class="post">
         <a href="/blog/2014/11/19/shared-libraries/">Shared libraries简介</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/10/20/daemon/">daemon简介</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/28/pthread-further-details/">pthread 进一步细节</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/25/pthread-cancel/">取消线程</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/17/pthread-control/">pthread control</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/14/per4-checpter6-decorator/">python decorator 深入理解</a>
       </li>
     
   </ul>
@@ -422,7 +794,7 @@
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2015 - enwu -
+  Copyright &copy; 2016 - enwu -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
   <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: python | Baren Blog]]></title>
   <link href="http://baren.github.io/blog/categories/python/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2015-03-30T20:49:23+08:00</updated>
+  <updated>2016-03-04T16:11:12+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -12,6 +12,295 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[python 函数知识]]></title>
+    <link href="http://baren.github.io/blog/2016/03/02/python-function/"/>
+    <updated>2016-03-02T19:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2016/03/02/python-function</id>
+    <content type="html"><![CDATA[<h1>函数命名空间</h1>
+
+<p>每次函数执行，都会创建一个 local namespace。用来存放在函数内定义的变量。</p>
+
+<p>在函数内引用一个变量，python查找这个变量的顺序是：</p>
+
+<ul>
+<li>局部空间</li>
+<li>全局空间（函数定义所在的模块定义的变量）</li>
+<li>built-in namespace</li>
+</ul>
+
+
+<p>如果找不到，则抛出NameError。</p>
+
+<p>如果想要在函数内修改全局变量值，则需要用global关键字声明，比如：</p>
+
+<pre><code class="python">
+a = 42
+b = 37 
+def foo():
+    global a   # 'a' is in global namespace
+    a = 13 
+    b=0
+
+
+foo()
+# a is now 13. b is still 37.
+</code></pre>
+
+<h2>内嵌函数的命名空间</h2>
+
+<p>函数内也可以定义函数，这叫nested function。内嵌函数的包围函数被称作外围函数（outer function）。在内嵌函数内绑定的变量是定义在词法空间（lexical scoping），在内嵌函数内，引用变量的顺序是：</p>
+
+<ul>
+<li>lexical scoping</li>
+<li>局部空间</li>
+<li>全局空间（函数定义所在的模块定义的变量）</li>
+<li>built-in namespace</li>
+</ul>
+
+
+<p>在内嵌函数内，可以访问包围其函数内定义的变量（对内嵌函数来说，外围函数定义的变量被称作自由变量 free variables），但是不能再内嵌函数中重新绑定其外围函数定义的变量。比如：</p>
+
+<pre><code class="python">
+def test():
+    b = 2
+    def inner():
+        b -= 1
+    inner()
+
+if __name__ == "__main__":
+    test()
+
+结果是：
+UnboundLocalError: local variable 'b' referenced before assignment
+</code></pre>
+
+<p>只能在内嵌函数的最外层函数和全局空间内更改变量（python3用nonlocal关键字解决这个问题）。</p>
+
+<h2>闭包</h2>
+
+<p>函数是first-class对象，因此，函数可以：</p>
+
+<ul>
+<li>赋值给变量</li>
+<li>作为参数传递给函数</li>
+<li>作为函数结果返回</li>
+<li>存放在数据结构中</li>
+</ul>
+
+
+<p>当把函数作为数据处理时，函数会隐含的带着一些额外的相关信息，这些相关信息就是函数定义处的一些数据。</p>
+
+<p>比如：</p>
+
+<pre><code class="python"># foo.py
+x = 42
+def callf(func):
+    return func()
+</code></pre>
+
+<p>观察行为</p>
+
+<pre><code class="python">
+&gt;&gt;&gt; import foo
+&gt;&gt;&gt; x = 37
+&gt;&gt;&gt; def helloworld():
+...     return "Hello World. x is %d" % x
+...
+&gt;&gt;&gt; foo.callf(helloworld)  # Pass a function as an argument 'Hello World. x is 37'
+&gt;&gt;&gt;
+</code></pre>
+
+<p>这里结果是helloworld定义位置的x的值，而不是执行位置的x的值。</p>
+
+<p>闭包定义：</p>
+
+<p>闭包是在其词法上下文（内嵌函数内部）中引用了自由变量（外围函数定义的变量）的函数。主要用途是当有需要延迟计算的情况，用闭包更简洁。</p>
+
+<p>比如：</p>
+
+<pre><code class="python">from urllib import urlopen
+# from urllib.request import urlopen (Python 3) 
+
+def page(url):
+    def get():
+        return urlopen(url).read()  # 引用了自由变量url，这个值取自定义函数的时候
+    return get
+</code></pre>
+
+<p>使用闭包例子：</p>
+
+<pre><code class="python">&gt;&gt;&gt; python = page("http://www.python.org") 
+&gt;&gt;&gt; python
+&lt;function get at 0x95d5f0&gt;
+&gt;&gt;&gt; jython = page("http://www.jython.org")
+&gt;&gt;&gt; jython
+&lt;function get at 0x9735f0&gt;
+&gt;&gt;&gt; pydata = python()   # Fetches http://www.python.org
+&gt;&gt;&gt; jydata = jython()   # Fetches http://www.jython.org
+&gt;&gt;&gt;
+</code></pre>
+
+<p>看上面的例子，当调用page函数时，返回的是内嵌函数，并没有立即执行，但是打开的url是固定的了。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[python 模块知识]]></title>
+    <link href="http://baren.github.io/blog/2016/02/26/python-model/"/>
+    <updated>2016-02-26T19:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2016/02/26/python-model</id>
+    <content type="html"><![CDATA[<h1>模块对象</h1>
+
+<p>每一个源文件就是对应一个model。
+模块与模块之间的依赖通过import和from语句进行关联。
+在其它语言中，有全局变量可供模块之间共享，python中，全局变量在模块间不共享，只属于一个模块。</p>
+
+<p>模块名与模块的文件名是一样的。</p>
+
+<p>模块也是一个对象，因此可以将模块作为参数传递，赋值给变量或存数容器，作为函数结果返回等。是<em>first-class</em>对象。</p>
+
+<p>import语句的语法是：
+<code>python
+import modname [as varname][,...]
+</code></p>
+
+<p>这行语句执行完成，会把变量modname绑定到模块对象上。</p>
+
+<p>模块内的语句，在第一次被import时执行。模块对象先于语句执行而创建，并存放在<code>sys.modules</code>中。</p>
+
+<h2>模块属性</h2>
+
+<p>import语句会为模块内的所有属性创建一个模块的命名空间（只有第一次import才会执行模块内语句）。模块体内的语句就是在这个命名空间内创建和绑定模块的属性，def创建函数属性，class创建类属性等等。</p>
+
+<p>除了模块体明确定义的属性，在执行模块内语句之前，import还会额外给模块创建一些属性：</p>
+
+<p>比如：</p>
+
+<pre><code class="python">
+['__all__', '__builtins__', '__doc__', '__file__', '__get_builtin_constructor', '__name__', '__package__',
+</code></pre>
+
+<ul>
+<li><strong>dict</strong> : 用这个字典对象作为模块属性的命名空间。<strong>dict</strong>在模块内不能直接使用，其它（比如<strong>file</strong>，因为是在执行语句之前就创建好了）可以。对于模块M来说，M.S=x 实际上恒等于M.<strong>dict</strong>[&rsquo;S&#8217;]=x.</li>
+</ul>
+
+
+<p>比如：</p>
+
+<pre><code class="python">print __file__
+print __dict__
+</code></pre>
+
+<p>输出结果：</p>
+
+<pre><code>/Users/user/work/project/auto_deploy/tst.py
+Traceback (most recent call last):
+  File "/Users/user/work/project/auto_deploy/tst.py", line 6, in &lt;module&gt;
+    print __dict__
+NameError: name '__dict__' is not defined
+</code></pre>
+
+<ul>
+<li><strong>name</strong>：模块名</li>
+<li><strong>file</strong>：模块文件</li>
+<li><strong>doc</strong>：注释</li>
+</ul>
+
+
+<h2>模块私有化属性</h2>
+
+<p>python模块没有真正的私有化属性，按照惯例，只要在模块内定义的属性是以单下划线开头，就认为是私有的，比如_secret.</p>
+
+<h2>模块加载</h2>
+
+<p>实际上，python加载模块是靠内置的<code>__import__</code>函数进行的。我们也可以直接调用这个函数。import M，<code>__import__</code>会先用key M去查sys.modules，如果在里面，直接返回值；如果不在，<code>__import__</code>会创建一个空模块对象，并增加<code>__name__</code>属性，其值是M，并把这个模块赋值给 sys.modules[M] ，然后按照正确方式加载模块对象（后面有）。因此只有第一次import一个对象时是慢的，以后直接从sys.modules对象中返回。</p>
+
+<h3>在磁盘系统搜索模块</h3>
+
+<p>当加载一个模块，先检查是否是内置对象（在sys.builtin_module_names 中列出），如果不在，则从磁盘中搜索。</p>
+
+<p><em><strong>import</strong></em>会按照sys.path列表中存的路径顺序一个个搜索模块。sys.path中既可以是目录，也可以是zip格式的归档文件。python启动时，会用PYTHONPATH来初始会sys.path。sys.path的第一个字符串总是程序启动的当前目录。</p>
+
+<p>因此，可以通过修改sys.path来操纵搜索逻辑。</p>
+
+<h3>重新加载模块</h3>
+
+<p>可以通过调用reload.reload(M)函数重新加载模块，reload函数的参数是M对象，而不是字符串。通过重新加载模块，影响的是通过import M这种方式，并通过M.A进行访问的代码。那种通过from M import 引入的则不受影响。</p>
+
+<h3>循环引用</h3>
+
+<p>python允许循环引用，比如a.py中import b，而b.py中import a。</p>
+
+<p>已import a为例说明循环引用的加载逻辑</p>
+
+<p>循环引用的执行过程：</p>
+
+<p>import a语句会创建一个空模块对象，并赋值给sys.models[&lsquo;a&rsquo;] ,
+然后开始执行a模块语句，如果遇到import b，则开始加载模块b，同样创建模块对象，并赋值给sys.models[&lsquo;b&rsquo;].
+执行模块b的语句。这是a模块的语句执行是阻塞的，直到b执行完成。</p>
+
+<p>这样，执行模块b的body时，遇到import a，则由于之前已经通过赋值sys.models[&lsquo;a&rsquo;]有数据，因此直接返回这个未初始化完成的a模块对象。这样，有可能a中的属性还没有被初始化。</p>
+
+<h1>包</h1>
+
+<p>python中，一个目录下需要定义<code>__init__</code>.py文件，才能标记这个目录是个包。包的体就是<code>__init__.py</code>文件内容。</p>
+
+<p>导入包的时候，会首先执行<code>__init__.py</code>内容。</p>
+
+<h2>包的特殊属性</h2>
+
+<p>包P的<code>__file__</code>的值实际上是包P体的内容，也就是<code>P/__init__.py</code>的路径。</p>
+
+<p>比如：</p>
+
+<pre><code class="python">import view
+print view.__file__
+</code></pre>
+
+<p>结果是</p>
+
+<pre><code>/Users/user/work/project/m-api/view/__init__.pyc
+</code></pre>
+
+<p>可以在<em>P/<strong>init</strong>.py</em>中设置<em><strong>all</strong></em>全局变量，用来控制其他模块执行<code>from P import *</code>语句时的行为。如果没有设置这个属性，则<code>from P import *</code>不会导入任何P的模块。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[统计系统设计]]></title>
+    <link href="http://baren.github.io/blog/2015/03/22/statis-udp/"/>
+    <updated>2015-03-22T15:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2015/03/22/statis-udp</id>
+    <content type="html"><![CDATA[<h1>需求</h1>
+
+<p>主要用来实时统计线上所依赖服务的运行情况。</p>
+
+<p>以分钟为最小统计维度，可以按照多个维度进行统计，比如一分钟实时状况，5分钟实时状况，10分钟实时状况。</p>
+
+<p>所统计的数据包括依赖服务的实时错误数、成功数。</p>
+
+<h1>设计思路</h1>
+
+<p>由于统计需求比较明确，并需要短时间内需要上线，因此暂时不能适用storm这种对机器资源需求量比较大的场合。</p>
+
+<p>为了保证后续可以顺利使用storm等分布式实时计算系统，其数据格式使用与storm容易处理的的nginx日志格式。</p>
+
+<p>数据传输协议采用UDP方式。</p>
+
+<h1>各子系统</h1>
+
+<p>分为三个部分：</p>
+
+<ul>
+<li>发送日志模块。采用嵌入到工程代码中的方式使用。</li>
+<li>数据接收系统。单独部署一个udp系统，负责接收数据，并把数据写入memcached。</li>
+<li>数据展示系统。负责将memcached的数据整理后写入数据库，并以图表方式展示。</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[yield（generator和coroutine）]]></title>
@@ -148,7 +437,7 @@ Traceback (most recent call last):
 StopIteration
 </code></pre>
 
-<p>在generator内部，close函数调用会导致在yield语句上抛出GeneratorExit异常，因此可以在generator内部捕获这个异常，来做一些清理工作：</p>
+<p>在generator内部，close函数调用会导致在yield语句上抛出GeneratorExit异常，因此可以在generator内部可选择的捕获这个异常（不捕获也不会抛出异常，就像上面例子中c.close()并没有出错），来做一些清理工作：</p>
 
 <pre><code class="python">def countdown(n):
     print("Counting down from %d" % n) 
@@ -162,6 +451,235 @@ StopIteration
 </code></pre>
 
 <h1>协程和yield表达式</h1>
+
+<p>yield关键字还可以作为表达式，出现在赋值表达式右边。比如：</p>
+
+<pre><code class="python">
+def receiver():
+    print("Ready to receive") 
+    while True:
+        n = (yield) 
+        print("Got %s" % n)
+</code></pre>
+
+<p>以这样的方式使用yield的函数，被称作协程。</p>
+
+<p>与generator一样，执行这种协程函数时，调用函数并不会执行，必须先调用next()函数或者send(None)才可以执行函数，比如：</p>
+
+<pre><code class="python">&gt;&gt;&gt; c = receiver()
+&gt;&gt;&gt; c.next()
+Ready to receive
+&gt;&gt;&gt; c.send(1)
+Got 1
+&gt;&gt;&gt; c.send(2)
+Got 2
+&gt;&gt;&gt; c.send('Hello')
+Got Hello
+</code></pre>
+
+<p>协程函数执行步骤是：</p>
+
+<ol>
+<li>先调用next()，执行协程函数，函数执行到yield表达式后挂起，等待接收send函数发给它的数据</li>
+<li>调用send函数，传递给send函数的值会被协程函数内的&#8221;(yield)&ldquo;表达式返回</li>
+<li>协程接收到数据，恢复执行，直到遇到下一个yield表达式</li>
+</ol>
+
+
+<blockquote><p>注意：
+对协程函数来说，在接收数据之前，需要先执行函数体，可以使用next()和send(None)来执行。
+如果调用send(非None值)，则会抛出TypeError错误：
+c.send(1)
+Traceback (most recent call last):
+ File &ldquo;<stdin>&rdquo;, line 1, in <module>
+ypeError: can&rsquo;t send non-None value to a just-started generator
+.</p></blockquote>
+
+<p>与generator一样，关闭一个协程，有两种方式：</p>
+
+<ul>
+<li>调用close函数</li>
+<li>自己返回</li>
+</ul>
+
+
+<p>一个关闭的协程函数，如果再发送数据给它，则会抛出StopIteration异常，比如：</p>
+
+<pre><code class="python">
+&gt;&gt;&gt; c.close()
+&gt;&gt;&gt; c.send(1)
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+StopIteration
+</code></pre>
+
+<p>调用close()函数，会在协程函数内部生成GeneratorExit异常。因此，可以捕获这个异常来做一些清理工作：</p>
+
+<pre><code class="python">def receiver():
+    print("Ready to receive") 
+    try:
+        while True:
+            n = (yield)
+            print("Got %s" % n) 
+    except GeneratorExit:
+        print("Receiver done")
+</code></pre>
+
+<h1>throw函数</h1>
+
+<p>generator和协程函数，都有throw函数。原型是：</p>
+
+<pre><code class="python">throw(type, value, traceback)
+</code></pre>
+
+<p>使用例子：</p>
+
+<pre><code class="python">&gt;&gt;&gt; g = countdown(10)
+&gt;&gt;&gt; g.next()
+Counting down from 10
+10
+&gt;&gt;&gt; c = receiver()
+&gt;&gt;&gt; c.next()
+Ready to receive
+&gt;&gt;&gt; c.send(1)
+Got 1
+&gt;&gt;&gt; g.throw(RuntimeError, 3)
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "&lt;stdin&gt;", line 4, in countdown
+RuntimeError: 3
+&gt;&gt;&gt; c.throw(RuntimeError, 3)
+Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  File "&lt;stdin&gt;", line 4, in receiver
+RuntimeError: 3
+</code></pre>
+
+<p>g.throw(type, value, traceback)会抛出特定的异常（参数传的异常类型），抛出异常点是函数的挂起地点，也就是yield表达式地方，或者是当还没有调用next()函数时的函数的起始点。</p>
+
+<p>如果：</p>
+
+<ul>
+<li>函数捕获了throw抛出的异常，并用yield生成了另一个值，那么这个值就是throw的返回值，比如：</li>
+</ul>
+
+
+<pre><code class="python">&gt;&gt;&gt; def receiver():
+...     print("Ready to receive")
+...     try:
+...             while True:
+...                     n = (yield)
+...                     print("Got %s" % n)
+...     except Exception:
+...             print("Receiver done")
+...             yield 'here'
+...
+&gt;&gt;&gt; a = receiver()
+&gt;&gt;&gt; a.next()
+Ready to receive
+&gt;&gt;&gt; a.send('a')
+Got a
+&gt;&gt;&gt; a.throw(Exception, 'exc')
+Receiver done
+'here'
+</code></pre>
+
+<p>throw函数与next和send一样，只是throw会抛出参数指定的异常。</p>
+
+<h1>使用yield既生成值，又接收值</h1>
+
+<p>函数内，可以使用yield同时接收和生成值，比如这样：</p>
+
+<pre><code class="python">&gt;&gt;&gt; def line_splitter(delimiter=None):
+...     print("Ready to split")
+...     result = None
+...     while True:
+...             line = (yield result)
+...             result = line.split(delimiter)
+...
+&gt;&gt;&gt; a = line_splitter(",")
+&gt;&gt;&gt; a.next()
+Ready to split
+&gt;&gt;&gt; a.send("a,b")
+['a', 'b']
+</code></pre>
+
+<p>其执行步骤：
+1、第一个next()调用，使函数开始执行
+2、到yield语句后，返回None语句，也就是result的初始值。
+3、调用send函数，接收到的值赋值给line，并继续执行语句，send()的返回值是下一个yield生成的结果。</p>
+
+<h1>使用generator和coroutine</h1>
+
+<p>开发一个例子，tail -f的例子，把开头为#号的过滤掉，其它原样打印。</p>
+
+<h2>generator使用例子：</h2>
+
+<pre><code class="python">def g_tail(the_file):
+    the_file.seek(0, 2)
+    while True:
+        line = the_file.readline()
+        if not line:
+            time.sleep(0.1)
+            continue
+        yield line
+
+def g_filter_line(lines):
+    for line in lines:
+        if not line.startswith("#"):
+            yield line
+
+def g_print_line(lines):
+    for line in lines:
+        print line
+
+
+if __name__ == "__main__":
+    f = open('/tmp/thefile')
+    g_print_line(g_filter_line(g_tail(f)))
+</code></pre>
+
+<p>使用generator，每个函数，都需要接收一个iterator或者叫generator数据，来驱动整个进程执行。</p>
+
+<h2>coroutine例子</h2>
+
+<pre><code class="python">import functools
+
+
+def crontine(method):
+    @functools.wraps(method)
+    def wrapper(*args, **kwargs):
+        a = method(*args, **kwargs)
+        a.next()
+        return a
+    return wrapper
+
+
+def c_tail(the_file, target):
+    the_file.seek(0, 2)
+    while True:
+        line = the_file.readline()
+        if not line:
+            time.sleep(0.1)
+            continue
+        target.send(line)
+
+
+@crontine
+def c_filter_line(target):
+    while True:
+        line = (yield)
+        if not line.startswith("#"):
+            target.send(line)
+
+@crontine
+def c_print_line():
+    while True:
+        line = (yield)
+        print line
+</code></pre>
+
+<p>使用coroutine，不需要每个函数都加参数，流程驱动是通过send函数来实现。</p>
 
 <h1>参考资料</h1>
 
@@ -177,960 +695,102 @@ StopIteration
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[python decorator 深入理解]]></title>
-    <link href="http://baren.github.io/blog/2014/09/14/per4-checpter6-decorator/"/>
-    <updated>2014-09-14T11:38:09+08:00</updated>
-    <id>http://baren.github.io/blog/2014/09/14/per4-checpter6-decorator</id>
-    <content type="html"><![CDATA[<h1>装饰器介绍</h1>
-
-<p>装饰器是一个函数，其主要目的是包装另一个函数或类，来透明的修改或者增强被包装对象的功能。语法上，装饰器用<em>@</em>表示，比如：</p>
-
-<pre><code class="python">
-@trace
-def square(x):
-    return x*x
-</code></pre>
-
-<p>上面装饰器，类似于这样的：</p>
-
-<pre><code class="python">
-def square(x):
-    return x*x
-
-square = trace(square)
-</code></pre>
+    <title type="html"><![CDATA[tornado源代码研究笔记]]></title>
+    <link href="http://baren.github.io/blog/2015/03/22/python-tornado-source/"/>
+    <updated>2015-03-22T15:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2015/03/22/python-tornado-source</id>
+    <content type="html"><![CDATA[<p>主要记录研究tornado源代码的心得笔记。</p>
 
 <!-- more -->
 
 
-<h1>不带参数的装饰器</h1>
+<h1>命令行参数解析</h1>
 
-<p>装饰器不带参数，被装饰的函数可以带参数，也可以不带，</p>
+<p>使用tornado，通常需要解析命令行参数，来指定运行行为，比如是否开启调试模式，端口号是多少，日志文件位置等等。</p>
 
-<h2>被装饰函数不带参数</h2>
-
-<p>不带参数的装饰器，比较简单，只需要接收一个函数作为参数即可。
-例子：</p>
+<p>tornado的命令行使用方式一般是这样：</p>
 
 <pre><code class="python">
-import time
-
-def timing_function(some_function):  # 装饰器，接收一个函数作为参数
-
-    """
-    Outputs the time a function takes
-    to execute.
-    """
-
-    def wrapper():
-        t1 = time.time()
-        some_function()
-        t2 = time.time()
-        return "Time it took to run the function: " + str((t2-t1)) + "\n"
-    return wrapper
-
-@timing_function
-def my_function():
-    num_list = []
-    for x in (range(0,10000)):
-        num_list.append(x)
-    print "\nSum of all the numbers: " +str((sum(num_list)))
-
-
-print my_function()
-</code></pre>
-
-<h2>被装饰函数带参数</h2>
-
-<p>如果被装饰的函数带参数，让包装函数带着参数就可以。
-例子：</p>
-
-<pre><code class="python">
-# It’s not black magic, you just have to let the wrapper 
-# pass the argument:
-
-def a_decorator_passing_arguments(function_to_decorate):
-    def a_wrapper_accepting_arguments(arg1, arg2):
-        print "I got args! Look:", arg1, arg2
-        function_to_decorate(arg1, arg2)
-    return a_wrapper_accepting_arguments
-
-# Since when you are calling the function returned by the decorator, you are
-# calling the wrapper, passing arguments to the wrapper will let it pass them to 
-# the decorated function
-
-@a_decorator_passing_arguments
-def print_full_name(first_name, last_name):
-    print "My name is", first_name, last_name
-
-print_full_name("Peter", "Venkman")
-# outputs:
-#I got args! Look: Peter Venkman
-#My name is Peter Venkman
-</code></pre>
-
-<p>为了函数通用，可以让包装器接收参数设置为(*args, **kwargs)的形式：</p>
-
-<pre><code class="python">
-def common_decorator(function):
-
-    """
-    Limits how fast the function is
-    called.
-    """
-
-    def wrapper(*args, **kwargs):
-        # 处理代码
-        function(*args, **kwargs)
-        # 处理代码
-    return wrapper
-
-
-@common_decorator
-def print_number(num):
-    return num
-</code></pre>
-
-<h1>装饰器需要参数</h1>
-
-<p>有时候为了装饰器的功能性，需要装饰器本身也需要接收参数，但是装饰器应该接收一个函数作为参数，为了达到让装饰器也能接收参数，需要：</p>
-
-<ul>
-<li>多套一层函数，最外层函数接收装饰器用到的参数</li>
-<li>在打装饰器时，把参数传给装饰器，也就是在<em>@</em>后面是一个函数调用，而不是仅仅是装饰器的名字。</li>
-</ul>
-
-
-<p>例子：</p>
-
-<pre><code class="python">
-def decorator_maker_with_arguments(decorator_arg1, decorator_arg2):
-
-    print "I make decorators! And I accept arguments:", decorator_arg1, decorator_arg2
-
-    def my_decorator(func):
-        # The ability to pass arguments here is a gift from closures.
-        # If you are not comfortable with closures, you can assume it’s ok,
-        # or read: http://stackoverflow.com/questions/13857/can-you-explain-closures-as-they-relate-to-python
-        print "I am the decorator. Somehow you passed me arguments:", decorator_arg1, decorator_arg2
-
-        # Don't confuse decorator arguments and function arguments!
-        def wrapped(function_arg1, function_arg2) :
-            print ("I am the wrapper around the decorated function.\n"
-                  "I can access all the variables\n"
-                  "\t- from the decorator: {0} {1}\n"
-                  "\t- from the function call: {2} {3}\n"
-                  "Then I can pass them to the decorated function"
-                  .format(decorator_arg1, decorator_arg2,
-                          function_arg1, function_arg2))
-            return func(function_arg1, function_arg2)
-
-        return wrapped
-
-    return my_decorator
-
-@decorator_maker_with_arguments("Leonard", "Sheldon")
-def decorated_function_with_arguments(function_arg1, function_arg2):
-    print ("I am the decorated function and only knows about my arguments: {0}"
-           " {1}".format(function_arg1, function_arg2))
-
-decorated_function_with_arguments("Rajesh", "Howard")
-#outputs:
-#I make decorators! And I accept arguments: Leonard Sheldon
-#I am the decorator. Somehow you passed me arguments: Leonard Sheldon
-#I am the wrapper around the decorated function. 
-#I can access all the variables 
-#   - from the decorator: Leonard Sheldon 
-#   - from the function call: Rajesh Howard 
-#Then I can pass them to the decorated function
-#I am the decorated function and only knows about my arguments: Rajesh Howard
-</code></pre>
-
-<p>注意上面的例子：
-1、打装饰器的时候，其实是一个函数调用：@decorator_maker_with_arguments(&ldquo;Leonard&rdquo;, &ldquo;Sheldon&rdquo;)。
-2、装饰器返回的包装函数，实际上是一个闭包，它引用了装饰器的参数（decorator_arg1和decorator_arg2）。</p>
-
-<h1>functools模块用于装饰器</h1>
-
-<p>functools在python2.5引入的，他包含了函数functools.wraps()，这个函数的作用是拷贝被包装的函数的名字、模块和docstring到它的包装器上。
-functools。wraps()实际上也是个装饰器。</p>
-
-<p>例子：</p>
-
-<pre><code class="python">
-# For debugging, the stacktrace prints you the function __name__
-def foo():
-    print "foo"
-
-print foo.__name__
-#outputs: foo
-
-# With a decorator, it gets messy    
-def bar(func):
-    def wrapper():
-        print "bar"
-        return func()
-    return wrapper
-
-@bar
-def foo():
-    print "foo"
-
-print foo.__name__
-#outputs: wrapper
-# 输出的信息是包装器的信息，而不是原始函数的信息。
-
-# 使用"functools" 来解决上面问题
-
-import functools
-
-def bar(func):
-    # We say that "wrapper", is wrapping "func"
-    # and the magic begins
-    @functools.wraps(func)
-    def wrapper():
-        print "bar"
-        return func()
-    return wrapper
-
-@bar
-def foo():
-    print "foo"
-
-print foo.__name__
-#outputs: foo
-# 输出的信息是实际的foo函数的信息
-</code></pre>
-
-<h1>类作为装饰器</h1>
-
-<p>装饰器除了使用函数的方式外（大部分都是用函数来实现装饰器），还可以使用类的形式。</p>
-
-<p>对于装饰器来说，唯一的约束是：<em>装饰器返回的对象必须可以被当成函数使用，也就是它可以被调用</em>。</p>
-
-<p>如果类被当成装饰器，那么，类必须实现<strong>call</strong>函数。</p>
-
-<p>需要注意的点：</p>
-
-<ul>
-<li>类的初始化函数（<strong>init</strong>）需要接受一个函数作为参赛</li>
-<li>在给函数打装饰器时，<strong>init</strong>会执行</li>
-<li>在调用被装饰的函数时，类的<strong>call</strong>被调用</li>
-</ul>
-
-
-<p>例子：</p>
-
-<pre><code class="python">
-&gt;&gt;&gt; class myDecorator(object):
-...     def __init__(self, f):
-...             print "inside myDecorator.__init__()"
-...             f()
-...     def __call__(self):
-...             print "inside myDecorator.__call__()"
-...
-&gt;&gt;&gt; @myDecorator
-... def aFunction():
-...     print "inside aFunction()"
-...
-inside myDecorator.__init__()
-inside aFunction()
-&gt;&gt;&gt; aFunction()
-inside myDecorator.__call__()
-</code></pre>
-
-<h2>被装饰函数带参数</h2>
-
-<p>如果使用类来作为装饰器，如果被装饰函数需要参数，则定义在<strong>call</strong>函数上。比如：</p>
-
-<pre><code class="python">
-class decoratorWithoutArguments(object):
-
-    def __init__(self, f):
-        """
-        If there are no decorator arguments, the function
-        to be decorated is passed to the constructor.
-        """
-        print "Inside __init__()"
-        self.f = f
-
-    def __call__(self, *args):  # 传给被装饰器的参数，传递给__call__()
-        """
-        The __call__ method is not called until the
-        decorated function is called.
-        """
-        print "Inside __call__()"
-        self.f(*args)
-        print "After self.f(*args)"
-
-@decoratorWithoutArguments
-def sayHello(a1, a2, a3, a4):
-    print 'sayHello arguments:', a1, a2, a3, a4
-
-print "After decoration"
-
-print "Preparing to call sayHello()"
-sayHello("say", "hello", "argument", "list")
-print "After first sayHello() call"
-sayHello("a", "different", "set of", "arguments")
-print "After second sayHello() call"
-</code></pre>
-
-<p>结果是：</p>
-
-<pre><code class="text">
-# 函数定义的执行结果
-Inside __init__()
-After decoration
-
-Preparing to call sayHello()  
-
-# 下面结果是一次函数调用
-Inside __call__()  
-sayHello arguments: say hello argument list
-After self.f(*args)
-
-After first sayHello() call
-
-# 下面结果是一次函数调用
-Inside __call__()
-sayHello arguments: a different set of arguments
-After self.f(*args)
-
-After second sayHello() call
-</code></pre>
-
-<h2>装饰器带参数</h2>
-
-<p>如果类作为装饰器，装饰器如果带参数，则需要注意的比较多：</p>
-
-<ul>
-<li>参数传递给<strong>init</strong>函数。</li>
-<li><strong>call</strong>函数需要返回一个包装函数（因为装饰器有参数，所有打装饰器的地方，实际上是个函数调用，这会导致class的<strong>call</strong>调用）。</li>
-</ul>
-
-
-<p>比如：</p>
-
-<pre><code class="python">
-class decoratorWithArguments(object):
-
-    def __init__(self, arg1, arg2, arg3):
-        """
-        If there are decorator arguments, the function
-        to be decorated is not passed to the constructor!
-        """
-        print "Inside __init__()"
-        self.arg1 = arg1
-        self.arg2 = arg2
-        self.arg3 = arg3
-
-    def __call__(self, f):
-        """
-        If there are decorator arguments, __call__() is only called
-        once, as part of the decoration process! You can only give
-        it a single argument, which is the function object.
-        """
-        print "Inside __call__()"
-        def wrapped_f(*args):
-            print "Inside wrapped_f()"
-            print "Decorator arguments:", self.arg1, self.arg2, self.arg3
-            f(*args)
-            print "After f(*args)"
-        return wrapped_f
-
-@decoratorWithArguments("hello", "world", 42)
-def sayHello(a1, a2, a3, a4):
-    print 'sayHello arguments:', a1, a2, a3, a4
-
-print "After decoration"
-
-print "Preparing to call sayHello()"
-sayHello("say", "hello", "argument", "list")
-print "after first sayHello() call"
-sayHello("a", "different", "set of", "arguments")
-print "after second sayHello() call"
-</code></pre>
-
-<p>输出结果是：</p>
-
-<pre><code class="text">定义输出
-Inside __init__()
-Inside __call__()  # 因此装饰器是函数调用，因此走到__call__调用
-
-
-After decoration
-
-Preparing to call sayHello()
-
-# 下面结果是一次函数调用装饰器调用
-Inside wrapped_f()
-Decorator arguments: hello world 42
-sayHello arguments: say hello argument list
-After f(*args)
-
-after first sayHello() call
-
-# 下面结果是一次函数调用
-Inside wrapped_f()
-Decorator arguments: hello world 42
-sayHello arguments: a different set of arguments
-After f(*args)
-
-after second sayHello() call
-</code></pre>
-
-<h1>总结</h1>
-
-<p>装饰器可以由函数实现，也可以由类实现，由类实现需要类实现<strong>call</strong>函数。
-不管用哪种方式，装饰器返回的必须是一个接受一个函数参数的可调用对象。</p>
-
-<h1>实际例子</h1>
-
-<p>关于装饰器的实际例子，可以参考</p>
-
-<p><a href="https://wiki.python.org/moin/PythonDecoratorLibrary">https://wiki.python.org/moin/PythonDecoratorLibrary</a></p>
-
-<h1>参考</h1>
-
-<p><a href="http://stackoverflow.com/questions/739654/how-can-i-make-a-chain-of-function-decorators-in-python/1594484#1594484">http://stackoverflow.com/questions/739654/how-can-i-make-a-chain-of-function-decorators-in-python/1594484#1594484</a></p>
-
-<p><a href="http://www.artima.com/weblogs/viewpost.jsp?thread=240845">http://www.artima.com/weblogs/viewpost.jsp?thread=240845</a>
-<a href="http://www.artima.com/weblogs/viewpost.jsp?thread=240808">http://www.artima.com/weblogs/viewpost.jsp?thread=240808</a></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[python 作用域规则]]></title>
-    <link href="http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming/"/>
-    <updated>2014-09-13T17:07:23+08:00</updated>
-    <id>http://baren.github.io/blog/2014/09/13/per4-checpter6-function-and-functional-programming</id>
-    <content type="html"><![CDATA[<h1>作用域规则</h1>
-
-<p>每当一个函数执行，都会创建一个局部命名空间（local namespace）。这个命名空间代表了一个局部环境，这个环境包含了凡是参数的名字、在函数内定义的局部变量等。当解析一个名字时，解析器会：</p>
-
-<ul>
-<li>首先检查局部环境变量</li>
-<li>如果在局部命名空间中找不到，然后再往上寻找全局命名空间（global namespace），全局命名空间是函数定义所在的模块。</li>
-<li>如果在全局命名空间不存在，解释器会查找内置的命名空间，如果还找不到，则NameError异常抛出</li>
-</ul>
-
-
-<p>python的命名空间的一个特点就是：在函数内处理全局变量。</p>
-
-<p>比如：</p>
-
-<!-- more -->
-
-
-<pre><code class="python">
-a = 42 
-def foo():
-    a = 13 
-foo()
-# a 还是 42
-</code></pre>
-
-<p>这里，虽然在函数foo内给a赋值为13，但是：<em>当一个变量在函数内赋值时，结果总是把这个变量绑定到局部命名空间中</em>，因此在foo内，a与全局变量的a是不一样的。</p>
-
-<p>如果要在函数内修改全局变量，必须使用<em>global</em>关键字来修饰变量。表示的意思是简单的生命这个名字属于全局命名空间。这只在这个变量需要被修改的情况下。
-例子：</p>
-
-<pre><code class="python">
-a = 42
-b = 37 
-
-def foo():
-    global a  # 'a' 此时在全局命名空间中
-    a = 13 
-    b=0
-
-foo()
-# a 是 13. b 仍然是 37.
-</code></pre>
-
-<h2>嵌套函数中的变量作用域</h2>
-
-<p>python支持嵌套函数定义，也就是在函数内定义函数：</p>
-
-<pre><code class="python">
-def countdown(start): 
-    n = start
-    def display(): # Nested function definition 
-        print('T-minus %d' % n)
-    while n &gt; 0: 
-        display()
-        n -= 1
-</code></pre>
-
-<p>当作用域涉及到嵌套函数时，变量的搜寻是按照<em>词法范围（lexical scoping）</em>来查找的。意思是：</p>
-
-<ul>
-<li>变量名字受限检查局部范围</li>
-<li>然后是函数定义处外围范围，依次往外查找，从最内层到最外层范围</li>
-<li>然后就是全局命名空间</li>
-<li>最后是内置的命名空间</li>
-</ul>
-
-
-<p>在给变量赋值时，牵扯到嵌套函数，python2有个限制是：</p>
-
-<ul>
-<li>只允许在最内层范围的和全局范围的（使用global）的变量可以被赋值。</li>
-</ul>
-
-
-<p>这意味着：</p>
-
-<ul>
-<li>内部函数不能够给一个局部变量赋值，这个局部变量是定义在内部函数的外围函数内。</li>
-</ul>
-
-
-<p>比如：</p>
-
-<pre><code>def countdown(start):
-    n = start
-
-    def display():
-        print('T-minus %d' % n)
-
-    def decrement():
-        n -= 1 # 在Python 2是错误的，这里不能修改这个值。
-
-    while n &gt; 0: 
-        display()
-        decrement()
-</code></pre>
-
-<p>在python3中，可以使用<em>nonlocal</em>关键字来修改：</p>
-
-<pre><code class="python">
-def countdown(start):
-    n = start
-
-    def display(): 
-        print('T-minus %d' % n) 
-
-    def decrement():
-        nonlocal n
-        n -= 1  # 绑定到外围的 n (Python 3)
-
-    while n &gt; 0: 
-        display()
-        decrement()
-</code></pre>
-
-<p>如果一个局部变量在赋值前被使用，则会抛出UnboundLocalError的错误，比如：</p>
-
-<pre><code class="python">
-i=0
-def foo():
-    i = i + 1 # 导致UnboundLocalError 异常 
-    print(i)
-</code></pre>
-
-<p>在这个例子中，变量<em>i</em>被定义为局部变量（在函数内被赋值，并且没有global关键字声明），这样，在执行 i = i +1 语句时，会试图读取变量“i”的值，会导致错误。</p>
-
-<h1>函数作为对象和闭包（closure）</h1>
-
-<h2>函数作为对象</h2>
-
-<p>python中，函数是一级对象（first-class），意思是</p>
-
-<ul>
-<li>函数可以作为参数传递给其它函数</li>
-<li>放在数据结构中</li>
-<li>以及作为结果从函数中返回。</li>
-</ul>
-
-
-<p>注意：</p>
-
-<blockquote><p>当函数作为数据被处理时，需要注意的是：函数隐含的携带了在函数定义处的外围环境信息。这会影响到自由的变量在函数内怎么被绑定。</p></blockquote>
-
-<p>比如下面例子：</p>
-
-<pre><code class="python foo_test.py">
-x = 33
-def print_x():
-    print x
-</code></pre>
-
-<p>然后在foo.py文件中导入foo_test：</p>
-
-<pre><code class="python foo.py">
-x = 42
-
-def foo(func):
-    func()
-
-
-if __name__ == "__main__":
-    foo(foo_test.print_x)
-
-// 输出结果是33，而不是此处定义的42
-</code></pre>
-
-<p>在这个例子中，需要注意的是print_x使用的x是他所定义处的x的值，而不是在执行处的值，虽然在执行的地方，也定义了同样的变量。</p>
-
-<h2>闭包</h2>
-
-<p>闭包的定义：
-组成函数的语句，与执行的环境绑定在一起，产生的对象，被称为闭包。可以简单的认为闭包是一个函数，它在词法上下文中引用了自由变量，所谓自由变量就是除局部变量以外的变量。</p>
-
-<p>闭包只是在形式和表现上像函数，但实际上不是函数。函数是一些可执行的代码，这些代码在函数被定义后就确定了，不会在执行时发生变化，所以一个函数只有一个实例。闭包在运行时可以有多个实例，不同的引用环境和相同的函数组合可以产生不同的实例</p>
-
-<p>一般有闭包特征的语言有下面这样的特性：</p>
-
-<ul>
-<li>函数是第一级对象（first-class）</li>
-<li>函数可以嵌套定义。</li>
-</ul>
-
-
-<p>当嵌套函数被使用时，闭包会捕获嵌套函数执行所需要的整个环境。比如：</p>
-
-<pre><code class="python">
-import foo 
-def bar(): 
-    x = 13
-
-def helloworld():
-    return "Hello World. x is %d" % x
-    foo.callf(helloworld)   # returns 'Hello World, x is 13'
-</code></pre>
-
-<p>闭包和嵌套函数在你想延迟计算时，比较有用：</p>
-
-<pre><code class="python">
-from urllib import urlopen
-# from urllib.request import urlopen (Python 3) 
-
-def page(url):
-
-    def get():
-        return urlopen(url).read()
-    return get
-</code></pre>
-
-<p>执行如下：</p>
-
-<pre><code class="python">
-&gt;&gt;&gt; python_url = page("http://www.python.org") 
-&gt;&gt;&gt; jython_url = page("http://www.jython.org") 
-&gt;&gt;&gt; python_url
-&lt;function get at 0x95d5f0&gt;
-&gt;&gt;&gt; jython
-&lt;function get at 0x9735f0&gt;
-&gt;&gt;&gt; pydata = python()  # 读取url内容
-&gt;&gt;&gt; jydata = jython()  # 读取url内容
-</code></pre>
-
-<p>对于上面这个闭包例子，解释如下：</p>
-
-<ul>
-<li>两个变量python_url和jython_url实际上是两个不同的get函数的版本（语句与外围环境的绑定）</li>
-<li>即使创建这两个变量的函数page不再运行，get函数暗中的携带了get函数使用的外围get函数定义处的变量。</li>
-<li>当get调用时，绑定了代码和外围的变量。</li>
-</ul>
-
-
-<p>闭包一个非常有用的方式是：<em>可以用来保存跨越一系列函数调用的状态（函数式编程所用到的状态的保存）</em>，比如：</p>
-
-<pre><code class="python">
-def countdown(n): 
-    def next():
-        nonlocal n  # python3
-        r=n
-        n -= 1 
-        return r
-    return next
-
-# Example use
-next = countdown(10) 
-while True:
-    v = next()  # 获取下一个值
-    if not v: 
-        break
-</code></pre>
-
-<p>在这段代码中，闭包被用来保存内部的计数值 n。这样，每次调用next()函数时，都能够更新和返回上一个计数变量的值（感觉就是更新了一个全局变量，但是这个n实际上是一个局部变量）。</p>
-
-<p>假设，语言不支持闭包，那么要实现上面同样的功能，可以这样(基本原则是在函数外定义一个变量，变量的生命周期不随函数调用而结束)：</p>
-
-<pre><code class="python">
-class Countdown(object): 
-
-    def __init__(self,n):
-        self.n = n 
-
-    def next(self):
-        r = self.n 
-        self.n -= 1 
-        return r
-
-# Example use
-c = Countdown(10) 
-
-while True:
-    v = c.next() # 获取下一个值
-    if not v: 
-        break
-</code></pre>
-
-<p>总结：</p>
-
-<blockquote><p>闭包可以保存变量的状态，这个变量不随着闭包调用结束而丢失。重要的特性。
-闭包可以捕获嵌套函数的环境的特性，在包装一个存在的函数来增加额外的功能的时候，非常有用（装饰器）。</p></blockquote>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[程序结构和控制]]></title>
-    <link href="http://baren.github.io/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/"/>
-    <updated>2014-09-06T21:56:14+08:00</updated>
-    <id>http://baren.github.io/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow</id>
-    <content type="html"><![CDATA[<h1>程序结构和执行</h1>
-
-<p>python程序被组织为一个语句序列。所有的语言特性，包括变量赋值、函数定义、类定义和模块导入等，都是语句，都是与其他语句具有相同状态。</p>
-
-<p>因此所有语句都可以放置在程序的任何地方。</p>
-
-<p>比如：</p>
-
-<pre><code class="python">if debug:
-    def square(x):
-        if not isinstance(x,float):
-            raise TypeError("Expected a float")
-        return x * x
-else:
-    def square(x):
-        return x * x
-</code></pre>
-
-<p>当加载文件时，python解释器顺序的执行每一条语句，知道不能执行为止。</p>
-
-<p>这种执行方式对于简单的作为主程序执行，或者经过import进行导入是一致的。</p>
-
-<!-- more -->
-
-
-<h1>循环和迭代</h1>
-
-<p>如果要迭代一个列表，可以使用常用的for in格式。如果迭代列表，还需要获取索引，可以使用enumerate函数，比如：</p>
-
-<pre><code class="python">
-for i,x in enumerate(s): 
-    statements
-</code></pre>
-
-<p>enumerate()函数实际上创建了一个iterator，这个迭代器每次返回一个元组(index, s[index])</p>
-
-<p>如果要迭代两个list，比如对两个list的每项元素相加。可以使用zip函数：</p>
-
-<pre><code class="python"># s and t are two sequences 
-for x,y in zip(s,t):
-    statements
-</code></pre>
-
-<p>zip()函数联合了s和t的元素，生成了一个元组序列：s[0],t[0]), (s[1],t[1]), (s[2], t[2]),等，直到最短的list结束。</p>
-
-<p>注意：
-* python2中，zip函数全部消耗了序列元素，生成一个序列。如果s和t比较大，那会生成一个大的列表，进而消耗内存资源。
-* python3中，zip改进了，一次生成一个元素，而不是一下子生成一个巨大的序列。
-* python2中，可以使用itertools.izip()函数来优化，其方式与python3中的zip一致。</p>
-
-<p>例子：</p>
-
-<pre><code class="python">&gt;&gt;&gt; a = range(8)
-&gt;&gt;&gt; b = range(9)
-&gt;&gt;&gt; a
-[0, 1, 2, 3, 4, 5, 6, 7]
-&gt;&gt;&gt; b
-[0, 1, 2, 3, 4, 5, 6, 7, 8]
-&gt;&gt;&gt; for x,y in zip(a,b):
-...     print x+y
-...
-0
-2
-4
-6
-8
-10
-12
-14
-&gt;&gt;&gt; import itertools
-&gt;&gt;&gt; for x,y in itertools.izip(a,b):
-...     print x+y
-...
-0
-2
-4
-6
-8
-10
-12
-14
-</code></pre>
-
-<p>循环结构，还可以有一个else的语句,for-else或者while-else，比如：</p>
-
-<pre><code class="python"># for-else
-for line in open("foo.txt"):
-    stripped = line.strip() 
-    if not stripped:
-        break
-# process the stripped line ...
-else:
-    raise RuntimeError("Missing section separator")
-</code></pre>
-
-<p>有两种情况下能够执行到else分支：
-* 立即执行，既循环条件不满足。
-* 迭代执行完毕，这意味着，如果是break语句或异常语句中断了循环，则不会执行else分支。</p>
-
-<p>一般需要用到for-else这种结构的情况是：迭代完数据，并且需要检查或者设置标记时，可以使用。</p>
-
-<h1>异常</h1>
-
-<p>记住几个点：</p>
-
-<ol>
-<li>在except语句中，既可以 except Exception as e，也可以except Exception, e，后面一个是老式用法，不推荐</li>
-<li>可以一次except捕获多个异常：<em>except (IOError, TypeError, NameError) as e:</em></li>
-</ol>
-
-
-<pre><code class="python">try:
-    do something
-except (IOError, TypeError, NameError) as e: # Handle I/O, Type, or Name errors
+from tornado.options import define, options
+define("port", default=8888, help="run on the given port", type=int)
+define("mysql_host", default="127.0.0.1:3306", help="Main user DB")
+define("memcache_hosts", default="127.0.0.1:11011", multiple=True,
+       help="Main user memcache servers")
+
+def connect():
+    db = database.Connection(options.mysql_host)
     ...
+
+# 后面会跟着下面语句，一般在启动函数内
+
+tornado.options.parse_command_line()  # 解析命令行传入参数
+# or
+tornado.options.parse_config_file("/etc/server.conf")  # 解析文件传入参数
 </code></pre>
 
-<ol>
-<li>try也支持else语句，执行else的条件是try块中没有抛出异常：</li>
-</ol>
+<p>所有的定义的参数，不管是在文件内定义的，还是通过命令行传入的，都保存到全局变量options里面。</p>
 
+<p>甚至在模块内，也可以有自己的参数定义。其条件是比如在调用parse_command_line函数时，import这个模块。</p>
 
-<pre><code class="python">try:
-    f = open('foo', 'r')
-except IOError as e:
-    error_log.write('Unable to open foo : %s\n' % e)
-else:
-    data = f.read() f.close()
+<p>这样通过define函数定义的参数和通过命令行传入的参数，都会存在options变量下面。这样使用：</p>
+
+<pre><code class="python">
+http_server = tornado.httpserver.HTTPServer(application)
+http_server.listen(options.port)
 </code></pre>
 
-<h1>上下文管理和with语句</h1>
+<p>问题是，python自带了解析命令行参数的模块<em>getopt</em>，tornado为啥不用这个，又自己写了这样的解析模块呢？</p>
 
-<p>在遇到异常的情况下，正确地管理系统资源（比如锁、文件、连接等）是比较棘手的。比如异常可能会绕过释放重要系统资源的代码。</p>
+<p>先了解下sys.argv和getopt模块。</p>
 
-<p><em>with</em>语句允许代码在一个运行的上下文中执行代码，这个运行的上下文被一个作为上下文管理器的对象来控制。比如：</p>
+<h2>sys.argv介绍</h2>
 
-<pre><code class="python"># 当控制离开with代码块时，with自动的将打开的文件关闭
-with open("debuglog","a") as f: 
-    f.write("Debugging\n") 
-    statements 
-    f.write("Done\n")
+<p>启动参数，会放在sys.argv下面，比如：</p>
 
-import threading
-lock = threading.Lock() 
-# 当控制进入和离开with代码块时，自动获取和释放锁。
-with lock:
-    # Critical section statements
-    # End critical section
+<pre><code class="python"># argecho.py
+import sys
+
+for arg in sys.argv:
+    print arg
 </code></pre>
 
-<p>语法 <em>with obj</em> 允许让对象obj来控制当执行进入和离开代码块时的行为。</p>
+<p>使用例子：</p>
+
+<pre><code>$ python argecho.py abc def     
+argecho.py
+abc
+def
+$ python argecho.py --help      
+argecho.py
+--help
+$ python argecho.py -m kant.xml 
+argecho.py
+-m
+kant.xml
+</code></pre>
+
+<p>sya.argv仅仅已空格区分，然后依次记录启动，其中argv[0]是启动脚本名称。</p>
+
+<p>python提供了getopt来方便解析argv的参数。</p>
+
+<h2>getopt模块</h2>
+
+<p>getopt函数支持下面几种参数定义：</p>
+
+<pre><code>-a
+-bval
+-b val
+--noarg
+--witharg=val
+--witharg val
+</code></pre>
+
+<p>getopt有三个参数：</p>
 
 <ul>
-<li>进入：
-当with obj执行时，它执行obj.<strong>enter</strong>()函数来标记正在进入一个新的上下文。</li>
-<li>离开：
-
-<blockquote><p>当控制离开上下文时，执行obj.<strong>exit</strong>(type,value,traceback)，此时，如果没有异常发生，<strong>exit</strong>()函数的三个参数都被设置为None，表示无异常。
-否则type,value,traceback就会被赋值为与导致控制流离开with代码块的异常相关联的信息。
-<strong>exit</strong>() 返回True和False来标记是否产生的异常被处理了。如果返回False，异常会继续向上传递。</p></blockquote></li>
-</ul>
-
-
-<p>with还可以跟着一个as标识符。<em>with obj as var:</em>如果设置了，则obj.<strong>enter</strong>()的返回值会被赋值给as指定的对象。注意，obj可以不等于var的值。</p>
-
-<p>注意：</p>
-
-<blockquote><p>with只能与支持上下文管理协议的对象（实现了<strong>enter</strong>()和<strong>exit</strong>）一块工作。</p></blockquote>
-
-<p>用户可以实现这两个函数来使自己定义的对象支持上下文管理协议：</p>
-
-<pre><code class="python">class ListTransaction(object): 
-    def __init__(self,thelist):
-        self.thelist = thelist 
-
-    def __enter__(self):
-        self.workingcopy = list(self.thelist)
-        return self.workingcopy
-
-    def __exit__(self,type,value,tb):
-        if type is None:
-            self.thelist[:] = self.workingcopy
-        return False
-
-# 使用
-items = [1,2,3]
-with ListTransaction(items) as working:
-    working.append(4)
-    working.append(5)
-    print(items) # Produces [1,2,3,4,5]
-
-try:
-    with ListTransaction(items) as working:
-        working.append(6) working.append(7)
-        raise RuntimeError("We're hosed!")
-except RuntimeError: pass
-    print(items) # Produces [1,2,3,4,5]
-</code></pre>
-
-<p>可以使用contextlib模块来简化上下文对象的实现：</p>
-
-<pre><code class="python">from contextlib import contextmanager 
-
-@contextmanager
-def ListTransaction(thelist):
-    workingcopy = list(thelist)
-    yield workingcopy
-    # Modify the original list only if no errors 
-    thelist[:] = workingcopy
-</code></pre>
-
-<p>yield生成的对象，就相当于<strong>enter</strong>函数返回的对象。
-当执行到<strong>exit</strong>函数时，执行会从yield后继续执行。</p>
-
-<p>如果在上下文中出现了异常，可异常可以在生成器函数中展现（函数内有yield的函数，调用后产生生成器）</p>
-
-<h1>assert</h1>
-
-<p>语法是这样：</p>
-
-<pre><code class="python">assert test [, msg]
-
-# test表达式生成True或者False，如果为False，assert会生成一个AssertionError异常，并附带msg信息
-</code></pre>
-
-<p>关于assert，需要知道以下几点：
-* 不能使用assert用来为了使程序正确而必须执行的代码（比如检查用户输入是否合法，则不能使用assert），因为有可能不被执行（运行python使用-O参数）
-* assert应该被用来事情总是是true的情况，否则就是个bug。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[python杂记]]></title>
-    <link href="http://baren.github.io/blog/2014/04/22/python-note/"/>
-    <updated>2014-04-22T11:15:07+08:00</updated>
-    <id>http://baren.github.io/blog/2014/04/22/python-note</id>
-    <content type="html"><![CDATA[<ul>
-<li><p>实际上，每一个python函数都有返回值，如果有return，则返回return指定的值；没有就返回None。</p></li>
-<li><p>python的搜索路径是在sys.path中搜索，sys.path是一个list，可以修改这个list的值。</p></li>
-<li><p>python中，所有都是对象（函数是对象，模块是对象等），意思是所有都可以赋值给变量，或者作为参数传递给函数。所有都是对象，有些可能不具有方法和属性，有些不能被继承，但是都可以赋值和传参。</p></li>
+<li>第一个参数是需要解析的参数列表，一般是从argv[1]开始：sys.argv[1:]。</li>
+<li>第二个参数是短的选项定义，单个字符的。如果需要接收参数则后面跟着冒号“:”，比如：&#8217;ab:c:&lsquo;，表示-a不接收参数，-b和-c后面都要跟着参数。</li>
+<li>第三个参数提供长选项名字的列表。如果有参数，后面跟着“=”，比如：&#8217;noarg&#8217;, &lsquo;witharg=&rsquo;, &lsquo;witharg2=&rsquo;</li>
 </ul>
 
 ]]></content>

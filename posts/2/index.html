@@ -9,10 +9,7 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="代码高亮语法 { % codeblock [lang:language] [title] [url] [link text] % }
-code snippet
-{ % endcodeblock % } 例子： Javascript Array SyntaxMDN Documentation 1
-2 &hellip;">
+  <meta name="description" content="主要描述POSIX线程的取消机制和更进一步的线程细节，包括线程和信号，线程栈等。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -67,6 +64,290 @@ code snippet
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/25/pthread-cancel/">取消线程</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-25T20:56:04+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>主要描述POSIX线程的取消机制和更进一步的线程细节，包括线程和信号，线程栈等。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/09/25/pthread-cancel/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/17/pthread-control/">Pthread Control</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-17T21:19:03+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>线程属性</h1>
+
+<p>在使用pthread_create函数：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">pthread_create</span><span class="p">(</span><span class="kt">pthread_t</span> <span class="o">*</span><span class="kr">thread</span><span class="p">,</span> <span class="k">const</span> <span class="kt">pthread_attr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">start</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="p">),</span> <span class="kt">void</span> <span class="o">*</span><span class="n">arg</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>创建线程时，第三个参数attr是线程属性。可以使用pthread_attr_t结构来修改线程默认属性。</p>
+
+<p>pthread_attr_t变量需要初始化，需要使用pthread_attr_init函数进行初始化。调用初始化函数后，pthread_attr_t结构所包含的内容就是操作系统实现支持的线程所有属性的默认值。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/09/17/pthread-control/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/14/per4-checpter6-decorator/">Python Decorator 深入理解</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-14T11:38:09+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>装饰器介绍</h1>
+
+<p>装饰器是一个函数，其主要目的是包装另一个函数或类，来透明的修改或者增强被包装对象的功能。语法上，装饰器用<em>@</em>表示，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="nd">@trace</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面装饰器，类似于这样的：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">square</span> <span class="o">=</span> <span class="n">trace</span><span class="p">(</span><span class="n">square</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/09/14/per4-checpter6-decorator/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">Python 作用域规则</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-13T17:07:23+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>作用域规则</h1>
+
+<p>每当一个函数执行，都会创建一个局部命名空间（local namespace）。这个命名空间代表了一个局部环境，这个环境包含了凡是参数的名字、在函数内定义的局部变量等。当解析一个名字时，解析器会：</p>
+
+<ul>
+<li>首先检查局部环境变量</li>
+<li>如果在局部命名空间中找不到，然后再往上寻找全局命名空间（global namespace），全局命名空间是函数定义所在的模块。</li>
+<li>如果在全局命名空间不存在，解释器会查找内置的命名空间，如果还找不到，则NameError异常抛出</li>
+</ul>
+
+
+<p>python的命名空间的一个特点就是：在函数内处理全局变量。</p>
+
+<p>比如：</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-06T21:56:14+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>程序结构和执行</h1>
+
+<p>python程序被组织为一个语句序列。所有的语言特性，包括变量赋值、函数定义、类定义和模块导入等，都是语句，都是与其他语句具有相同状态。</p>
+
+<p>因此所有语句都可以放置在程序的任何地方。</p>
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span class='line'>      <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="nb">float</span><span class="p">):</span>
+</span><span class='line'>          <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Expected a float&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
+</span><span class='line'><span class="k">else</span><span class="p">:</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>当加载文件时，python解释器顺序的执行每一条语句，知道不能执行为止。</p>
+
+<p>这种执行方式对于简单的作为主程序执行，或者经过import进行导入是一致的。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -425,305 +706,6 @@ chown改变该终端的所有权，使登录用户成为它的所有者
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/04/process-control/">Apue(进程控制)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-04T20:00:02+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>进程标识符</h1>
-
-<p>进程都有一个非负整数代表唯一的进程ID。</p>
-
-<p>当进程终止后，进程ID可以重用，为了防止将新进程视为使用同一个进程ID的旧的进程，系统采用了<em>延迟重用</em>算法来重用进程ID。</p>
-
-<p>系统启动后有一些专用进程：</p>
-
-<ul>
-<li>ID为0的进程——调度进程，也称为交换进程（swapper），这个进程是内核的一部分，不执行磁盘上的程序，被称为系统进程。</li>
-<li>ID为1的进程——init进程，自举结束时由内核调用；早期的进程文件是/etc/init，现在都是/sbin/init。init通常读取系统的配置文件来初始化系统（/etc/rc*或/etc/initab, /etc/init.d）。init进程不会终止，虽然是普通进程，但是以超级用户权限运行，还接收孤儿进程，是所有孤儿进程（子进程还活着，父进程终止了，称为孤儿进程）父进程。</li>
-</ul>
-
-
-<p>下面函数返回与进程相关的其他标识符：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>pid_t getpid(void);
-</span><span class='line'>
-</span><span class='line'>pid_t getppid(void);
-</span><span class='line'>
-</span><span class='line'>uid_t getuid(void);  // 实际用户id
-</span><span class='line'>
-</span><span class='line'>uid_t geteuid(void);  // 有效用户id
-</span><span class='line'>
-</span><span class='line'>gid_t getgid(void);  // 实际组id
-</span><span class='line'>
-</span><span class='line'>gid_t getegid(void);  // 有效组id
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/05/04/process-control/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/04/22/python-note/">Python杂记</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-04-22T11:15:07+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><ul>
-<li><p>实际上，每一个python函数都有返回值，如果有return，则返回return指定的值；没有就返回None。</p></li>
-<li><p>python的搜索路径是在sys.path中搜索，sys.path是一个list，可以修改这个list的值。</p></li>
-<li><p>python中，所有都是对象（函数是对象，模块是对象等），意思是所有都可以赋值给变量，或者作为参数传递给函数。所有都是对象，有些可能不具有方法和属性，有些不能被继承，但是都可以赋值和传参。</p></li>
-</ul>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/04/09/process-environment/">Apue(进程环境)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-04-09T20:00:58+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>main函数</h1>
-
-<p>c程序的起始运行函数是</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>int main(int argc, char *argv[]);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>argc是命令行参数数目，argv是指针数组，指向每一个参数。</p>
-
-<p>内核执行C程序是调用exec函数，在调用main函数之前，会先调用一个特殊的启动例程，可执行程序文件指定这个例程作为程序的启动地址。这是由链接编辑器设置的。链接编辑器由编译器调用。</p>
-
-<p>启动例程会从内核取得命令行参数和环境变量值。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/04/09/process-environment/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/29/system-data-file-and-info/">Apue(系统数据文件和信息)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-29T08:06:39+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>时间和日期</h1>
-
-<p>unix内核提供的<em>基本时间服务</em>是计算自国际标准时间公元1970年1月1日00:00:00以来经过的秒数。</p>
-
-<p>这种秒数是以数据类型time_t表示的。称之为<strong>日历时间</strong>，日历时间包括日期和时间。</p>
-
-<p>time函数返回当前的时间和日期：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#include &lt;time.h&gt;
-</span><span class='line'>
-</span><span class='line'>time_t time(time_t *calptr);
-</span></code></pre></td></tr></table></div></figure>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/03/29/system-data-file-and-info/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/03/22/standard-io/">apue(标准I/O库)</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-03-22T20:06:00+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>流和FILE对象</h1>
-
-<h2>流介绍</h2>
-
-<p>对于标准I/O库，他们的操作是围绕<em>流</em>进行的。</p>
-
-<p>与JAVA使用Stream类来代表流不一样，标准I/O采用结构体FILE来代表流，由于大多数标准库的函数使用FILE <em>来作为参数，因此也用</em>文件指针*来代称流。</p>
-
-<p>struct FILE结构体在stdio.h中做了声明：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>typedef struct _sFILE{...} FILE;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>数据类型FILE
-    > 代表流对象，FILE对象含有所有的连接文件的内部状态，包括文件位置标记和缓存信息等。
-    > 每一个流海包含error和文件末尾状态标记，可以通过ferror和feof函数进行测试。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/03/22/standard-io/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="3">&larr; Older</a>
@@ -741,7 +723,27 @@ chown改变该终端的所有权，使登录用户成为它的所有者
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2016/03/02/python-function/">python 函数知识</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/02/26/python-model/">python 模块知识</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/01/20/man-bash/">man bash 解释</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/statis-udp/">统计系统设计</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/03/22/python-yield/">yield（generator和coroutine）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/python-tornado-source/">tornado源代码研究笔记</a>
       </li>
     
       <li class="post">
@@ -750,26 +752,6 @@ chown改变该终端的所有权，使登录用户成为它的所有者
     
       <li class="post">
         <a href="/blog/2014/11/19/shared-libraries/">Shared libraries简介</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/10/20/daemon/">daemon简介</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/28/pthread-further-details/">pthread 进一步细节</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/25/pthread-cancel/">取消线程</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/17/pthread-control/">pthread control</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/14/per4-checpter6-decorator/">python decorator 深入理解</a>
       </li>
     
   </ul>
@@ -785,7 +767,7 @@ chown改变该终端的所有权，使登录用户成为它的所有者
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2015 - enwu -
+  Copyright &copy; 2016 - enwu -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
   <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>

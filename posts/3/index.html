@@ -9,13 +9,7 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="stat系列函数 3个stat函数，位于sys/stat.h头文件中，其声明： 1
-2
-3
-4
-5
-#include &lt;sys/stat.h&gt; int stat(const char *restrict path, struct stat *restrict buf);
-int &hellip;">
+  <meta name="description" content="进程标识符 进程都有一个非负整数代表唯一的进程ID。 当进程终止后，进程ID可以重用，为了防止将新进程视为使用同一个进程ID的旧的进程，系统采用了延迟重用算法来重用进程ID。 系统启动后有一些专用进程： ID为0的进程——调度进程，也称为交换进程（swapper），这个进程是内核的一部分， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -70,6 +64,305 @@ int &hellip;">
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/05/04/process-control/">Apue(进程控制)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-04T20:00:02+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>进程标识符</h1>
+
+<p>进程都有一个非负整数代表唯一的进程ID。</p>
+
+<p>当进程终止后，进程ID可以重用，为了防止将新进程视为使用同一个进程ID的旧的进程，系统采用了<em>延迟重用</em>算法来重用进程ID。</p>
+
+<p>系统启动后有一些专用进程：</p>
+
+<ul>
+<li>ID为0的进程——调度进程，也称为交换进程（swapper），这个进程是内核的一部分，不执行磁盘上的程序，被称为系统进程。</li>
+<li>ID为1的进程——init进程，自举结束时由内核调用；早期的进程文件是/etc/init，现在都是/sbin/init。init通常读取系统的配置文件来初始化系统（/etc/rc*或/etc/initab, /etc/init.d）。init进程不会终止，虽然是普通进程，但是以超级用户权限运行，还接收孤儿进程，是所有孤儿进程（子进程还活着，父进程终止了，称为孤儿进程）父进程。</li>
+</ul>
+
+
+<p>下面函数返回与进程相关的其他标识符：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;unistd.h&gt;
+</span><span class='line'>
+</span><span class='line'>pid_t getpid(void);
+</span><span class='line'>
+</span><span class='line'>pid_t getppid(void);
+</span><span class='line'>
+</span><span class='line'>uid_t getuid(void);  // 实际用户id
+</span><span class='line'>
+</span><span class='line'>uid_t geteuid(void);  // 有效用户id
+</span><span class='line'>
+</span><span class='line'>gid_t getgid(void);  // 实际组id
+</span><span class='line'>
+</span><span class='line'>gid_t getegid(void);  // 有效组id
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/05/04/process-control/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/04/22/python-note/">Python杂记</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-04-22T11:15:07+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><ul>
+<li><p>实际上，每一个python函数都有返回值，如果有return，则返回return指定的值；没有就返回None。</p></li>
+<li><p>python的搜索路径是在sys.path中搜索，sys.path是一个list，可以修改这个list的值。</p></li>
+<li><p>python中，所有都是对象（函数是对象，模块是对象等），意思是所有都可以赋值给变量，或者作为参数传递给函数。所有都是对象，有些可能不具有方法和属性，有些不能被继承，但是都可以赋值和传参。</p></li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/04/09/process-environment/">Apue(进程环境)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-04-09T20:00:58+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>main函数</h1>
+
+<p>c程序的起始运行函数是</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>int main(int argc, char *argv[]);
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>argc是命令行参数数目，argv是指针数组，指向每一个参数。</p>
+
+<p>内核执行C程序是调用exec函数，在调用main函数之前，会先调用一个特殊的启动例程，可执行程序文件指定这个例程作为程序的启动地址。这是由链接编辑器设置的。链接编辑器由编译器调用。</p>
+
+<p>启动例程会从内核取得命令行参数和环境变量值。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/04/09/process-environment/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/03/29/system-data-file-and-info/">Apue(系统数据文件和信息)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-29T08:06:39+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>时间和日期</h1>
+
+<p>unix内核提供的<em>基本时间服务</em>是计算自国际标准时间公元1970年1月1日00:00:00以来经过的秒数。</p>
+
+<p>这种秒数是以数据类型time_t表示的。称之为<strong>日历时间</strong>，日历时间包括日期和时间。</p>
+
+<p>time函数返回当前的时间和日期：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>#include &lt;time.h&gt;
+</span><span class='line'>
+</span><span class='line'>time_t time(time_t *calptr);
+</span></code></pre></td></tr></table></div></figure>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/03/29/system-data-file-and-info/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/03/22/standard-io/">apue(标准I/O库)</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-03-22T20:06:00+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>流和FILE对象</h1>
+
+<h2>流介绍</h2>
+
+<p>对于标准I/O库，他们的操作是围绕<em>流</em>进行的。</p>
+
+<p>与JAVA使用Stream类来代表流不一样，标准I/O采用结构体FILE来代表流，由于大多数标准库的函数使用FILE <em>来作为参数，因此也用</em>文件指针*来代称流。</p>
+
+<p>struct FILE结构体在stdio.h中做了声明：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>typedef struct _sFILE{...} FILE;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>数据类型FILE
+    > 代表流对象，FILE对象含有所有的连接文件的内部状态，包括文件位置标记和缓存信息等。
+    > 每一个流海包含error和文件末尾状态标记，可以通过ferror和feof函数进行测试。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/03/22/standard-io/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -370,184 +663,9 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/12/30/fileio-further-details/">Linux文件io进一步描述</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-12-30T13:15:19+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>原子性和条件竞争</h2>
-
-<p>所有系统调用都是原子执行的。原子执行避免了条件竞争。所谓条件竞争，指的是两个进程，在共享资源上操作，产生的结果依赖于两个进程的执行顺序。</p>
-
-<h3>排他性创建文件</h3>
-
-<p>在调用open系统调用函数时，如果文件存在，则如果指定O_EXCL和O_CREAT会导致open失败。这就为进程提供了一种确保是他创建了文件的方式。
-如果没有这个选项，则一般是先检查文件存在不存在，如果不存在，就创建一个文件。由于是check-if-absent方式，产生条件竞争。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2013/12/30/fileio-further-details/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/12/23/the-universal-io-model/">FiFe I/O 通用的I/O模型</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-12-23T14:36:16+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>总述</h2>
-
-<p>所有完成IO的系统调用，都是使用文件描述符（file descriptor）来引用一个文件。文件描述符用来引用打开的所有类型文件，包括管道、socket、设备等。每个进程都有自己的文件描述符集。</p>
-
-<p>根据惯例，大多数的应用程序都希望打开三个标准的文件描述符（标准输入、输出和错误）。这三个文集描述符，一般是由在程序启动之前启动的shell程序打开的。</p>
-
-<table>
-<thead>
-<tr>
-<th> 文件描述符        </th>
-<th style="text-align:center;"> POSIX 名称（在unistd.h头文件中定义）           </th>
-<th style="text-align:right;"> 描述  </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td> 0      </td>
-<td style="text-align:center;"> STDIN_FILENO </td>
-<td style="text-align:right;"> 标准输入 </td>
-</tr>
-<tr>
-<td> 1     </td>
-<td style="text-align:center;"> STDOUT_FILENO      </td>
-<td style="text-align:right;">   标准输出 </td>
-</tr>
-<tr>
-<td> 2 </td>
-<td style="text-align:center;"> STDERR_FILENO     </td>
-<td style="text-align:right;">    标准错误 </td>
-</tr>
-</tbody>
-</table>
-
-
-<p>在程序中，既可以使用数字，也可以使用posix的名称来指向这几个文件描述符。</p>
-
-<p>下面是四个关键的完成IO的系统调用：
-* fd = open(pathname, flags, mode) 。通过制定flags参数，open函数既可以打开文件，也可以创建文件。如果创建文件，mode参数用来指定创建文件的访问权限。如果不是用来创建文件，可以忽略mode这个文件。SUSv3规定，如果open成功，他保证使用这个进程的最小的没有使用的文件描述符。
-* numread = read(fd, buffer, count)。读取fd引用的文件，最多读取count个字节，返回的是实际读取的字节数，如果到了文件末尾，返回0。
-* numwritten = write(fd, buffer, count)。从buffer中，写入count个字节数据到fd所指向的文件中。返回的是实际写入的字节数，有可能小于count。
-* status = close(fd) 。释放文件描述符，以及相关的内核资源</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2013/12/23/the-universal-io-model/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/12/17/linux-open-max-fd-num/">Linux最大文件描述符设置</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-12-17T14:36:20+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>在linux中，所有都是文件，也就是说一个连接也是一个文件。每打开一个文件，内核会分配一个文件描述符，因此一个进程可打开的最大文件描述符决定了可支持的最大连接数。这是一个重要的参数。</p>
-
-<p>linux有两个限制：</p>
-
-<pre><code>1、系统级限制。限制了整个系统可打开的最大文件描述符
-
-2、每个进程的限制。一个应用可打开的最大文件描述符
-</code></pre>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2013/12/17/linux-open-max-fd-num/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="4">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -562,7 +680,27 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2016/03/02/python-function/">python 函数知识</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/02/26/python-model/">python 模块知识</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/01/20/man-bash/">man bash 解释</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/statis-udp/">统计系统设计</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/03/22/python-yield/">yield（generator和coroutine）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/python-tornado-source/">tornado源代码研究笔记</a>
       </li>
     
       <li class="post">
@@ -571,26 +709,6 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     
       <li class="post">
         <a href="/blog/2014/11/19/shared-libraries/">Shared libraries简介</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/10/20/daemon/">daemon简介</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/28/pthread-further-details/">pthread 进一步细节</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/25/pthread-cancel/">取消线程</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/17/pthread-control/">pthread control</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/14/per4-checpter6-decorator/">python decorator 深入理解</a>
       </li>
     
   </ul>
@@ -606,7 +724,7 @@ lstat如果参数是符号链接，返回符号链接的信息，而不是返回
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2015 - enwu -
+  Copyright &copy; 2016 - enwu -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
   <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>

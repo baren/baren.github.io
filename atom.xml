@@ -4,7 +4,7 @@
   <title><![CDATA[Baren Blog]]></title>
   <link href="http://baren.github.io/atom.xml" rel="self"/>
   <link href="http://baren.github.io/"/>
-  <updated>2015-03-30T20:49:23+08:00</updated>
+  <updated>2016-03-04T16:11:12+08:00</updated>
   <id>http://baren.github.io/</id>
   <author>
     <name><![CDATA[enwu]]></name>
@@ -12,6 +12,384 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[python 函数知识]]></title>
+    <link href="http://baren.github.io/blog/2016/03/02/python-function/"/>
+    <updated>2016-03-02T19:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2016/03/02/python-function</id>
+    <content type="html"><![CDATA[<h1>函数命名空间</h1>
+
+<p>每次函数执行，都会创建一个 local namespace。用来存放在函数内定义的变量。</p>
+
+<p>在函数内引用一个变量，python查找这个变量的顺序是：</p>
+
+<ul>
+<li>局部空间</li>
+<li>全局空间（函数定义所在的模块定义的变量）</li>
+<li>built-in namespace</li>
+</ul>
+
+
+<p>如果找不到，则抛出NameError。</p>
+
+<p>如果想要在函数内修改全局变量值，则需要用global关键字声明，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="mi">42</span>
+</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="mi">37</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+</span><span class='line'>  <span class="k">global</span> <span class="n">a</span>   <span class="c"># &#39;a&#39; is in global namespace</span>
+</span><span class='line'>  <span class="n">a</span> <span class="o">=</span> <span class="mi">13</span>
+</span><span class='line'>  <span class="n">b</span><span class="o">=</span><span class="mi">0</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="n">foo</span><span class="p">()</span>
+</span><span class='line'><span class="c"># a is now 13. b is still 37.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>内嵌函数的命名空间</h2>
+
+<p>函数内也可以定义函数，这叫nested function。内嵌函数的包围函数被称作外围函数（outer function）。在内嵌函数内绑定的变量是定义在词法空间（lexical scoping），在内嵌函数内，引用变量的顺序是：</p>
+
+<ul>
+<li>lexical scoping</li>
+<li>局部空间</li>
+<li>全局空间（函数定义所在的模块定义的变量）</li>
+<li>built-in namespace</li>
+</ul>
+
+
+<p>在内嵌函数内，可以访问包围其函数内定义的变量（对内嵌函数来说，外围函数定义的变量被称作自由变量 free variables），但是不能再内嵌函数中重新绑定其外围函数定义的变量。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
+</span><span class='line'>    <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">inner</span><span class="p">():</span>
+</span><span class='line'>        <span class="n">b</span> <span class="o">-=</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="n">inner</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">test</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">结果是：</span>
+</span><span class='line'><span class="ne">UnboundLocalError</span><span class="p">:</span> <span class="n">local</span> <span class="n">variable</span> <span class="s">&#39;b&#39;</span> <span class="n">referenced</span> <span class="n">before</span> <span class="n">assignment</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>只能在内嵌函数的最外层函数和全局空间内更改变量（python3用nonlocal关键字解决这个问题）。</p>
+
+<h2>闭包</h2>
+
+<p>函数是first-class对象，因此，函数可以：</p>
+
+<ul>
+<li>赋值给变量</li>
+<li>作为参数传递给函数</li>
+<li>作为函数结果返回</li>
+<li>存放在数据结构中</li>
+</ul>
+
+
+<p>当把函数作为数据处理时，函数会隐含的带着一些额外的相关信息，这些相关信息就是函数定义处的一些数据。</p>
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># foo.py</span>
+</span><span class='line'><span class="n">x</span> <span class="o">=</span> <span class="mi">42</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">callf</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">func</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>观察行为</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">foo</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">37</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">helloworld</span><span class="p">():</span>
+</span><span class='line'><span class="o">...</span>        <span class="k">return</span> <span class="s">&quot;Hello World. x is </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">x</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="n">callf</span><span class="p">(</span><span class="n">helloworld</span><span class="p">)</span>  <span class="c"># Pass a function as an argument &#39;Hello World. x is 37&#39;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里结果是helloworld定义位置的x的值，而不是执行位置的x的值。</p>
+
+<p>闭包定义：</p>
+
+<p>闭包是在其词法上下文（内嵌函数内部）中引用了自由变量（外围函数定义的变量）的函数。主要用途是当有需要延迟计算的情况，用闭包更简洁。</p>
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">urlopen</span>
+</span><span class='line'><span class="c"># from urllib.request import urlopen (Python 3) </span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">page</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get</span><span class="p">():</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>  <span class="c"># 引用了自由变量url，这个值取自定义函数的时候</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">get</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用闭包例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">python</span> <span class="o">=</span> <span class="n">page</span><span class="p">(</span><span class="s">&quot;http://www.python.org&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">python</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span> <span class="n">get</span> <span class="n">at</span> <span class="mh">0x95d5f0</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jython</span> <span class="o">=</span> <span class="n">page</span><span class="p">(</span><span class="s">&quot;http://www.jython.org&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jython</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span> <span class="n">get</span> <span class="n">at</span> <span class="mh">0x9735f0</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">pydata</span> <span class="o">=</span> <span class="n">python</span><span class="p">()</span> <span class="c"># Fetches http://www.python.org</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jydata</span> <span class="o">=</span> <span class="n">jython</span><span class="p">()</span>     <span class="c"># Fetches http://www.jython.org</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>看上面的例子，当调用page函数时，返回的是内嵌函数，并没有立即执行，但是打开的url是固定的了。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[python 模块知识]]></title>
+    <link href="http://baren.github.io/blog/2016/02/26/python-model/"/>
+    <updated>2016-02-26T19:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2016/02/26/python-model</id>
+    <content type="html"><![CDATA[<h1>模块对象</h1>
+
+<p>每一个源文件就是对应一个model。
+模块与模块之间的依赖通过import和from语句进行关联。
+在其它语言中，有全局变量可供模块之间共享，python中，全局变量在模块间不共享，只属于一个模块。</p>
+
+<p>模块名与模块的文件名是一样的。</p>
+
+<p>模块也是一个对象，因此可以将模块作为参数传递，赋值给变量或存数容器，作为函数结果返回等。是<em>first-class</em>对象。</p>
+
+<p>import语句的语法是：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">modname</span> <span class="p">[</span><span class="k">as</span> <span class="n">varname</span><span class="p">][,</span><span class="o">...</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这行语句执行完成，会把变量modname绑定到模块对象上。</p>
+
+<p>模块内的语句，在第一次被import时执行。模块对象先于语句执行而创建，并存放在<code>sys.modules</code>中。</p>
+
+<h2>模块属性</h2>
+
+<p>import语句会为模块内的所有属性创建一个模块的命名空间（只有第一次import才会执行模块内语句）。模块体内的语句就是在这个命名空间内创建和绑定模块的属性，def创建函数属性，class创建类属性等等。</p>
+
+<p>除了模块体明确定义的属性，在执行模块内语句之前，import还会额外给模块创建一些属性：</p>
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="p">[</span><span class="s">&#39;__all__&#39;</span><span class="p">,</span> <span class="s">&#39;__builtins__&#39;</span><span class="p">,</span> <span class="s">&#39;__doc__&#39;</span><span class="p">,</span> <span class="s">&#39;__file__&#39;</span><span class="p">,</span> <span class="s">&#39;__get_builtin_constructor&#39;</span><span class="p">,</span> <span class="s">&#39;__name__&#39;</span><span class="p">,</span> <span class="s">&#39;__package__&#39;</span><span class="p">,</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>dict</strong> : 用这个字典对象作为模块属性的命名空间。<strong>dict</strong>在模块内不能直接使用，其它（比如<strong>file</strong>，因为是在执行语句之前就创建好了）可以。对于模块M来说，M.S=x 实际上恒等于M.<strong>dict</strong>[&rsquo;S&#8217;]=x.</li>
+</ul>
+
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">print</span> <span class="n">__file__</span>
+</span><span class='line'><span class="k">print</span> <span class="n">__dict__</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>输出结果：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">user</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">project</span><span class="o">/</span><span class="n">auto_deploy</span><span class="o">/</span><span class="n">tst</span><span class="o">.</span><span class="n">py</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/Users/user/work/project/auto_deploy/tst.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">6</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'>    <span class="k">print</span> <span class="n">__dict__</span>
+</span><span class='line'><span class="ne">NameError</span><span class="p">:</span> <span class="n">name</span> <span class="s">&#39;__dict__&#39;</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">defined</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>name</strong>：模块名</li>
+<li><strong>file</strong>：模块文件</li>
+<li><strong>doc</strong>：注释</li>
+</ul>
+
+
+<h2>模块私有化属性</h2>
+
+<p>python模块没有真正的私有化属性，按照惯例，只要在模块内定义的属性是以单下划线开头，就认为是私有的，比如_secret.</p>
+
+<h2>模块加载</h2>
+
+<p>实际上，python加载模块是靠内置的<code>__import__</code>函数进行的。我们也可以直接调用这个函数。import M，<code>__import__</code>会先用key M去查sys.modules，如果在里面，直接返回值；如果不在，<code>__import__</code>会创建一个空模块对象，并增加<code>__name__</code>属性，其值是M，并把这个模块赋值给 sys.modules[M] ，然后按照正确方式加载模块对象（后面有）。因此只有第一次import一个对象时是慢的，以后直接从sys.modules对象中返回。</p>
+
+<h3>在磁盘系统搜索模块</h3>
+
+<p>当加载一个模块，先检查是否是内置对象（在sys.builtin_module_names 中列出），如果不在，则从磁盘中搜索。</p>
+
+<p><em><strong>import</strong></em>会按照sys.path列表中存的路径顺序一个个搜索模块。sys.path中既可以是目录，也可以是zip格式的归档文件。python启动时，会用PYTHONPATH来初始会sys.path。sys.path的第一个字符串总是程序启动的当前目录。</p>
+
+<p>因此，可以通过修改sys.path来操纵搜索逻辑。</p>
+
+<h3>重新加载模块</h3>
+
+<p>可以通过调用reload.reload(M)函数重新加载模块，reload函数的参数是M对象，而不是字符串。通过重新加载模块，影响的是通过import M这种方式，并通过M.A进行访问的代码。那种通过from M import 引入的则不受影响。</p>
+
+<h3>循环引用</h3>
+
+<p>python允许循环引用，比如a.py中import b，而b.py中import a。</p>
+
+<p>已import a为例说明循环引用的加载逻辑</p>
+
+<p>循环引用的执行过程：</p>
+
+<p>import a语句会创建一个空模块对象，并赋值给sys.models[&lsquo;a&rsquo;] ,
+然后开始执行a模块语句，如果遇到import b，则开始加载模块b，同样创建模块对象，并赋值给sys.models[&lsquo;b&rsquo;].
+执行模块b的语句。这是a模块的语句执行是阻塞的，直到b执行完成。</p>
+
+<p>这样，执行模块b的body时，遇到import a，则由于之前已经通过赋值sys.models[&lsquo;a&rsquo;]有数据，因此直接返回这个未初始化完成的a模块对象。这样，有可能a中的属性还没有被初始化。</p>
+
+<h1>包</h1>
+
+<p>python中，一个目录下需要定义<code>__init__</code>.py文件，才能标记这个目录是个包。包的体就是<code>__init__.py</code>文件内容。</p>
+
+<p>导入包的时候，会首先执行<code>__init__.py</code>内容。</p>
+
+<h2>包的特殊属性</h2>
+
+<p>包P的<code>__file__</code>的值实际上是包P体的内容，也就是<code>P/__init__.py</code>的路径。</p>
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">view</span>
+</span><span class='line'><span class="k">print</span> <span class="n">view</span><span class="o">.</span><span class="n">__file__</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>结果是</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">user</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">project</span><span class="o">/</span><span class="n">m</span><span class="o">-</span><span class="n">api</span><span class="o">/</span><span class="n">view</span><span class="o">/</span><span class="n">__init__</span><span class="o">.</span><span class="n">pyc</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以在<em>P/<strong>init</strong>.py</em>中设置<em><strong>all</strong></em>全局变量，用来控制其他模块执行<code>from P import *</code>语句时的行为。如果没有设置这个属性，则<code>from P import *</code>不会导入任何P的模块。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[man bash 解释]]></title>
+    <link href="http://baren.github.io/blog/2016/01/20/man-bash/"/>
+    <updated>2016-01-20T15:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2016/01/20/man-bash</id>
+    <content type="html"><![CDATA[<h3>bash -c string 用法</h3>
+
+<p>如果指定-c，表示命令从string中读取，如果string后面带着参数，则将参数赋值给位置参数（posi-tional parameters），从$0开始。</p>
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sh -c 'echo $0' a</span></code></pre></td></tr></table></div></figure>
+
+
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[统计系统设计]]></title>
+    <link href="http://baren.github.io/blog/2015/03/22/statis-udp/"/>
+    <updated>2015-03-22T15:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2015/03/22/statis-udp</id>
+    <content type="html"><![CDATA[<h1>需求</h1>
+
+<p>主要用来实时统计线上所依赖服务的运行情况。</p>
+
+<p>以分钟为最小统计维度，可以按照多个维度进行统计，比如一分钟实时状况，5分钟实时状况，10分钟实时状况。</p>
+
+<p>所统计的数据包括依赖服务的实时错误数、成功数。</p>
+
+<h1>设计思路</h1>
+
+<p>由于统计需求比较明确，并需要短时间内需要上线，因此暂时不能适用storm这种对机器资源需求量比较大的场合。</p>
+
+<p>为了保证后续可以顺利使用storm等分布式实时计算系统，其数据格式使用与storm容易处理的的nginx日志格式。</p>
+
+<p>数据传输协议采用UDP方式。</p>
+
+<h1>各子系统</h1>
+
+<p>分为三个部分：</p>
+
+<ul>
+<li>发送日志模块。采用嵌入到工程代码中的方式使用。</li>
+<li>数据接收系统。单独部署一个udp系统，负责接收数据，并把数据写入memcached。</li>
+<li>数据展示系统。负责将memcached的数据整理后写入数据库，并以图表方式展示。</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[yield（generator和coroutine）]]></title>
@@ -209,7 +587,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>在generator内部，close函数调用会导致在yield语句上抛出GeneratorExit异常，因此可以在generator内部捕获这个异常，来做一些清理工作：</p>
+<p>在generator内部，close函数调用会导致在yield语句上抛出GeneratorExit异常，因此可以在generator内部可选择的捕获这个异常（不捕获也不会抛出异常，就像上面例子中c.close()并没有出错），来做一些清理工作：</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -234,6 +612,376 @@
 
 <h1>协程和yield表达式</h1>
 
+<p>yield关键字还可以作为表达式，出现在赋值表达式右边。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">receiver</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Ready to receive&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Got </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>以这样的方式使用yield的函数，被称作协程。</p>
+
+<p>与generator一样，执行这种协程函数时，调用函数并不会执行，必须先调用next()函数或者send(None)才可以执行函数，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span> <span class="o">=</span> <span class="n">receiver</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Ready</span> <span class="n">to</span> <span class="n">receive</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="n">Got</span> <span class="mi">1</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span class='line'><span class="n">Got</span> <span class="mi">2</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&#39;Hello&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">Got</span> <span class="n">Hello</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>协程函数执行步骤是：</p>
+
+<ol>
+<li>先调用next()，执行协程函数，函数执行到yield表达式后挂起，等待接收send函数发给它的数据</li>
+<li>调用send函数，传递给send函数的值会被协程函数内的&#8221;(yield)&ldquo;表达式返回</li>
+<li>协程接收到数据，恢复执行，直到遇到下一个yield表达式</li>
+</ol>
+
+
+<blockquote><p>注意：
+对协程函数来说，在接收数据之前，需要先执行函数体，可以使用next()和send(None)来执行。
+如果调用send(非None值)，则会抛出TypeError错误：
+c.send(1)
+Traceback (most recent call last):
+ File &ldquo;<stdin>&rdquo;, line 1, in <module>
+ypeError: can&rsquo;t send non-None value to a just-started generator
+.</p></blockquote>
+
+<p>与generator一样，关闭一个协程，有两种方式：</p>
+
+<ul>
+<li>调用close函数</li>
+<li>自己返回</li>
+</ul>
+
+
+<p>一个关闭的协程函数，如果再发送数据给它，则会抛出StopIteration异常，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'><span class="ne">StopIteration</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>调用close()函数，会在协程函数内部生成GeneratorExit异常。因此，可以捕获这个异常来做一些清理工作：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">receiver</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">print</span><span class="p">(</span><span class="s">&quot;Ready to receive&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">try</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Got </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">except</span> <span class="ne">GeneratorExit</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Receiver done&quot;</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>throw函数</h1>
+
+<p>generator和协程函数，都有throw函数。原型是：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">throw</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">traceback</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span> <span class="o">=</span> <span class="n">countdown</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Counting</span> <span class="n">down</span> <span class="kn">from</span> <span class="mi">10</span>
+</span><span class='line'><span class="mi">10</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span> <span class="o">=</span> <span class="n">receiver</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Ready</span> <span class="n">to</span> <span class="n">receive</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span class='line'><span class="n">Got</span> <span class="mi">1</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">g</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">4</span><span class="p">,</span> <span class="ow">in</span> <span class="n">countdown</span>
+</span><span class='line'><span class="ne">RuntimeError</span><span class="p">:</span> <span class="mi">3</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">c</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">4</span><span class="p">,</span> <span class="ow">in</span> <span class="n">receiver</span>
+</span><span class='line'><span class="ne">RuntimeError</span><span class="p">:</span> <span class="mi">3</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>g.throw(type, value, traceback)会抛出特定的异常（参数传的异常类型），抛出异常点是函数的挂起地点，也就是yield表达式地方，或者是当还没有调用next()函数时的函数的起始点。</p>
+
+<p>如果：</p>
+
+<ul>
+<li>函数捕获了throw抛出的异常，并用yield生成了另一个值，那么这个值就是throw的返回值，比如：</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">receiver</span><span class="p">():</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">print</span><span class="p">(</span><span class="s">&quot;Ready to receive&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">try</span><span class="p">:</span>
+</span><span class='line'><span class="o">...</span>             <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'><span class="o">...</span>                     <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>                     <span class="k">print</span><span class="p">(</span><span class="s">&quot;Got </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+</span><span class='line'><span class="o">...</span>             <span class="k">print</span><span class="p">(</span><span class="s">&quot;Receiver done&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>             <span class="k">yield</span> <span class="s">&#39;here&#39;</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">receiver</span><span class="p">()</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Ready</span> <span class="n">to</span> <span class="n">receive</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">Got</span> <span class="n">a</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="ne">Exception</span><span class="p">,</span> <span class="s">&#39;exc&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="n">Receiver</span> <span class="n">done</span>
+</span><span class='line'><span class="s">&#39;here&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>throw函数与next和send一样，只是throw会抛出参数指定的异常。</p>
+
+<h1>使用yield既生成值，又接收值</h1>
+
+<p>函数内，可以使用yield同时接收和生成值，比如这样：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">line_splitter</span><span class="p">(</span><span class="n">delimiter</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">print</span><span class="p">(</span><span class="s">&quot;Ready to split&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>     <span class="n">result</span> <span class="o">=</span> <span class="bp">None</span>
+</span><span class='line'><span class="o">...</span>     <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'><span class="o">...</span>             <span class="n">line</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span> <span class="n">result</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>             <span class="n">result</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">delimiter</span><span class="p">)</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span> <span class="o">=</span> <span class="n">line_splitter</span><span class="p">(</span><span class="s">&quot;,&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'><span class="n">Ready</span> <span class="n">to</span> <span class="n">split</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">a</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s">&quot;a,b&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>其执行步骤：
+1、第一个next()调用，使函数开始执行
+2、到yield语句后，返回None语句，也就是result的初始值。
+3、调用send函数，接收到的值赋值给line，并继续执行语句，send()的返回值是下一个yield生成的结果。</p>
+
+<h1>使用generator和coroutine</h1>
+
+<p>开发一个例子，tail -f的例子，把开头为#号的过滤掉，其它原样打印。</p>
+
+<h2>generator使用例子：</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">g_tail</span><span class="p">(</span><span class="n">the_file</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">the_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">line</span> <span class="o">=</span> <span class="n">the_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">continue</span>
+</span><span class='line'>        <span class="k">yield</span> <span class="n">line</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">g_filter_line</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;#&quot;</span><span class="p">):</span>
+</span><span class='line'>            <span class="k">yield</span> <span class="n">line</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">g_print_line</span><span class="p">(</span><span class="n">lines</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+</span><span class='line'>        <span class="k">print</span> <span class="n">line</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;/tmp/thefile&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">g_print_line</span><span class="p">(</span><span class="n">g_filter_line</span><span class="p">(</span><span class="n">g_tail</span><span class="p">(</span><span class="n">f</span><span class="p">)))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用generator，每个函数，都需要接收一个iterator或者叫generator数据，来驱动整个进程执行。</p>
+
+<h2>coroutine例子</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">functools</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">crontine</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+</span><span class='line'>    <span class="nd">@functools.wraps</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span class='line'>        <span class="n">a</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">a</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">a</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">wrapper</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">c_tail</span><span class="p">(</span><span class="n">the_file</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+</span><span class='line'>    <span class="n">the_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">line</span> <span class="o">=</span> <span class="n">the_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span>
+</span><span class='line'>            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+</span><span class='line'>            <span class="k">continue</span>
+</span><span class='line'>        <span class="n">target</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@crontine</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">c_filter_line</span><span class="p">(</span><span class="n">target</span><span class="p">):</span>
+</span><span class='line'>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">line</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;#&quot;</span><span class="p">):</span>
+</span><span class='line'>            <span class="n">target</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@crontine</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">c_print_line</span><span class="p">():</span>
+</span><span class='line'>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+</span><span class='line'>        <span class="n">line</span> <span class="o">=</span> <span class="p">(</span><span class="k">yield</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">print</span> <span class="n">line</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用coroutine，不需要每个函数都加参数，流程驱动是通过send函数来实现。</p>
+
 <h1>参考资料</h1>
 
 <ol>
@@ -243,6 +991,150 @@
 <li>python essential reference chapter 5</li>
 <li><a href="http://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do-in-python/231855#231855">http://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do-in-python/231855#231855</a></li>
 </ol>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[tornado源代码研究笔记]]></title>
+    <link href="http://baren.github.io/blog/2015/03/22/python-tornado-source/"/>
+    <updated>2015-03-22T15:32:01+08:00</updated>
+    <id>http://baren.github.io/blog/2015/03/22/python-tornado-source</id>
+    <content type="html"><![CDATA[<p>主要记录研究tornado源代码的心得笔记。</p>
+
+<!-- more -->
+
+
+<h1>命令行参数解析</h1>
+
+<p>使用tornado，通常需要解析命令行参数，来指定运行行为，比如是否开启调试模式，端口号是多少，日志文件位置等等。</p>
+
+<p>tornado的命令行使用方式一般是这样：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">tornado.options</span> <span class="kn">import</span> <span class="n">define</span><span class="p">,</span> <span class="n">options</span>
+</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;port&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">8888</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;run on the given port&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;mysql_host&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&quot;127.0.0.1:3306&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Main user DB&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;memcache_hosts&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&quot;127.0.0.1:11011&quot;</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+</span><span class='line'>       <span class="n">help</span><span class="o">=</span><span class="s">&quot;Main user memcache servers&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">connect</span><span class="p">():</span>
+</span><span class='line'>    <span class="n">db</span> <span class="o">=</span> <span class="n">database</span><span class="o">.</span><span class="n">Connection</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">mysql_host</span><span class="p">)</span>
+</span><span class='line'>    <span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># 后面会跟着下面语句，一般在启动函数内</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">tornado</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">parse_command_line</span><span class="p">()</span>  <span class="c"># 解析命令行传入参数</span>
+</span><span class='line'><span class="c"># or</span>
+</span><span class='line'><span class="n">tornado</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">parse_config_file</span><span class="p">(</span><span class="s">&quot;/etc/server.conf&quot;</span><span class="p">)</span>  <span class="c"># 解析文件传入参数</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>所有的定义的参数，不管是在文件内定义的，还是通过命令行传入的，都保存到全局变量options里面。</p>
+
+<p>甚至在模块内，也可以有自己的参数定义。其条件是比如在调用parse_command_line函数时，import这个模块。</p>
+
+<p>这样通过define函数定义的参数和通过命令行传入的参数，都会存在options变量下面。这样使用：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">http_server</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httpserver</span><span class="o">.</span><span class="n">HTTPServer</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+</span><span class='line'><span class="n">http_server</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>问题是，python自带了解析命令行参数的模块<em>getopt</em>，tornado为啥不用这个，又自己写了这样的解析模块呢？</p>
+
+<p>先了解下sys.argv和getopt模块。</p>
+
+<h2>sys.argv介绍</h2>
+
+<p>启动参数，会放在sys.argv下面，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># argecho.py</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">sys</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">print</span> <span class="n">arg</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="err">$</span> <span class="n">python</span> <span class="n">argecho</span><span class="o">.</span><span class="n">py</span> <span class="n">abc</span> <span class="k">def</span>
+</span><span class='line'><span class="nf">argecho</span><span class="o">.</span><span class="n">py</span>
+</span><span class='line'><span class="n">abc</span>
+</span><span class='line'><span class="k">def</span>
+</span><span class='line'><span class="err">$ </span><span class="nf">python</span> <span class="n">argecho</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">help</span>
+</span><span class='line'><span class="n">argecho</span><span class="o">.</span><span class="n">py</span>
+</span><span class='line'><span class="o">--</span><span class="n">help</span>
+</span><span class='line'><span class="err">$</span> <span class="n">python</span> <span class="n">argecho</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">m</span> <span class="n">kant</span><span class="o">.</span><span class="n">xml</span>
+</span><span class='line'><span class="n">argecho</span><span class="o">.</span><span class="n">py</span>
+</span><span class='line'><span class="o">-</span><span class="n">m</span>
+</span><span class='line'><span class="n">kant</span><span class="o">.</span><span class="n">xml</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>sya.argv仅仅已空格区分，然后依次记录启动，其中argv[0]是启动脚本名称。</p>
+
+<p>python提供了getopt来方便解析argv的参数。</p>
+
+<h2>getopt模块</h2>
+
+<p>getopt函数支持下面几种参数定义：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">-</span><span class="n">a</span>
+</span><span class='line'><span class="o">-</span><span class="n">bval</span>
+</span><span class='line'><span class="o">-</span><span class="n">b</span> <span class="n">val</span>
+</span><span class='line'><span class="o">--</span><span class="n">noarg</span>
+</span><span class='line'><span class="o">--</span><span class="n">witharg</span><span class="o">=</span><span class="n">val</span>
+</span><span class='line'><span class="o">--</span><span class="n">witharg</span> <span class="n">val</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>getopt有三个参数：</p>
+
+<ul>
+<li>第一个参数是需要解析的参数列表，一般是从argv[1]开始：sys.argv[1:]。</li>
+<li>第二个参数是短的选项定义，单个字符的。如果需要接收参数则后面跟着冒号“:”，比如：&#8217;ab:c:&lsquo;，表示-a不接收参数，-b和-c后面都要跟着参数。</li>
+<li>第三个参数提供长选项名字的列表。如果有参数，后面跟着“=”，比如：&#8217;noarg&#8217;, &lsquo;witharg=&rsquo;, &lsquo;witharg2=&rsquo;</li>
+</ul>
 
 ]]></content>
   </entry>
@@ -5655,2246 +6547,6 @@ linux的因特网守护进程是xinetd。</p>
 <h1>作业控制</h1>
 
 <p>略</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[apue(进程控制)]]></title>
-    <link href="http://baren.github.io/blog/2014/05/04/process-control/"/>
-    <updated>2014-05-04T20:00:02+08:00</updated>
-    <id>http://baren.github.io/blog/2014/05/04/process-control</id>
-    <content type="html"><![CDATA[<h1>进程标识符</h1>
-
-<p>进程都有一个非负整数代表唯一的进程ID。</p>
-
-<p>当进程终止后，进程ID可以重用，为了防止将新进程视为使用同一个进程ID的旧的进程，系统采用了<em>延迟重用</em>算法来重用进程ID。</p>
-
-<p>系统启动后有一些专用进程：</p>
-
-<ul>
-<li>ID为0的进程——调度进程，也称为交换进程（swapper），这个进程是内核的一部分，不执行磁盘上的程序，被称为系统进程。</li>
-<li>ID为1的进程——init进程，自举结束时由内核调用；早期的进程文件是/etc/init，现在都是/sbin/init。init通常读取系统的配置文件来初始化系统（/etc/rc*或/etc/initab, /etc/init.d）。init进程不会终止，虽然是普通进程，但是以超级用户权限运行，还接收孤儿进程，是所有孤儿进程（子进程还活着，父进程终止了，称为孤儿进程）父进程。</li>
-</ul>
-
-
-<p>下面函数返回与进程相关的其他标识符：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>pid_t getpid(void);
-</span><span class='line'>
-</span><span class='line'>pid_t getppid(void);
-</span><span class='line'>
-</span><span class='line'>uid_t getuid(void);  // 实际用户id
-</span><span class='line'>
-</span><span class='line'>uid_t geteuid(void);  // 有效用户id
-</span><span class='line'>
-</span><span class='line'>gid_t getgid(void);  // 实际组id
-</span><span class='line'>
-</span><span class='line'>gid_t getegid(void);  // 有效组id
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<!-- more -->
-
-
-<h1>fork函数</h1>
-
-<p>可以调用<code>fork</code>函数创建一个新进程。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>pid_t fork(void);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>fork创建的新进程被称为子进程。fork调用一次返回两次：</p>
-
-<ul>
-<li>子进程返回0.</li>
-<li>父进程返回子进程的ID，如果返回-1，表示创建进程出错</li>
-</ul>
-
-
-<p>返回后，父进程和子进程继续执行调用fork之后的指令。</p>
-
-<p>fork后，子进程是父进程的副本。比如子进程获得父进程的数据空间，堆和栈的副本。父子进程不共享这些，只是共享正文段。</p>
-
-<p>一般fork后都执行exec函数，因此现在的系统在fork的实现上，并不立即完全复制父进程的数据段、堆栈的完全复制，而是采用copy-on-write的技术，只有在父或子进程写的时候才进行复制，复制也是仅仅复制写的那块区域，一般就是存储系统中的一页。</p>
-
-<p>在fork后，是先返回父进程还是子进程，是不确定的，取决于系统的调度算法的实现。</p>
-
-<p>如果fork后没有调用exec，子进程与父进程执行同一代码，则需要注意调用fork之前的IO流缓冲问题。</p>
-
-<ul>
-<li>如果之前有IO流缓冲，则可能会被子进程和父进程各调用一次，伪代码：</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>printf("。。。");  // 如果标准输出被重定向到一个文件，则是全缓冲的。
-</span><span class='line'>
-</span><span class='line'>pid = fork()
-</span><span class='line'>if(pid == 0){
-</span><span class='line'>  exit()
-</span><span class='line'>} else if (pid == -1) {
-</span><span class='line'>  printf('error')
-</span><span class='line'>} else {
-</span><span class='line'>  exit()
-</span><span class='line'>}
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>上面代码，如果printf的标准输出重定向到文件，则是全缓冲的，因此调用printf的时候，有可能把数据存放到缓冲中。</p>
-
-<p>这样，fork后，父子进程各有一个缓冲，因此exit后，printf各被flush，因此父子进程都会打印printf的输出。</p>
-
-<blockquote><p>注意：
-strlen() 和sizeof()的区别。strlen是返回不包含null终止符的字符串的长度。sizeof返回包含null终止符的缓冲区的大小。
-strlen() 是一次函数调用。而sizeof在编译时期就知道大小。</p></blockquote>
-
-<h2>文件共享</h2>
-
-<p>fork的一个特征是文件进程所有打开文件的描述符都被复制到子进程。</p>
-
-<p>这样父子进程每个相同的打开描述符共享一个文件表项（内核为每个打开的文件维持文件表，若两个进程打开同一个文件，每个进程都有自己的文件表项。但是fork后，两个进程就会共享同一个文件表项，也就是共享偏移量。）</p>
-
-<p>如图：</p>
-
-<p>如果两个进程打开同一个文件，每个进程都有自己的文件偏移量：
-<img src="http://baren.github.io/images/assets/Figure8-1.png" title="time-function" alt="alt text" /></p>
-
-<p>如果fork后，父进程和子进程则共享一个文件表项，共享文件偏移量：
-<img src="http://baren.github.io/images/assets/Figure8-2.png" title="time-function" alt="alt text" /></p>
-
-<p>fork后处理文件描述符的两种情况：</p>
-
-<ol>
-<li>父进程等子进程完成，在这种情况下，父进程无需对描述符进行任何处理，当子进程结束后，父进程的偏移量也已经被更新。</li>
-<li>父子进程各自执行不同的程序段，fork，父子进程各自关闭不需要的文件描述符，这样不会干扰对方使用的文件描述符。网络服务进程常用这种方式。</li>
-</ol>
-
-
-<p>除了文件，许多其它属性也被子进程继承：</p>
-
-<ul>
-<li>实际用户（组）ID，有效用户（组）ID</li>
-<li>会话ID</li>
-<li>环境</li>
-</ul>
-
-
-<p>注意：
- 父进程的文件锁不会被继承</p>
-
-<p> fork的两种用法：</p>
-
-<ol>
-<li>父进程希望复制自己，是父子进程执行不同的代码段（比如网络服务）</li>
-<li>子进程执行一个不同的程序，比如shell</li>
-</ol>
-
-
-<h1>vfork函数</h1>
-
-<p>vfork的目的是创建一个新进程，而该进程的目的是exec一个新进程。</p>
-
-<p>vfork与fork调用相同，有两点不同：</p>
-
-<ul>
-<li>vfork不会复制父进程的地址空间，在子进程调用exec或exit之前，子进程在父进程的地址空间中执行（意味着会修改父进程的变量等）</li>
-<li>vfork函数保证子进程先执行，在它调用exec或exit之后，父进程才被调度运行</li>
-</ul>
-
-
-<h1>exit函数</h1>
-
-<p>5种正常终止进程的方式：</p>
-
-<ul>
-<li>main函数中return返回，等效于调用exit函数</li>
-<li>调用exit函数。ISO C定义的函数，操作包括1）调用终止处理程序（atexit注册的函数）；2）关闭所有标准IO流描述符</li>
-<li>调用<em>exit或</em>Exit函数。ISO C定义_Exit函数。这两个函数的目的是提供一种无需运行终止处理程序（atexit注册的函数）或信号处理程序而终止的方法；这两个函数一般都不对标准IO流进行冲洗。</li>
-<li>进程最后一个线程在启动例程中执行返回语句，进程终止状态为0</li>
-<li>进程最后一个线程调用pthread_exit函数，进程终止状态为0</li>
-</ul>
-
-
-<p>3种异常终止程序：</p>
-
-<ul>
-<li>调用abort</li>
-<li>进程收到某些信号，这个信号可以由其它进程、自己或内核发起。</li>
-<li>最后一个线程对“取消”做出响应。</li>
-</ul>
-
-
-<blockquote><p>注意：
-不管是正常终止或者是异常终止，内核都会在进程结束后执行一段代码，工作是：
-1. 关闭打开的描述符
-2. 释放使用的存储器</p></blockquote>
-
-<h2>子进程如何通知父进程它的终止状态</h2>
-
-<ol>
-<li>对于三个终止函数（exit, <em>exit, </em>Exit）退出的进程，若通知父进程其退出状态，需要把状态作为参数传递给这三个函数。其它两种正常退出，终止状态为0.</li>
-<li>异常终止，内核产生一个指示其异常终止原因的终止状态。</li>
-</ol>
-
-
-<blockquote><p>注意：
-不管哪种情况，父进程都可以通过wait和waitpit函数获取其终止状态。</p></blockquote>
-
-<h2>进程领养与僵死进程</h2>
-
-<p>父子进行结束的两种情况：</p>
-
-<ol>
-<li>父进程先于子进程终止。</li>
-</ol>
-
-
-<p>对于父进程已经终止的子进程，其父进程改变为init进程（ID为1）。每当一个进程终止时，内核会挨个检查所有活动的进程，判断是否是已终止进程的子进程。是，则将其父进程修改为init进程。</p>
-
-<p>这个步骤称为<em>进程的领养</em>。</p>
-
-<ol>
-<li>子进程先于父进程终止。</li>
-</ol>
-
-
-<p>为了让父进程获取其子进程的终止状态，内核为每个终止的子进程保存了一定量的信息。因此当父进程调用wait或waitpid函数时，可以获取子进程的终止状态。</p>
-
-<p>内核为终止的子进程保存的信息有：</p>
-
-<ul>
-<li>进程ID</li>
-<li>终止状态</li>
-<li>进程使用CPU时间总量</li>
-</ul>
-
-
-<blockquote><p>注意：
-由于进程终止时，内核释放了其占用的存储空间和关闭了打开的文件描述符，引起，进程占用的大部分资源都已经释放掉了。</p></blockquote>
-
-<p><em>僵死进程（zombie）</em> ：一个已终止，而父进程没有终止，并且父进程还没有对其进行善后处理（获取子进程的终止信息，也就是还没有经过wait调用）的进程，被称为僵死进程，状态为Z。</p>
-
-<blockquote><p>注意：
-由init进程领养的子进程终止时，不会称为僵死进程。因为init的实现，只要有子进程终止，就会调用wait函数获取其终止状态。</p></blockquote>
-
-<h1>父进程获取子进程终止状态（wait和waitpid函数）</h1>
-
-<p>当进程的子进程终止时，内核会立即向其父进程发送SIGCHLD信号。因此父进程可以提供一个信号处理程序处理这个信号。</p>
-
-<p>对于这个信号，父进程可以有两种处理方式：</p>
-
-<ul>
-<li>编写一个处理这个信号的处理程序（然后调用wait函数获取其终止子进程的终止状态）</li>
-<li>忽略掉（系统默认）</li>
-</ul>
-
-
-<p>除了信号方式外，若父进程在程序内调用wait或者waitpid函数，则可能会发生以下：</p>
-
-<ul>
-<li>若所有子进程都在运行，阻塞</li>
-<li>若一个子进程已经终止，正等待父进程获取其终止状态，则会立刻返回</li>
-<li>若没有任何子进程，立即出错返回</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/wait.h&gt;
-</span><span class='line'>
-</span><span class='line'>pid_t wait(int *statloc);
-</span><span class='line'>
-</span><span class='line'>pid_t waitpid(pid_t pid, int *statloc, int options);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>wait和waitpid函数的区别：</p>
-
-<ul>
-<li>在一个子进程终止前，wait函数会使其调用至阻塞，而waitpid有一个选项，可使调用者不阻塞（比如：<code>waitpid(-1, &amp;statloc, WNOHANG)</code>）</li>
-<li>waitpid可以不用等待其调用后的第一个终止的子进程，可以指定它等待的进程（参数pid > 0时）</li>
-</ul>
-
-
-<p>参数statloc是一个整型指针，子进程的终止状态存放于此，若不关心终止状态，可以传空指针。而判断子进程的终止状态，可以使用wait.h定义的宏：</p>
-
-<table>
-<thead>
-<tr>
-<th>宏        </th>
-<th style="text-align:center;"> 描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>WIFEXITED       </td>
-<td style="text-align:center;"> 若正常终止的子进程，则为真。此时，可以调用WEXITSTATUS(status)获取子进程传送给exit <em>exit </em>Exit参数的低8位</td>
-</tr>
-<tr>
-<td>WIFSIGNALED     </td>
-<td style="text-align:center;"> 若为异常终止的子进程返回的状态，则为真。可以使用WTERMSIG(status)获取子进程终止的信号编号。</td>
-</tr>
-<tr>
-<td>WIFSTOPPED      </td>
-<td style="text-align:center;"> 若为当前暂停子进程的返回状态，则为真。可使用WSTOPSIG(status)获取进程暂停信号编号</td>
-</tr>
-<tr>
-<td>WIFCONTINUED    </td>
-<td style="text-align:center;"> 若作业控制暂停后已经继续的子进程返回了状态，则为真。</td>
-</tr>
-</tbody>
-</table>
-
-
-<h2>waitpid</h2>
-
-<p>waitpid函数功能多于wait函数，其中，pid参数的意义：</p>
-
-<ul>
-<li>pid == -1 ，等待任一子进程，此时与wait等效</li>
-<li>pid > 0，等待进程Id等于PID的进程</li>
-<li>pid == 0，等待其组ID等于调用进程组ID的任意一子进程</li>
-<li>pid &lt; -1，等待其组ID等于pid绝对值的任一子进程</li>
-</ul>
-
-
-<p>而waitpid的options参数进一步控制了waitpid的操作：</p>
-
-<ul>
-<li>WNOHANG : 不阻塞</li>
-<li>WCONTINUED : 作业控制相关</li>
-<li>WUNTEACED: 作业控制相关</li>
-</ul>
-
-
-<p>依据这两个参数，waitpid提供了wait不具有的三个功能：</p>
-
-<ul>
-<li>可等待特定的进程</li>
-<li>提供了wait的非阻塞版本</li>
-<li>支持作业控制</li>
-</ul>
-
-
-<h1>关于僵死进程补充</h1>
-
-<h2>僵死进程的危害</h2>
-
-<p>若父进程一直存在，但不调用wait回收终止子进程的终止状态，则：</p>
-
-<ul>
-<li>内核保留了僵死进程的一定量信息，资源浪费</li>
-<li>进程号一直没有释放，也就得不到重用</li>
-</ul>
-
-
-<h2>避免僵死进程的方法</h2>
-
-<ul>
-<li>通过信号机制</li>
-<li>wait/waitpid函数调用</li>
-<li>fork两次，由init来回收</li>
-</ul>
-
-
-<h2>如何查看僵死进程</h2>
-
-<p>命令</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ps -A -o stat, ppid, pid, cmd | grep -e '^[zZ]'
-</span><span class='line'>
-</span><span class='line'>* -A 列出所有进程
-</span><span class='line'>* -o 自定义输出字段，stat表示进程状态，Z/z表示僵死进程
-</span><span class='line'>
-</span><span class='line'># 竞争条件
-</span><span class='line'>
-</span><span class='line'>当多个进程都企图对共享数据进行某种处理，而最后的结果又取决于进程运行的顺序时，则认为发生了*竞争条件（race condition）*
-</span><span class='line'>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>exec函数</h1>
-
-<p>在fork后，如果调用exec函数，则该进程执行的程序完全替换成新程序，并且从新程序的main函数开始执行。exec并不创建新进程，因此调用exec前后并不改变进程ID。exec只是用全新的程序替换了当前进程的正文数据堆和栈等段。</p>
-
-<p>unix系统提供了6个exec函数，unix对进程的控制：</p>
-
-<ul>
-<li>fork</li>
-<li>exit</li>
-<li>wait</li>
-<li>exec</li>
-</ul>
-
-
-<p>这几个函数使得unix进程控制原语更加完善。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>// 下面四个函数，执行程序是路径
-</span><span class='line'>int execl(const char *pathname, const char *arg0, ... /* (char *)0 */)  // 参数是列表，以空指针结束
-</span><span class='line'>
-</span><span class='line'>int execv(const char *pathname, char *const argv[]) // 参数列表是一个数组
-</span><span class='line'>
-</span><span class='line'>int execle(const char *pathname, const char *arg0, ... /* (char *)0, char *const envp[] */) // 可以传递一个环境表，这个环境表是个指针数组，每个元素是指向字符的指针
-</span><span class='line'>
-</span><span class='line'>int execve(const char *pathname, char *const argv[], char *const envp[]) // 传递环境表
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>// 执行程序是文件名，如果文件名以“/”开头，则认为是路径，否则从PATH变量中搜寻执行文件
-</span><span class='line'>int execlp(const char *filename, const char *arg0, ... /* (char *)0 */)
-</span><span class='line'>
-</span><span class='line'>int execvp(const char *filename, char *const argv[])
-</span><span class='line'>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这六个函数的几种区别是：</p>
-
-<ol>
-<li>前四个函数已路径名作为参数，而后两个使用文件名作为参数，如果是文件名作为参数，则：
-
-<ul>
-<li>如果filename是包含“/”，则认为是路径</li>
-<li>否则就按PATH环境变量，在它所指定的各目录中搜寻可执行文件（如果找到的可执行文件不是链接器生成的机器可执行文件，则认为是shell脚本，就会调用/bin/sh，并以filename作为shell的输入）</li>
-</ul>
-</li>
-</ol>
-
-
-<blockquote><p>说明：
-环境表：每个程序都会接收一张环境表，这个环境表是一个字符指针数组，全局变量environ指向这个数组。
-      环境表包含的环境变量，比如PATH=:/bin:/usr/bin:、USER=sar、等</p>
-
-<p>环境变量（环境表中的每个数组元素），可以通过getenv获取环境变量。通过putenv、setenv等设置环境变量，一般使用这两个
-函数访问设置环境变量，而不推荐直接访问environ全局变量。</p>
-
-<p>POSIX.1 XSI等预定义了很多环境变量，其中PATH环境变量表示“搜索可执行文件的路径前缀列表”</p></blockquote>
-
-<ol>
-<li><p>第二个区别是参数表的传递不同。l表示list，v表示vector。execl、execle、execlp的每个命令行参数都说明为一个单独的参数，最后以空指针结尾。而execv、execve、execvp的命令行参数是以数组提供。</p></li>
-<li><p>最后一个区别，传递的环境表有关。已e结尾的两个函数execle和execve，可以传递一个指向环境字符串指针数组的指针，其它几个函数则使用调用进程中的environ变量为新程序复制现有的环境。</p></li>
-</ol>
-
-
-<p>注意几点：</p>
-
-<ol>
-<li>对打开的文件的处理</li>
-</ol>
-
-
-<p>这与执行时关闭close-on-exec设置有关</p>
-
-<p>进程中每个打开描述符都有一个执行时关闭标志。若设置此标志，则在执行exec时关闭该描述符，否则该描述符仍然打开。除非特地用fcntl设置了该标志，否则系统默认的操作是在执行exec后仍保持这种描述符的打开。</p>
-
-<blockquote><p>fcntl函数可以：
-* 复制一个现有描述符
-* 设置/获得文件描述符标记（文件描述符标志，当前只定义了一个，就是FD_CLOEXEC）
-* 获得/设置文件状态标志
-* 等。</p></blockquote>
-
-<p>posix.1明确要求在执行exec时关闭打开的目录流，这通常是opendir来实现的。它调用fcntl函数为对应于打开目录流的描述符设置执行时关闭标志。</p>
-
-<blockquote><p>疑问：
-设置close-on-exec的场景是什么？？</p></blockquote>
-
-<ol>
-<li>有效用户问题</li>
-</ol>
-
-
-<p>exec后，实际用户id和实际组id不变，而有效id是否改变，则取决于程序文件的设置用户id和设置组id是否设置。</p>
-
-<p>很多unix实现中，只有execve是系统调用，其它函数是库函数。</p>
-
-<h1>更改用户ID和组ID</h1>
-
-<p>unix系统中，特权是基于用户和组ID的。</p>
-
-<p>可以调用setuid函数设置实际用户id和有效用户id。setgid函数设置实际组id和有效组id。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>
-</span><span class='line'>int setuid(uid_t uid);
-</span><span class='line'>
-</span><span class='line'>int setgid(gid_t gid);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>对于修改ID有以下规则：</p>
-
-<ul>
-<li>若进程具有超级用户特权，则setuid函数将实际用户ID、有效用户ID以及保存的设置用户ID设置为参数uid</li>
-<li>若进程没有超级用户特权，但是参数uid等于实际用户ID<strong>或者</strong>保存的设置用户ID，则setuid只将有效用户ID设置为uid，不改变实际用户ID<strong>和</strong>保存的设置用户ID</li>
-<li>若上面两个条件都不满足，则将errno设置为EPERM，并返回-1.</li>
-</ul>
-
-
-<p>关于内核维护的三个用户ID，注意：</p>
-
-<ol>
-<li>只有超级用户进程可以更改实际用户ID。通常实际用户ID是在用户登录时，有login程序设置的，而且拥有不会改变他。</li>
-<li>仅当对程序文件设置了设置用户ID位时，exec函数才会设置有效用户ID。如果设置用户位没有设置，则exec函数不会改变有效用户ID，而将其维持为原先的值。任何时候都可以调用setuid，将有效用户ID设置为实际用户ID。</li>
-<li>保存的设置用户id是由exec复制有效用户ID而得来的。如果设置了文件的设置用户ID位（执行位显示为s），则exec根据文件的用户ID设置了进程的有效用户ID以后，就将这个副本保存起来。</li>
-</ol>
-
-
-<table>
-<thead>
-<tr>
-<th>ID    </th>
-<th style="text-align:center;"> exec(设置用户ID位关闭) </th>
-<th style="text-align:center;"> exec（设置用户ID位开启）</th>
-<th style="text-align:center;"> setuid（超级用户） </th>
-<th style="text-align:center;"> setuid（非特权用户）</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>实际用户ID     </td>
-<td style="text-align:center;"> 不变    </td>
-<td style="text-align:center;"> 不变    </td>
-<td style="text-align:center;"> 设置为uid  </td>
-<td style="text-align:center;">不变</td>
-</tr>
-<tr>
-<td>有效用户id     </td>
-<td style="text-align:center;"> 不变    </td>
-<td style="text-align:center;"> 设置为程序文件的用户ID  </td>
-<td style="text-align:center;"> 设置为uid  </td>
-<td style="text-align:center;">设置为uid</td>
-</tr>
-<tr>
-<td>保存的设置用户ID</td>
-<td style="text-align:center;"> 从有效用户ID复制   </td>
-<td style="text-align:center;"> 从有效用户ID复制</td>
-<td style="text-align:center;">设置为uid </td>
-<td style="text-align:center;"> 不变</td>
-</tr>
-</tbody>
-</table>
-
-
-<h2>su 和sudo和setuid的关系</h2>
-
-<p>su命令可以切换用户，而sudo可以以超级用户权限运行命令。查看这两个文件状态：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$ ll /usr/bin/su
-</span><span class='line'>-rwsr-xr-x  1 root  wheel  21472  3 13  2013 /usr/bin/su
-</span><span class='line'>$ ll /usr/bin/sudo
-</span><span class='line'>-r-s--x--x  1 root  wheel  164496  3 13  2013 /usr/bin/sudo
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>su和sudo的用户执行位都是s，表示setuid为开启。当用户运行这个程序时，</p>
-
-<p>会设置程序的有效用户ID为文件所有者，就会以这个文件的所有者（这里是root）权限运行。</p>
-
-<p>因此，sudo命令可以以root权限执行命令。</p>
-
-<p>当su命令执行时，设置进程的有效用户ID为root。</p>
-
-<h1>解释器文件</h1>
-
-<p>解释器文件，是文本文件，起始行的形式是：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#! pathname [optional-argument]
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>感叹号和pathname之间的空格是可选的。最常见的解释器是：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#! /bin/sh</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li>pathname通常是绝对路径，对它不进行特殊处理（既不视屏PATH进行路径搜索），对这种文件识别，是由内核作为exec系统调用处理的一部分完成的。</li>
-<li>内核调用exec函数实际上执行的并不是解释器文件，而是解释器文件中第一行pathname指定的文件</li>
-<li>注意区别解释器文件（文本文件，以#!开头）和解释器之间区别（解释器文件第一行pathname指定）</li>
-</ul>
-
-
-<h2>解释器例子</h2>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>#include &lt;sys/wait.h&gt;
-</span><span class='line'>
-</span><span class='line'>int main(int argc, char *argv[])
-</span><span class='line'>{
-</span><span class='line'>  pid_t pid;
-</span><span class='line'>  if((pid = fork()) == -1)
-</span><span class='line'>  {
-</span><span class='line'>      printf("fork error\n");
-</span><span class='line'>      exit(-1);
-</span><span class='line'>  }
-</span><span class='line'>  if(pid == 0)
-</span><span class='line'>  {
-</span><span class='line'>      printf("child process\n");
-</span><span class='line'>      if(execl("/Users/user/work/cproj/testinterp", "testinterp", "myarg1", "My arg2", (char *) 0) &lt; 0)
-</span><span class='line'>      {
-</span><span class='line'>          printf("error execl\n");
-</span><span class='line'>          exit(-1);
-</span><span class='line'>      }
-</span><span class='line'>      exit(0);
-</span><span class='line'>  }
-</span><span class='line'>  if(waitpid(pid, NULL, 0) &lt; 0)
-</span><span class='line'>  {
-</span><span class='line'>      printf("error waitpid");
-</span><span class='line'>      exit(-1);
-</span><span class='line'>  }
-</span><span class='line'>  exit(0);
-</span><span class='line'>
-</span><span class='line'>}
-</span><span class='line'>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>解释器文件testinterp很简单，只有一行：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#! /Users/user/work/cproj/echoarg foo</span></code></pre></td></tr></table></div></figure>
-
-
-<p>而echoarg程序仅仅是打印参数：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
-</span><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>
-</span><span class='line'>int main(int argc, char *argv[])
-</span><span class='line'>{
-</span><span class='line'>  int i;
-</span><span class='line'>  for (i = 0; i &lt; argc; i++)
-</span><span class='line'>  {
-</span><span class='line'>      printf("ARGV[%d]:%s\n", i, *(argv+i));
-</span><span class='line'>  }
-</span><span class='line'>  exit(0);
-</span><span class='line'>}
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>结果如下：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ser@usertekiMacBook-Pro cproj$ ./execinterp
-</span><span class='line'>child process
-</span><span class='line'>ARGV[0]:/Users/user/work/cproj/echoarg
-</span><span class='line'>ARGV[1]:foo
-</span><span class='line'>ARGV[2]:/Users/user/work/cproj/testinterp
-</span><span class='line'>ARGV[3]:myarg1
-</span><span class='line'>ARGV[4]:My arg2
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>对程序结果的解释：</p>
-
-<ul>
-<li>当exec调用解释器（/Users/user/work/cproj/echoarg）时，argv[0]是该解释器的pathname（）。</li>
-<li>argv[1]是解释器文件中的可选参数（foo）</li>
-<li>其余参数是pathname（/Users/user/work/cproj/testinterp）</li>
-<li>以及第二、三个参数（myarg1和My arg2）</li>
-<li>注意，第一个参数（testinterp），是没有用的</li>
-</ul>
-
-
-<h2>解释器文件可选参数例子</h2>
-
-<p>解释器pathname后可跟随可选参数，比如awk支持-f选项：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>awk -f myfile</span></code></pre></td></tr></table></div></figure>
-
-
-<p>它告诉awk从文件myfile中读awk程序。</p>
-
-<p>如果在解释器文件中使用-f选项，则解释器文件可以这么写：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#! /bin/awk -f
-</span><span class='line'>
-</span><span class='line'>后面跟着awk程序</span></code></pre></td></tr></table></div></figure>
-
-
-<p>比如解释器文件/usr/local/bin/awkexample的内容是：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#!/bin/awk -f 
-</span><span class='line'>BEGIN {
-</span><span class='line'>  for (i = 0; i &lt; ARGC; i++)
-</span><span class='line'>      printf "ARGV[%d] = %s\n", i, ARGV[i]
-</span><span class='line'>  exit 
-</span><span class='line'>}
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>调用：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$ awkexample file1 FILENAME2 f3 ARGV[0] = awk
-</span><span class='line'>ARGV[1] = file1
-</span><span class='line'>ARGV[2] = FILENAME2
-</span><span class='line'>ARGV[3] = f3</span></code></pre></td></tr></table></div></figure>
-
-
-<p>如果执行这个文件时，实际上，是这么调用的：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>/bin/awk -f /usr/local/bin/awkexample file1 FILENAME2 f3</span></code></pre></td></tr></table></div></figure>
-
-
-<ol>
-<li>解释器文件的路径名/usr/local/bin/awkexample给传给解释器，因为不知道解释器是不是会从搜索路径中搜索该文件，因此传全路径文件名</li>
-<li>awk读取解释器文件，第一行是#，注释，因此忽略第一行，执行后续程序</li>
-</ol>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[python杂记]]></title>
-    <link href="http://baren.github.io/blog/2014/04/22/python-note/"/>
-    <updated>2014-04-22T11:15:07+08:00</updated>
-    <id>http://baren.github.io/blog/2014/04/22/python-note</id>
-    <content type="html"><![CDATA[<ul>
-<li><p>实际上，每一个python函数都有返回值，如果有return，则返回return指定的值；没有就返回None。</p></li>
-<li><p>python的搜索路径是在sys.path中搜索，sys.path是一个list，可以修改这个list的值。</p></li>
-<li><p>python中，所有都是对象（函数是对象，模块是对象等），意思是所有都可以赋值给变量，或者作为参数传递给函数。所有都是对象，有些可能不具有方法和属性，有些不能被继承，但是都可以赋值和传参。</p></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[apue(进程环境)]]></title>
-    <link href="http://baren.github.io/blog/2014/04/09/process-environment/"/>
-    <updated>2014-04-09T20:00:58+08:00</updated>
-    <id>http://baren.github.io/blog/2014/04/09/process-environment</id>
-    <content type="html"><![CDATA[<h1>main函数</h1>
-
-<p>c程序的起始运行函数是</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>int main(int argc, char *argv[]);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>argc是命令行参数数目，argv是指针数组，指向每一个参数。</p>
-
-<p>内核执行C程序是调用exec函数，在调用main函数之前，会先调用一个特殊的启动例程，可执行程序文件指定这个例程作为程序的启动地址。这是由链接编辑器设置的。链接编辑器由编译器调用。</p>
-
-<p>启动例程会从内核取得命令行参数和环境变量值。</p>
-
-<!-- more -->
-
-
-<h1>进程终止</h1>
-
-<p>有八种终止进程的方式，其中5种方式为正常终止，为：</p>
-
-<ol>
-<li>从main函数返回</li>
-<li>调用exit函数</li>
-<li>调用<em>exit或</em>Exit</li>
-<li>最后一个线程从其启动例程返回</li>
-<li>最后一个线程调用pthread_exit</li>
-</ol>
-
-
-<p>异常终止的三种方式：</p>
-
-<ol>
-<li>调用abort</li>
-<li>接到一个信号并终止</li>
-<li>最后一个线程对取消请求做出响应</li>
-</ol>
-
-
-<p>程序启动例程，在main函数返回后，会立即调用exit函数。其类似过程是这样的：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>exit(main(argc, argv));</span></code></pre></td></tr></table></div></figure>
-
-
-<p>实际上，并不是这样（过程是一样的），启动例程一般是用汇编编写。</p>
-
-<h2>exit函数</h2>
-
-<p>三个用于正常终止程序的函数中，<em>exit和</em>Exit函数立即进入内核。</p>
-
-<p>exit函数则先执行一些清理处理（调用终止处理程序，关闭所有标识I/O流），然后进入内核。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#include &lt;stdlib.h&gt;
-</span><span class='line'>void exit(int status);
-</span><span class='line'>void _Exit(int status);
-</span><span class='line'>
-</span><span class='line'>#include &lt;unistd.h&gt;
-</span><span class='line'>void _exit(int status);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>exit的清理操作，执行一个标准的I/O库的清理关闭操作，为所有打开流调用fclose函数（怎么实现的？）</p>
-
-<blockquote><p>注意
-exit和<em>Exit函数是ISO C标准定义的，而</em>exit则是POSIX说明的，因此使用的头不一样。</p></blockquote>
-
-<p>由于标准库有buffer，因此怎样退出程序很重要。</p>
-
-<p>若使用fopen函数打开文件，并没用fclost关闭它，影响是什么呢？</p>
-
-<p>若使用exit函数或正常从main函数返回，两种方式都会调用exit函数。因此，exit函数会为你处理：</p>
-
-<ul>
-<li>flush输出流</li>
-<li>关闭文件</li>
-<li>进程拥有的其它资源也会被释放</li>
-</ul>
-
-
-<p>如果非正常退出，或调用<em>exit或</em>Exit函数，则</p>
-
-<ul>
-<li>系统会关闭打开的文件</li>
-<li>释放资源</li>
-<li>buffer并不会被flush</li>
-</ul>
-
-
-<p>三个exit函数都有一个整型参数，称之为终止状态（或退出状态，exit status），shell可用$?查看上一条命令的返回值。</p>
-
-<p>若：</p>
-
-<ul>
-<li>调用这些函数不带终止符</li>
-<li>main执行了一个无返回值的return语句</li>
-<li>main没有生命返回类型为整型</li>
-</ul>
-
-
-<p>则：</p>
-
-<p>进程状态为未定义的。</p>
-
-<p>但：</p>
-
-<p>若main生命为int返回类型，并执行到最后一条语句时返回（隐式返回），</p>
-
-<p>则：</p>
-
-<p>进程终止状态为0</p>
-
-<p>在main函数返回一整型值与用该值调用exit函数是等价的</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>exit(0) == return 0;</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>atexit函数</h2>
-
-<p>可以注册终止处理函数，这批函数在exit自动调用，ISO C规定，可注册函数多达32个，注册这些函数使用atexit函数</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
-</span><span class='line'>
-</span><span class='line'>int atexit(void (*func)(void));
-</span></code></pre></td></tr></table></div></figure>
-
-
-<blockquote><p>注：
-1. exit调用这些函数顺序与他们登记的顺序相近
-2. 同一个函数若登记多次，则会调用多次</p></blockquote>
-
-<p><img src="http://baren.github.io/images/assets/Figure7-1.png" title="time-function" alt="alt text" /></p>
-
-<h1>命令行参数</h1>
-
-<p>比较简单，记录一点。</p>
-
-<p>argv[argc]是一个空指针，这样，可以在循环获取参数时，这样：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>for(i=0; garv[i] != NULL; i++)
-</span><span class='line'>{
-</span><span class='line'>  // 代码
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>环境表</h1>
-
-<p>每个程序，都会收到一张环境表，环境表是字符指针数组，每个指针指向的字符以null结束。</p>
-
-<p><strong>全局变量</strong><code>environ</code>包含了该指针数组的地址：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>extern char ** environ;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>称environ为环境指针，指针数组为环境表，环境表每个表项由name=value组成。</p>
-
-<h1>C程序的存储空间</h1>
-
-<p>C程序由以下几部分组成</p>
-
-<ul>
-<li>正文段：是由CPU执行的机器指令部分，正文段是共享的，而且是只读的。</li>
-<li>初始化数据段：常称为数据段，它包含了程序中须明确的赋初始值的变量。比如
-在C程序中出现在任何函数之外的声明：</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>int maxcount = 99;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li>非初始化数据段：常称为bss段，在程序开始执行之前，内核将此段中的数据初始化为0或空指针，出现在任何函数外的C声明：</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>long sum[1000];
-</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li>栈：自动变量，函数调用时所需要保存的信息，都存放到栈中，这种实现方式允许递归调用。</li>
-<li>堆：一般在堆中进行动态存储分配。堆位于非初始化数据段和栈之间。</li>
-</ul>
-
-
-<p>示意图：</p>
-
-<p><img src="http://baren.github.io/images/assets/Figure7-2.png" title="time-function" alt="" /></p>
-
-<p>linux的size命令可以报告正文段、数据段和bss段的长度。</p>
-
-<h1>共享库</h1>
-
-<p>共享库使得可执行文件中不再需要包含共用库的例程。</p>
-
-<p>只需要在所有进程都可引用的存储区中维护这种库例程的一个副本，在例程<strong>第一次</strong>执行或在第一次调用某个库函数时，用<strong>动态链接</strong>方法，将程序与共享库函数相链接。</p>
-
-<p>好处：</p>
-
-<ul>
-<li>减少了执行文件长度</li>
-<li>方便替换使用的库函数的版本而不需要重新链接。</li>
-</ul>
-
-
-<p>坏处：
-* 增加了首次的运行时间</p>
-
-<blockquote><p>GCC编译器，默认引用动态库，动态库是以.so结尾；而静态库是以.a为扩展名。引用一个程序库，可以使用-l<em>NAME</em>选项。</p></blockquote>
-
-<h1>存储器分配</h1>
-
-<ol>
-<li>malloc 分配指定大小（字节数）的存储区，初始值不确定</li>
-<li>calloc 为指定数量且指定长度的对象分配存储空间，初始化值为0</li>
-<li>realloc 更改以前分配区的长度（增加或减少）</li>
-</ol>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'># include &lt;stdlib.h&gt;
-</span><span class='line'>
-</span><span class='line'>void *malloc(size_t size);
-</span><span class='line'>void *calloc(size_t nobj, size_t size);
-</span><span class='line'>void *realloc(void *ptr, size_t newsize);
-</span><span class='line'>
-</span><span class='line'>void free(void *ptr);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>三个函数返回的指针一定是适当对齐的（原理基本上是已对齐单位的倍数的方式多分配内存）。</p>
-
-<p>三个函数返回void *指针，因此可以将其赋值给任何指针而不需要强制转换。</p>
-
-<p>free可以释放由上面三个函数分配的内存。</p>
-
-<p>这些分配函数通常调用sbrk系统调用实现。</p>
-
-<p>sbrk可增大和减少进程的存储空间，但malloc和free一般都不减少存储空间，以便分配并保持在malloc池中不返回内核。</p>
-
-<h1>环境变量</h1>
-
-<p>环境变量字符串的形式为<code>name=value</code>，unix不会查看此字符串，完全由程序解释。</p>
-
-<p>ISO C定义了一个函数getenv，根据name获取其value。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdlib.h&gt;
-</span><span class='line'>
-</span><span class='line'>char *getenv(const char *name);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>除了获取环境变量，还可以设置环境变量：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#include &lt;stdlib.h&gt;
-</span><span class='line'>
-</span><span class='line'>int putenv(char *str);
-</span><span class='line'>
-</span><span class='line'>int setenv(const char *name, const char *value, int rewrite);
-</span><span class='line'>
-</span><span class='line'>int unsetenv(const char *name);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>putenv，参数为name=value字符串，若name存在，则先删除</p>
-
-<p>setenv，参数name的值设为value，如果name存在，则根据rewrite参数决定是重写还是不删除。</p>
-
-<p>unsetenv，删除name的定义</p>
-
-<blockquote><p>注意：
-1. putenv的实现，linux直接将字符串地址作为参数放入环境表中，如果参数是存放在栈中，则会发生错误。
-2. 由于环境变量存放在程序空间的最上面，大小是有边界的，因此，如果设置的环境变量超出了存储空间大小，则需要由malloc在堆上分配空间来存储。</p></blockquote>
-
-<h1>setjmp和longjmp函数</h1>
-
-<p>c语言中，goto语句不能跨函数，如果要跨函数，则需要setjmp和longjmp函数：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;setjmp.h&gt;
-</span><span class='line'>
-</span><span class='line'>int setjmp(jmp_buf env);
-</span><span class='line'>void longjmp(jmp_buf env, int val);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>调用这两个函数，遇到的问题是：</p>
-
-<ol>
-<li>调用longjmp后，自动变量和寄存器变量的状态如何？这些值能回滚到调用setjmp的状态码？</li>
-</ol>
-
-
-<p>答：不确定，跟实现有关系。大多数实现并不回滚这些自动变量和寄存器变量的值，而所有标准则说他们的值是不确定的。如果有一个自动变量，而又不想使其回滚，则可以定义具有volatile属性。声明为全局或静态变量的值在执行longjmp时保持不变。</p>
-
-<ol>
-<li>自动变量的问题：若在函数内部声明指针，并返回了这个指针，则会出问题。</li>
-</ol>
-
-
-<h1>进程资源</h1>
-
-<h2>进程资源使用</h2>
-
-<p>getrusage()系统调用返回调用进程或者其所有子进程运行所使用的各种系统资源。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/resource.h&gt;
-</span><span class='line'>
-</span><span class='line'>int getrusage(int who, struct rusage *res_usage);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>参数who指定了进程中谁的资源使用信息将会被获取。有下面几个值：</p>
-
-<ul>
-<li>RUSAGE_SELF 返回调用进程的资源</li>
-<li>RUSAGE_CHILDREN 返回调用进程的所有子进程的资源。子进程是停止的和wait的。</li>
-<li>RUSAGE_THREAD 返回调用线程的资源（Linux 2.6.26）</li>
-</ul>
-
-
-<p>res_usage参数是一个指针，指向结构为rusage的对象。</p>
-
-<h2>进程资源限制</h2>
-
-<p>每个进程都消耗系统资源，OS对每个进程都有一些资源限制。在shell中，可以使用ulimit命令设置进程的资源限制。所有通过shell启动的进程都会继承ulimit设置的限制。</p>
-
-<p><em>getrlimit()</em> 和 <em>setrlimit()</em> 两个函数可以获取和设置进程的资源限制。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/resource.h&gt;
-</span><span class='line'>int getrlimit(int resource, struct rlimit *rlim);
-</span><span class='line'>int setrlimit(int resource, const struct rlimit *rlim);
-</span><span class='line'>// Both return 0 on success, or –1 on error
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><em>resource</em>参数代表了需要获取或设置的资源标记符。rlimit是一个结构体，用来描述资源限制的值。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>struct rlimit {
-</span><span class='line'>rlim_t rlim_cur; /* Soft limit (actual process limit) */ 
-</span><span class='line'>rlim_t rlim_max; /* Hard limit (ceiling for rlim_cur) */
-</span><span class='line'>};</span></code></pre></td></tr></table></div></figure>
-
-
-<p>关于结构体<code>struct rlimit</code>解释如下：</p>
-
-<p>既有软限制（rlim_cur），又有硬限制（rlim_max）。软限制表示进程可以消耗的最大资源设置。一个进程可以调整软限制，调整范围是[0-硬限制]。进程可以调整其硬限制。没有权限的进程，只能降硬限制调小（但不小于软限制），对于大多数进程，硬限制只是说明进程的可消耗的资源的最大值。</p>
-
-<p>有权限的进程（CAP_SYS_RESOURCE）可以调整硬限制大小，既可往大得方向调整，也可以往小的方向调整。</p>
-
-<p>如果rlim_cur和rlim_max的值是RLIM_INFINITY，表示没有限制。</p>
-
-<p>虽然设置进程的资源限制是针对单个进程的。但进程可消耗的资源除了与这个设置有关系外，还需要依赖同一个用户id的进程所消耗的资源之和。</p>
-
-<p>比如RLIMIT_NPROC资源，表示可创建的进程数限制，就是一个很好的例子。但是如果根据进程的子进程数来检查这个限制，将会失效，因为子进程也会创建新的进程。实际上，这个资源限制是针对所有的用户id都相同的进程设置的。但是，即使是具有同样的用户id，如果其他进程并没有针对这个资源进行限制，或者有限制，但是限制数跟其他不一样，则这个限制资源检查则是根据这个进程的相应设置来进行相应检查的。</p>
-
-<p>下表是参数<em>resource</em>的取值表：</p>
-
-<table>
-<thead>
-<tr>
-<th>resource        </th>
-<th style="text-align:center;"> Limit on</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>RLIMIT_AS      </td>
-<td style="text-align:center;"> 进程的虚拟内存大小（byte）</td>
-</tr>
-<tr>
-<td>RLIMIT_CORE    </td>
-<td style="text-align:center;"> Core 文件大小（byte）</td>
-</tr>
-<tr>
-<td>RLIMIT_CPU     </td>
-<td style="text-align:center;"> 进程的cpu时间(seconds)</td>
-</tr>
-<tr>
-<td>RLIMIT_DATA    </td>
-<td style="text-align:center;"> 进程的数据段大小（byte）</td>
-</tr>
-<tr>
-<td>RLIMIT_FSIZE   </td>
-<td style="text-align:center;"> 文件大小（byte）</td>
-</tr>
-<tr>
-<td>RLIMIT_MEMLOCK </td>
-<td style="text-align:center;"> 锁定的内存大小（byte）</td>
-</tr>
-<tr>
-<td>RLIMIT_MSGQUEUE </td>
-<td style="text-align:center;"> 为实际用户id分配的POSIX的消息队列的大小(since Linux 2.6.8)</td>
-</tr>
-<tr>
-<td>RLIMIT_NICE    </td>
-<td style="text-align:center;"> nice的值(since Linux 2.6.12)</td>
-</tr>
-<tr>
-<td>RLIMIT_NOFILE  </td>
-<td style="text-align:center;"> 最大的文件描述符个数</td>
-</tr>
-<tr>
-<td>RLIMIT_NPROC   </td>
-<td style="text-align:center;"> 一个实际用户id可创建的进程数</td>
-</tr>
-<tr>
-<td>RLIMIT_RSS     </td>
-<td style="text-align:center;"> Resident set size (bytes; not implemented)</td>
-</tr>
-</tbody>
-</table>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[apue(系统数据文件和信息)]]></title>
-    <link href="http://baren.github.io/blog/2014/03/29/system-data-file-and-info/"/>
-    <updated>2014-03-29T08:06:39+08:00</updated>
-    <id>http://baren.github.io/blog/2014/03/29/system-data-file-and-info</id>
-    <content type="html"><![CDATA[<h1>时间和日期</h1>
-
-<p>unix内核提供的<em>基本时间服务</em>是计算自国际标准时间公元1970年1月1日00:00:00以来经过的秒数。</p>
-
-<p>这种秒数是以数据类型time_t表示的。称之为<strong>日历时间</strong>，日历时间包括日期和时间。</p>
-
-<p>time函数返回当前的时间和日期：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#include &lt;time.h&gt;
-</span><span class='line'>
-</span><span class='line'>time_t time(time_t *calptr);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<!-- more -->
-
-
-<p>时间值总是作为函数值返回。如果参数不为空，则时间也存放在由calptr执行的内存中。</p>
-
-<p>gettimeofday函数提供了更高分辨率（最高为微妙级）。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;sys/time.h&gt;  ## 这里就是sys/time.h头文件了
-</span><span class='line'>
-</span><span class='line'>int gettimeofday(struct timeval *restrict tp, void *restrict tzp);
-</span><span class='line'>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>该函数作为XSI扩展定于在Single UNIX Specification中，tzp唯一合法的值是NULL，其它值则将产生不确定的结果。</p>
-
-<p>gettimeofday函数把当前时间放在tp指向的timeval结构中，该结构存储秒和微妙。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>struct timeval {
-</span><span class='line'>  time_t tv_sec;  /*秒*/
-</span><span class='line'>  long tv_usec;  /*微妙，注意是微妙，不是毫秒*/
-</span><span class='line'>
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>取到time_t后，可以调用其它函数来转成成可读的日期和时间。</p>
-
-<p><img src="http://baren.github.io/images/assets/Figure6-1.png" title="time-function" alt="alt text" /></p>
-
-<p>localtime和gmtime将日历时间转换成以年、月、日、时、分、秒、周日表示的时间，并将这些存放在tm结构中：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;time.h&gt;
-</span><span class='line'>
-</span><span class='line'># 将日历时间转换成国际标准时间的年、月、日、时、分、秒、周日。
-</span><span class='line'>struct tm *gmtime(const time_t *calptr);
-</span><span class='line'># 将日历时间转换成本地时间（考虑本地时区和夏令时）
-</span><span class='line'>struct tm *localtime(const time_t *calptr);
-</span><span class='line'>
-</span><span class='line'>struct tm{
-</span><span class='line'>  int time_sec; /*秒 [0-60]*/
-</span><span class='line'>  int time_min; /*分 [0-59]*/
-</span><span class='line'>  int tm_hour; /*时 [0-23]*/
-</span><span class='line'>  int time_mday; /*日 [0-31]*/
-</span><span class='line'>  int tm_mon; /*月 [0-11]*/
-</span><span class='line'>  int tm_year; /*年 [1900年开始]*/
-</span><span class='line'>  int tm_wday; /*从周日开始的天 [0-6]*/
-</span><span class='line'>  int tm_yday; /*从一月开始的天数 [0-365]*/
-</span><span class='line'>  int tm_isdst; /*daylight(夏令时)保存时间标记，&lt;0, 0, &gt;0*/
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>秒可以超过59的原因是可以闰秒。如果夏令时生效，夏令时标志值为正；如果非夏令时制时间，标志位0；不可用，则为负。</p>
-
-<p>mktime函数把年月日等作为参数，转换成time_t的值：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;time.h&gt;
-</span><span class='line'>
-</span><span class='line'>time_t mktime(struct tm *tmptr);
-</span><span class='line'>
-</span><span class='line'># 下面两个函数把时间转换成date命令的系统默认输出形式。只是参数不一样
-</span><span class='line'>char *asctime(const struct tm *tmptr);
-</span><span class='line'>char *ctime(const time_t *calptr);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>strftime函数是格式化时间：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;time.h&gt;
-</span><span class='line'>
-</span><span class='line'>size_t strftime(char *restrict buf, size_t masxize, const char *restrict format, const struct tm *restrict tmptr);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>最后一个参数是要格式化的时间值，tm结构指针传递。格式化结果存放在一个长度为maxsize的buf数组中，如果buf长度可以存放格式化结果和一个null终止符，则该函数返回在buf中存放的字符数，否则该函数返回0.</p>
-
-<p>format是格式化字符串。</p>
-
-<p>转换符略。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[apue(标准I/O库)]]></title>
-    <link href="http://baren.github.io/blog/2014/03/22/standard-io/"/>
-    <updated>2014-03-22T20:06:00+08:00</updated>
-    <id>http://baren.github.io/blog/2014/03/22/standard-io</id>
-    <content type="html"><![CDATA[<h1>流和FILE对象</h1>
-
-<h2>流介绍</h2>
-
-<p>对于标准I/O库，他们的操作是围绕<em>流</em>进行的。</p>
-
-<p>与JAVA使用Stream类来代表流不一样，标准I/O采用结构体FILE来代表流，由于大多数标准库的函数使用FILE <em>来作为参数，因此也用</em>文件指针*来代称流。</p>
-
-<p>struct FILE结构体在stdio.h中做了声明：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>typedef struct _sFILE{...} FILE;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>数据类型FILE
-    > 代表流对象，FILE对象含有所有的连接文件的内部状态，包括文件位置标记和缓存信息等。
-    > 每一个流海包含error和文件末尾状态标记，可以通过ferror和feof函数进行测试。</p>
-
-<!-- more -->
-
-
-<h2>流的定向</h2>
-
-<p>标准I/O可以用于单字节的字符集（ascii字符集）和多字节（宽）字符集，这就要求<em>流的定向</em>。
-对于宽字节的处理，有一套专门的多字节处理函数（wchar.h中声明）。
-对于同样的流，为了能处理宽的和正常的字符的操作，有一个限制：</p>
-
-<ul>
-<li>流要么被标记为宽定向的，要么是字节定向的</li>
-<li>一旦确定定向后，不能二者混用</li>
-</ul>
-
-
-<p>有三种方式来定向流：</p>
-
-<ul>
-<li>创建流后，任一个正常字符函数被使用，流被标记为字节定向的。</li>
-<li>创建流后，任一个宽字符函数被使用，流被标记为宽定向的。</li>
-<li>使用<code>fwide函数</code>来设置流的定向。</li>
-<li>freopen函数可以清除流的定向。</li>
-</ul>
-
-
-<p>注意：</p>
-
-<ul>
-<li>流刚被创建时，并没有定向</li>
-<li>在未定向流上使用字节字符函数则置为字节定向的</li>
-<li>在未定向流上使用宽字节函数则置为宽字节定向的</li>
-</ul>
-
-
-<p>fwide函数说明：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>#include &lt;wchar.h&gt;
-</span><span class='line'>
-</span><span class='line'># 返回值：若流是宽定向的，则返回正值；若流是字节定向的，则返回负值；若流是未定向的，则返回0.
-</span><span class='line'>int fwide(FILE *fp, int mode);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>根据mode参数的值，fwide执行不同的工作：</p>
-
-<ul>
-<li>若mode参数为负值，fwide试图使指定的流是字节定向的</li>
-<li>若mode参数为正值，fwide试图使指定的流是宽定向的</li>
-<li>若mode参数为0，fwide将不试图设置流的定向，但返回标识该流定向的值</li>
-</ul>
-
-
-<blockquote><p>注意:
-fwide不会改变已经设置定向的流
-fwide不会出错，想检查错误，唯一可用的是调用之前先清除errno，调用fwide后检查errno的值。（errno是全局变量，每次调用失败，系统会用错误代码赋值给errno）</p></blockquote>
-
-<h1>标准输入/输出/错误</h1>
-
-<p>当main函数被调用，就已经有3哥预先定义的打开的流可以使用，这三个流在stdio.h中声明：</p>
-
-<ul>
-<li>FILE *stdin。标准输入流</li>
-<li>FILE *stdout。标准输出流</li>
-<li>FILE *stderr。标准错误流</li>
-</ul>
-
-
-<p>在GNU C中，stdin、stdout和stderr是正常常量，可以直接用：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>fclost(stdout);
-</span><span class='line'>stdout = fopen("filepath", "w");
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>缓冲</h1>
-
-<p>标准I/O提供了三种类型的缓冲：</p>
-
-<ul>
-<li>全缓冲。填满缓冲区后才进行实际的I/O操作。对于磁盘文件，通常是全缓冲的。在一个流上第一次执行I/O操作时，标准I/O函数通常用malloc获取需要使用的缓冲区。</li>
-<li>行缓冲。当输入和输出中遇到换行符时，标准I/O库执行I/O操作。当涉及到终端时，通常使用行缓冲。</li>
-</ul>
-
-
-<blockquote><p>行缓冲有两个限制：</p>
-
-<p>缓冲区长度是固定的，所以只要填满了缓冲区，即使没有缓冲区，也进行I/O操作</p>
-
-<p>任何时候，只要标准I/O库从 a）不带缓冲的流，或者 b）一个行缓冲的流（但数据从内核获取）得到输入数据，那么就会造成冲洗所有行缓冲输出流。</p>
-
-<p>从实现角度说，这么个限制是有原因的：如果从不带缓冲的流中获取数据，那么缓冲区中的没有冲洗的旧数据会对新数据造成污染。</p></blockquote>
-
-<ul>
-<li>不带缓冲。标准I/O库不对字符进行缓冲存储。标准错误流通常不带缓冲的。</li>
-</ul>
-
-
-<p>iso c 是这样设置缓冲的：
-* 当且仅当标准输入和标准输出并不涉及交互设备时，他们才是全缓冲。
-* 标准错误绝不会是全缓冲。</p>
-
-<p>但是标准输入输出涉及交互设备时，一般：</p>
-
-<ul>
-<li>标准错误不带缓冲。</li>
-<li>其它流，涉及终端设备，则是行缓冲；否则是全缓冲。</li>
-</ul>
-
-
-<p>对于这些默认的缓冲情况，可以使用函数进行修改：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>
-</span><span class='line'>void setbuf(FILE * fp, char * buf);
-</span><span class='line'>int servbuf(FILE * fp, char * buf, int mode, size_t size);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这些函数的使用限制是：</p>
-
-<ul>
-<li>一定要在流已被打开后调用</li>
-<li>在对流执行任何一个其它操作之前调用</li>
-</ul>
-
-
-<p>setbuf可以打开和关闭缓冲，打开缓冲，将buf指向一个长为BUFSIZE的缓冲区（该常量被定义在stdio.h中）。关闭缓冲，则设置buf为NULL。
-setvbuf，可以精确控制缓冲类型，通过mode参数指定：</p>
-
-<ul>
-<li>_IOFBF    全缓冲</li>
-<li>_IOLBF    行缓冲</li>
-<li>_IONBF    不缓冲</li>
-</ul>
-
-
-<blockquote><p>注意：
-如果在一个函数内分配一个自动变量类的标准I/O缓冲区，则从该函数返回之前，必须关闭该流（也就是把数据冲洗一下）。
-一般而言，应由系统选择缓冲区的长度，并自动分配缓冲区。这种情况下，关闭此流时，标准I/O库将自动释放缓冲区。</p></blockquote>
-
-<p>可以通过函数强制缓冲一个流：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdih.h&gt;
-</span><span class='line'>
-</span><span class='line'>int fflush(FILE * fp);</span></code></pre></td></tr></table></div></figure>
-
-
-<h1>打开流</h1>
-
-<p>使用下列函数打开流：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>
-</span><span class='line'>FILE *fopen(char * pathname, char *type);
-</span><span class='line'>FILE *freopen(char *pachname, char *type, FILE *fp);
-</span><span class='line'>FILE *fdopen(int fd, char *type);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>使用fopen函数打开一个文件，创建一个新流，并建立这个流和文件之间的连接。这个过程也会涉及到创建新文件。</p>
-
-<p>其中，type参数指定对该流的读、写方式：</p>
-
-<ul>
-<li><code>'r'</code>: 只读打开文件</li>
-<li><code>'w'</code>: 只写打开，若文件存在，截断为0；否则创建新文件</li>
-<li><code>'a'</code>: 追加打开，为在文件为写而打开。文件若存在，则不改变内容。</li>
-<li><code>'r+'</code>: 读写打开文件，初始化内容不变，初始化文件位置在文件开头。</li>
-<li><code>'w+'</code>: 读写打开文件，若文件存在，截断为0.否则创建新文件</li>
-<li><code>'a+'</code>: 为在文件尾读和写而打开文件。</li>
-</ul>
-
-
-<blockquote><p>注意：</p>
-
-<p>&lsquo;+&#8217;请求一个流可以读和写，当使用这种流时，在读写之间转换时，必须刷新buffer，fflush或者订货函数fseek都可以。不然内部的buffer可能不空。</p></blockquote>
-
-<p>freopen函数像fclos和fopen的联合。受限关闭有fp指向的流（这个过程会忽略任何错误），然后再打开pathname指向的文件，一般用于将一个指定的文件打开为一个预定义的流。</p>
-
-<p>可以使用fclose关闭流：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>
-</span><span class='line'>int fclose(FILE *fp);</span></code></pre></td></tr></table></div></figure>
-
-
-<p>关闭一个流，关闭文件，并刷新缓冲区的输出数据，并释放由标准I/O库分配的内存。</p>
-
-<blockquote><p>注意：
-当程序正常关闭时（调用exit函数和正常从main返回），所有未写缓冲数据的标准I/O流，都会被冲洗；所有打开的标准I/O都会关闭。</p></blockquote>
-
-<h1>读和写流</h1>
-
-<p>一旦打开了流，就可在三中不同类型的非格式化I/O中选择，进行读写。包括：</p>
-
-<ul>
-<li>每次只读一个字符的I/O，一次读写一个字符。若流是缓冲的，标准I/O会处理所有缓冲。</li>
-<li>每次一行I/O，可以使用fgets和fputs，每行以换行符终止。</li>
-<li>direct I/O，直接I/O。fread和fwrite函数支持这种类型的I/O。每次I/O操作读或写某种数量的对象，而每个对象具有指定的长度。用于从二进制文件中每次读或写一个结构。</li>
-</ul>
-
-
-<h2>一次一个字符</h2>
-
-<p>下面三个函数可以用于一次读一个字符：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>
-</span><span class='line'># 三个函数的返回值，若成功，返回下一个字符；达文件末尾或失败，则返回EOF
-</span><span class='line'>int getc(FILE *fp);
-</span><span class='line'>int fgetc(FILE *fp);
-</span><span class='line'>
-</span><span class='line'>int getchar(void);
-</span><span class='line'>
-</span><span class='line'># 写入流
-</span><span class='line'>int putc(int c, FILE *fp);
-</span><span class='line'>int fputc(int c, FILE * fp);
-</span><span class='line'>int putchar(int c);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>getchar 等价于getc(stdin)，而getc和fgetc的区别是前者可以实现为宏；而后者不可。这意味着：</p>
-
-<ul>
-<li>getc的参数不应当是具有副作用的表达式</li>
-<li>fgetc是函数，可得到其地址，允许fgetc地址作为参数传递给其它函数</li>
-<li>fgetc函数执行时间长于getc函数（宏的优势）</li>
-</ul>
-
-
-<p>不管是出错，还是到达文件末尾，三个函数都返回EOF，为了区分是出错还是到达文件末尾，需要使用ferror或feof函数。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>
-</span><span class='line'>int ferror(FILE *fp);
-</span><span class='line'>
-</span><span class='line'>int feof(FILE *fp);
-</span><span class='line'>
-</span><span class='line'>void clearerr(FILE *fp);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>大多数实现，为每个流在FILE对象中维持了两个标志：</p>
-
-<ul>
-<li>出错标志</li>
-<li>文件结束标志</li>
-</ul>
-
-
-<p>从流中读取数据后，可以调用ungetc奖字符再压回流中。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>
-</span><span class='line'># 成功，返回c，出错返回EOF
-</span><span class='line'>int ungetc(int c, FILE *fp);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>关于压回，注意：</p>
-
-<ul>
-<li>压回流中的字符可以再读出，但与压入顺序相反。</li>
-<li>不能压回EOF。</li>
-<li>到达文件末尾，还可压回字符。下次读取将返回该字符，再次读取则返回EOF。这么做的一个原因是，一次成功的ungetc调用会清除该流的文件结束标志。</li>
-</ul>
-
-
-<h2>每次一行</h2>
-
-<p>下面函数是每次一行函数：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>
-</span><span class='line'># 读一行函数，成功，则返回bug，错误或到达末尾，则返回NULL
-</span><span class='line'>char * fgets(char * buf, int n, FILE *fp);
-</span><span class='line'>
-</span><span class='line'>char * gets(char *buf);
-</span><span class='line'>
-</span><span class='line'># 写一行函数，成功，返回非负值，出错返回EOF
-</span><span class='line'>
-</span><span class='line'>int fputs(char * str, FILE *fp);
-</span><span class='line'>
-</span><span class='line'>int puts(char *str);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>两个gets函数，指定了缓冲区，把读的行送入其中。gets从标准输入读，fgets从指定流读。</p>
-
-<ul>
-<li>fgets必须指定缓冲区的长度。此函数一直读到下一个换行符为止，但不超过n-1（放null字符），读入的数据被送入缓冲区。</li>
-<li>该缓冲区一null结尾。</li>
-<li>若该行的字符数超过n-1，则fgets只返回一个不完整的行，但是，缓冲区总是以null字符结尾。</li>
-</ul>
-
-
-<blockquote><p>注意：
-gets函数不推荐，由于没有指定缓冲区大小，容易造成缓冲区溢出。</p></blockquote>
-
-<p>写入一行函数，将一个以null符终止的字符串写入到指定流。尾端null不会被写入。</p>
-
-<h2>二进制I/O</h2>
-
-<p>对于直接I/O，也就是二进制I/O，提供两个函数：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>size_t fread(void *ptr, size_t size, size_t nobj, FILE *fp);
-</span><span class='line'>
-</span><span class='line'>size_t fwrite(void * ptr, size_t size, size_t nobj, FILE *fp);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这两个函数的常用用法：</p>
-
-<ol>
-<li>读或写一个二进制数组。比如将一个浮点数组的第2~5个元素写到一个文件上：</li>
-</ol>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>float data[10];
-</span><span class='line'>
-</span><span class='line'>if (fwrite(&data[2], sizeof(float), 4, fp) != 4)
-</span><span class='line'>  printf("error");</span></code></pre></td></tr></table></div></figure>
-
-
-<ol>
-<li>读写一个结构</li>
-</ol>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>struct {
-</span><span class='line'>  
-</span><span class='line'>  short count;
-</span><span class='line'>  long total;
-</span><span class='line'>  char name[NAMESIZE];
-</span><span class='line'>
-</span><span class='line'>} item;
-</span><span class='line'>
-</span><span class='line'>if (fwrite(&item, sizeof(item), 1, fp) != 1)
-</span><span class='line'>  printf("error");
-</span></code></pre></td></tr></table></div></figure>
-
-
-<blockquote><p>注意：
-对于二进制读写的问题是：只能用于同一个系统上已写的数据，原因是：
-1. 在同一个结构中，同一个成员的偏移量可能因为编译器和系统而异。
-2. 用来存储多字节整数和浮点值的二进制格式，在不同机器体系结构不同。</p></blockquote>
-
-<h1>定位流</h1>
-
-<p>三种方法定位标准I/O流</p>
-
-<ul>
-<li>ftell和fseek，假设位置偏移量，可以使用长整型。</li>
-<li>ftello和fseeko，文件偏移量，使用off_t代替长整型。</li>
-<li>fgetpos和fsetpos，ISO C引入，使用抽象数据类型fpos_t来记录文件的位置。</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>
-</span><span class='line'>long ftell(FILE *fp); # 成功，返回当前文件位置指示，出错返回-1
-</span><span class='line'>
-</span><span class='line'>int fseek(FILE *fp, long offset, int whence);
-</span><span class='line'>
-</span><span class='line'>void rewind(FILE *fp);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>定位涉及到文本文件和二进制文件，由于存放格式不一样，里面许多注意点。</p>
-
-<h2>对于二进制文件</h2>
-
-<p>二进制文件，文件位置指示器是从文件起始位置开始度量，并以字节为计量单位。</p>
-
-<p>ftell用于二进制文件时，其返回值就是这种字节位置。</p>
-
-<p>为了使用fseek定位一个二进制文件，必须指定一个字节的<em>offset</em>。以及解释这种偏移量的方式。</p>
-
-<p>whence的值与内核函数lseek函数相同：</p>
-
-<ul>
-<li>SEEK_SET表示从文件的起始位置开始</li>
-<li>SEEK_CUR表示从当前文件位置开始</li>
-<li>SEEK_END表示从文件尾端开始。</li>
-</ul>
-
-
-<h2>文本文件</h2>
-
-<p>对于文本文件，他们的文件位置可能不以简单的字节偏移量来度量。主要是在非unix系统中，以不同格式存放文本文件。</p>
-
-<p>为了定位文本文件，<em>whence</em>一定要是SEEK_SET，而<em>offset</em>的值只有两种：0（绕回到文件的起始位置）。或是对该文件调用ftell返回的值。</p>
-
-<p>使用fewind可以将流设置到文件的起始位置。</p>
-
-<h1>格式化I/O</h1>
-
-<h2>scanf函数</h2>
-
-<p>有以下几个scanf函数：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>#include &lt;stdio.h&gt;
-</span><span class='line'>
-</span><span class='line'>int fscanf(FILE *stream, char const *format, ...);
-</span><span class='line'>
-</span><span class='line'>int scanf(char const *format, ...);
-</span><span class='line'>
-</span><span class='line'>int sscanf(char const *string, char const *format, ...);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这些函数都是从输入源中读取字符并根据format字符串给出的格式代码对他们进行转换。</p>
-
-<p>fscanf输入源就是作为参数给出的流，scanf从标准输入读取，sscanf从第一个参数所给的字符串中读取字符。</p>
-
-<p>读取停止条件：</p>
-
-<ol>
-<li>当格式化字符串到达末尾</li>
-<li>读取的输入不再匹配格式字符串所指定的类型时</li>
-</ol>
-
-
-<p>返回结果是被转换的输入值的数据。</p>
-
-<p>如果在任何输入值被转换之前文件就已经到达尾部，函数就返回常量值EOF。</p>
-
-<blockquote><p>注意：
-对于scanf函数的参数，前面需要使用<code>&amp;</code>。</p></blockquote>
-
-<p>scanf函数族中的format字符串参数可能包含下面内容：</p>
-
-<ul>
-<li>空白字符————她们与输入中得零个或多个空白字符匹配，在处理过程中被忽略。</li>
-<li>格式代码————她们指定函数如何解释接下来的输入字符。</li>
-<li>其它字符————当任何其它字符出现在format字符串时，下一个输入字符必须与它匹配。如果匹配，该输入字符随后就被丢弃。如果不匹配，函数就不再读取直接返回。</li>
-</ul>
-
-
-<p>格式代码的结构是：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>%[*] [fldwidth] [lenmodifier]convtype</span></code></pre></td></tr></table></div></figure>
-
-
-<p>针对上面的格式，解释如下：</p>
-
-<ul>
-<li>可选<code>*</code>字符：将使转换后的值被丢弃而不是进行存储</li>
-<li>fldwith宽度：非负整数，它限制将被读取用于转换的输入字符的个数。如果没有给出宽度，函数就连续读入字符直到遇到输入中的下一个空白符。</li>
-<li>lenmodifier限定符：用于修改有些格式代码的含义</li>
-</ul>
-
-
-<blockquote><p>对于限定符，说明：
-限定符的目的是为了指定参数的长度。如果整型参数比缺省的整型值更短或更长时，在格式化代码中省略限定符就是一个常见的错误。
-对于浮点型也是如此。
-如果省略了限定符，可能导致一个较长的变量只有部分被初始化。或者一个较短变量的临近变量也被修改，这都取决于这些类型的相对长度。</p></blockquote>
-
-<p>限定符作用到整型和浮点型的效果如下表：</p>
-
-<table>
-<thead>
-<tr>
-<th>格式代码        </th>
-<th style="text-align:center;"> h           </th>
-<th style="text-align:center;"> l  </th>
-<th style="text-align:center;"> L</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>d,i,n      </td>
-<td style="text-align:center;"> short </td>
-<td style="text-align:center;"> long </td>
-<td style="text-align:center;">    空 </td>
-</tr>
-<tr>
-<td>o,u,x      </td>
-<td style="text-align:center;"> 无符号 short      </td>
-<td style="text-align:center;">       无符号 long </td>
-<td style="text-align:center;"> 空</td>
-</tr>
-<tr>
-<td>e,f,g </td>
-<td style="text-align:center;">     空  </td>
-<td style="text-align:center;">    double </td>
-<td style="text-align:center;">       long double</td>
-</tr>
-</tbody>
-</table>
-
-
-<p>转换符</p>
-
-<p>看下面例子：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>nfields = fscanf(input, "%4d %4d %4d", &a, &b, &c)</span></code></pre></td></tr></table></div></figure>
-
-
-<p>上面程序，宽度参数把整数值限制为4个数字或者更少的数字，如果是下面的输入：</p>
-
-<p>1 2</p>
-
-<p>则a的值是1，b的值是2，c没有改变。而nfields值为2.</p>
-
-<p>如果是下面的输入：</p>
-
-<p>12345 67890</p>
-
-<p>则a的值是1234， <strong>b的值是5</strong>。c的值是6789，nfield的值是3。</p>
-
-<p>转换符表格：</p>
-
-<table>
-<thead>
-<tr>
-<th>代码        </th>
-<th style="text-align:center;"> 参数类型           </th>
-<th style="text-align:left;"> 含义</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>c </td>
-<td style="text-align:center;"> char *</td>
-<td style="text-align:left;"> 读取和存储单个字符。如果给定了宽度，则读取和存储这个数目的字符（因此参数类型是char *），参数必须指向一个足够大的字符数组</td>
-</tr>
-<tr>
-<td>i,d</td>
-<td style="text-align:center;">int * </td>
-<td style="text-align:left;"> 一个可选的有符号整数倍转换，d把输入解释为十进制；i根据它的第一个字符决定值的基数</td>
-</tr>
-<tr>
-<td>u,o,x</td>
-<td style="text-align:center;"> unsigned *</td>
-<td style="text-align:left;"> 无符号，分别是u无符号十进制，o无符号八进制，x无符号十六进制</td>
-</tr>
-<tr>
-<td>e，f，g</td>
-<td style="text-align:center;"> float *</td>
-<td style="text-align:left;">浮点数</td>
-</tr>
-<tr>
-<td>s</td>
-<td style="text-align:center;"> char * </td>
-<td style="text-align:left;"> 字符串</td>
-</tr>
-<tr>
-<td>p </td>
-<td style="text-align:center;"> void * </td>
-<td style="text-align:left;"> 指向void的指针。输入预期为一串字符，诸如那些有printf函数的%p格式代码所产生的输出。</td>
-</tr>
-<tr>
-<td>n </td>
-<td style="text-align:center;"> int * </td>
-<td style="text-align:left;">到目前为止通过这个scanf函数的调用从输入读取的字符数被返回。%n转换的字符不被计算在内。它本身并不耗费任何输入。</td>
-</tr>
-<tr>
-<td>% </td>
-<td style="text-align:center;"> 无</td>
-<td style="text-align:left;"> %</td>
-</tr>
-</tbody>
-</table>
-
-
-<h2>printf函数</h2>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>int fprintf(FILE *stream, char const *format, ...);
-</span><span class='line'>
-</span><span class='line'>int printf(char const *format, ...);
-</span><span class='line'>
-</span><span class='line'>int sprintf(char *buffer, char const *format, ...);
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>printf，结果输出送到标准输出，fprintf可以指定输出流。sprintf把结果作为一个NUL结尾的字符串存储到指定的buffer缓冲区中。</p>
-
-<blockquote><p>注意：
-sprintf有潜在的错误，缓存区大小不是一个参数，因此，如果输出结果长于缓冲区，会改写缓冲区后面的内存位置中得数据。</p></blockquote>
-
-<p>printf中得format构成是：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>%[flags] [fldwidth] [precision] [lenmodifier]convtype
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>flags字符</h3>
-
-<table>
-<thead>
-<tr>
-<th>标志 </th>
-<th> 含义</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>-   </td>
-<td> 值在字段中左对齐，默认是右对齐</td>
-</tr>
-<tr>
-<td>0   </td>
-<td>当数值为右对齐时，却僧情况下使用空格填充左边未使用的列。使用这个标志，则用零来填充，它可用于d,i,u,o,x,X,e,E,f,g和G代码。</td>
-</tr>
-<tr>
-<td>+   </td>
-<td> 正值前有加号</td>
-</tr>
-<tr>
-<td>空格</td>
-<td> 只用于转换有符号值的代码。当值非负时，这个标志把一个空格添加到它开始的位置。注意这个标志和+互斥。</td>
-</tr>
-</tbody>
-</table>
-
-
-<p>代码：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&gt;&gt;&gt; print '%0.5f' % 1.1
-</span><span class='line'>1.10000
-</span><span class='line'>&gt;&gt;&gt; print '%0.5d' % 1.1
-</span><span class='line'>00001</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>fldwidth 宽度</h3>
-
-<p>字段宽度是一个十进制整数，用于指定将要出现在结果中得最小字符数。如果字符数少于字段宽度，就对它进行填充以增加长度。flags字段决定填充
-使用空白还是零。</p>
-
-<h3>precision 精度</h3>
-
-<p>精度字段以一个句点开头，后面跟着一个可选的十进制整数，如果没有给出，则精度为0.</p>
-
-<ul>
-<li>如果作用的是d、i、u、o、x和X类型转换符，精度字段指定将出现在结果中的最小数子个数。如果转换后的值的位数小于宽度，就在它签名插入零。如果值为零，精度也为零，则不输出数字。</li>
-<li>如果作用于e，E和f类型转换符，精度决定将要出现在小数点后的数字位数</li>
-<li>如果作用于s，精度指定将被转换的最多字符数。</li>
-</ul>
-
 ]]></content>
   </entry>
   

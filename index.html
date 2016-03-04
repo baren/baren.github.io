@@ -9,7 +9,9 @@
   <meta name="author" content="enwu">
 
   
-  <meta name="description" content="主要介绍python中yield的用法。在python中，与yield关键字相关的语法有generator和coroutine，这里会分别介绍这两种语法。 ">
+  <meta name="description" content="函数命名空间 每次函数执行，都会创建一个 local namespace。用来存放在函数内定义的变量。 在函数内引用一个变量，python查找这个变量的顺序是： 局部空间
+全局空间（函数定义所在的模块定义的变量）
+built-in namespace 如果找不到，则抛出NameError。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -70,6 +72,492 @@
       
   <header>
     
+      <h1 class="entry-title"><a href="/blog/2016/03/02/python-function/">Python 函数知识</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-03-02T19:32:01+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>函数命名空间</h1>
+
+<p>每次函数执行，都会创建一个 local namespace。用来存放在函数内定义的变量。</p>
+
+<p>在函数内引用一个变量，python查找这个变量的顺序是：</p>
+
+<ul>
+<li>局部空间</li>
+<li>全局空间（函数定义所在的模块定义的变量）</li>
+<li>built-in namespace</li>
+</ul>
+
+
+<p>如果找不到，则抛出NameError。</p>
+
+<p>如果想要在函数内修改全局变量值，则需要用global关键字声明，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">a</span> <span class="o">=</span> <span class="mi">42</span>
+</span><span class='line'><span class="n">b</span> <span class="o">=</span> <span class="mi">37</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+</span><span class='line'>  <span class="k">global</span> <span class="n">a</span>   <span class="c"># &#39;a&#39; is in global namespace</span>
+</span><span class='line'>  <span class="n">a</span> <span class="o">=</span> <span class="mi">13</span>
+</span><span class='line'>  <span class="n">b</span><span class="o">=</span><span class="mi">0</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="n">foo</span><span class="p">()</span>
+</span><span class='line'><span class="c"># a is now 13. b is still 37.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>内嵌函数的命名空间</h2>
+
+<p>函数内也可以定义函数，这叫nested function。内嵌函数的包围函数被称作外围函数（outer function）。在内嵌函数内绑定的变量是定义在词法空间（lexical scoping），在内嵌函数内，引用变量的顺序是：</p>
+
+<ul>
+<li>lexical scoping</li>
+<li>局部空间</li>
+<li>全局空间（函数定义所在的模块定义的变量）</li>
+<li>built-in namespace</li>
+</ul>
+
+
+<p>在内嵌函数内，可以访问包围其函数内定义的变量（对内嵌函数来说，外围函数定义的变量被称作自由变量 free variables），但是不能再内嵌函数中重新绑定其外围函数定义的变量。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
+</span><span class='line'>    <span class="n">b</span> <span class="o">=</span> <span class="mi">2</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">inner</span><span class="p">():</span>
+</span><span class='line'>        <span class="n">b</span> <span class="o">-=</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="n">inner</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span class='line'>    <span class="n">test</span><span class="p">()</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">结果是：</span>
+</span><span class='line'><span class="ne">UnboundLocalError</span><span class="p">:</span> <span class="n">local</span> <span class="n">variable</span> <span class="s">&#39;b&#39;</span> <span class="n">referenced</span> <span class="n">before</span> <span class="n">assignment</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>只能在内嵌函数的最外层函数和全局空间内更改变量（python3用nonlocal关键字解决这个问题）。</p>
+
+<h2>闭包</h2>
+
+<p>函数是first-class对象，因此，函数可以：</p>
+
+<ul>
+<li>赋值给变量</li>
+<li>作为参数传递给函数</li>
+<li>作为函数结果返回</li>
+<li>存放在数据结构中</li>
+</ul>
+
+
+<p>当把函数作为数据处理时，函数会隐含的带着一些额外的相关信息，这些相关信息就是函数定义处的一些数据。</p>
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># foo.py</span>
+</span><span class='line'><span class="n">x</span> <span class="o">=</span> <span class="mi">42</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">callf</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">func</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>观察行为</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">foo</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">37</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="k">def</span> <span class="nf">helloworld</span><span class="p">():</span>
+</span><span class='line'><span class="o">...</span>        <span class="k">return</span> <span class="s">&quot;Hello World. x is </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">x</span>
+</span><span class='line'><span class="o">...</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">foo</span><span class="o">.</span><span class="n">callf</span><span class="p">(</span><span class="n">helloworld</span><span class="p">)</span>  <span class="c"># Pass a function as an argument &#39;Hello World. x is 37&#39;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里结果是helloworld定义位置的x的值，而不是执行位置的x的值。</p>
+
+<p>闭包定义：</p>
+
+<p>闭包是在其词法上下文（内嵌函数内部）中引用了自由变量（外围函数定义的变量）的函数。主要用途是当有需要延迟计算的情况，用闭包更简洁。</p>
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">urllib</span> <span class="kn">import</span> <span class="n">urlopen</span>
+</span><span class='line'><span class="c"># from urllib.request import urlopen (Python 3) </span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">page</span><span class="p">(</span><span class="n">url</span><span class="p">):</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">get</span><span class="p">():</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">urlopen</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>  <span class="c"># 引用了自由变量url，这个值取自定义函数的时候</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">get</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用闭包例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">python</span> <span class="o">=</span> <span class="n">page</span><span class="p">(</span><span class="s">&quot;http://www.python.org&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">python</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span> <span class="n">get</span> <span class="n">at</span> <span class="mh">0x95d5f0</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jython</span> <span class="o">=</span> <span class="n">page</span><span class="p">(</span><span class="s">&quot;http://www.jython.org&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jython</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">function</span> <span class="n">get</span> <span class="n">at</span> <span class="mh">0x9735f0</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">pydata</span> <span class="o">=</span> <span class="n">python</span><span class="p">()</span> <span class="c"># Fetches http://www.python.org</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span> <span class="n">jydata</span> <span class="o">=</span> <span class="n">jython</span><span class="p">()</span>     <span class="c"># Fetches http://www.jython.org</span>
+</span><span class='line'><span class="o">&gt;&gt;&gt;</span>
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>看上面的例子，当调用page函数时，返回的是内嵌函数，并没有立即执行，但是打开的url是固定的了。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/02/26/python-model/">Python 模块知识</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-02-26T19:32:01+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>模块对象</h1>
+
+<p>每一个源文件就是对应一个model。
+模块与模块之间的依赖通过import和from语句进行关联。
+在其它语言中，有全局变量可供模块之间共享，python中，全局变量在模块间不共享，只属于一个模块。</p>
+
+<p>模块名与模块的文件名是一样的。</p>
+
+<p>模块也是一个对象，因此可以将模块作为参数传递，赋值给变量或存数容器，作为函数结果返回等。是<em>first-class</em>对象。</p>
+
+<p>import语句的语法是：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">modname</span> <span class="p">[</span><span class="k">as</span> <span class="n">varname</span><span class="p">][,</span><span class="o">...</span><span class="p">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这行语句执行完成，会把变量modname绑定到模块对象上。</p>
+
+<p>模块内的语句，在第一次被import时执行。模块对象先于语句执行而创建，并存放在<code>sys.modules</code>中。</p>
+
+<h2>模块属性</h2>
+
+<p>import语句会为模块内的所有属性创建一个模块的命名空间（只有第一次import才会执行模块内语句）。模块体内的语句就是在这个命名空间内创建和绑定模块的属性，def创建函数属性，class创建类属性等等。</p>
+
+<p>除了模块体明确定义的属性，在执行模块内语句之前，import还会额外给模块创建一些属性：</p>
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="p">[</span><span class="s">&#39;__all__&#39;</span><span class="p">,</span> <span class="s">&#39;__builtins__&#39;</span><span class="p">,</span> <span class="s">&#39;__doc__&#39;</span><span class="p">,</span> <span class="s">&#39;__file__&#39;</span><span class="p">,</span> <span class="s">&#39;__get_builtin_constructor&#39;</span><span class="p">,</span> <span class="s">&#39;__name__&#39;</span><span class="p">,</span> <span class="s">&#39;__package__&#39;</span><span class="p">,</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>dict</strong> : 用这个字典对象作为模块属性的命名空间。<strong>dict</strong>在模块内不能直接使用，其它（比如<strong>file</strong>，因为是在执行语句之前就创建好了）可以。对于模块M来说，M.S=x 实际上恒等于M.<strong>dict</strong>[&rsquo;S&#8217;]=x.</li>
+</ul>
+
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">print</span> <span class="n">__file__</span>
+</span><span class='line'><span class="k">print</span> <span class="n">__dict__</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>输出结果：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">user</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">project</span><span class="o">/</span><span class="n">auto_deploy</span><span class="o">/</span><span class="n">tst</span><span class="o">.</span><span class="n">py</span>
+</span><span class='line'><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+</span><span class='line'>  <span class="n">File</span> <span class="s">&quot;/Users/user/work/project/auto_deploy/tst.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">6</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+</span><span class='line'>    <span class="k">print</span> <span class="n">__dict__</span>
+</span><span class='line'><span class="ne">NameError</span><span class="p">:</span> <span class="n">name</span> <span class="s">&#39;__dict__&#39;</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">defined</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>name</strong>：模块名</li>
+<li><strong>file</strong>：模块文件</li>
+<li><strong>doc</strong>：注释</li>
+</ul>
+
+
+<h2>模块私有化属性</h2>
+
+<p>python模块没有真正的私有化属性，按照惯例，只要在模块内定义的属性是以单下划线开头，就认为是私有的，比如_secret.</p>
+
+<h2>模块加载</h2>
+
+<p>实际上，python加载模块是靠内置的<code>__import__</code>函数进行的。我们也可以直接调用这个函数。import M，<code>__import__</code>会先用key M去查sys.modules，如果在里面，直接返回值；如果不在，<code>__import__</code>会创建一个空模块对象，并增加<code>__name__</code>属性，其值是M，并把这个模块赋值给 sys.modules[M] ，然后按照正确方式加载模块对象（后面有）。因此只有第一次import一个对象时是慢的，以后直接从sys.modules对象中返回。</p>
+
+<h3>在磁盘系统搜索模块</h3>
+
+<p>当加载一个模块，先检查是否是内置对象（在sys.builtin_module_names 中列出），如果不在，则从磁盘中搜索。</p>
+
+<p><em><strong>import</strong></em>会按照sys.path列表中存的路径顺序一个个搜索模块。sys.path中既可以是目录，也可以是zip格式的归档文件。python启动时，会用PYTHONPATH来初始会sys.path。sys.path的第一个字符串总是程序启动的当前目录。</p>
+
+<p>因此，可以通过修改sys.path来操纵搜索逻辑。</p>
+
+<h3>重新加载模块</h3>
+
+<p>可以通过调用reload.reload(M)函数重新加载模块，reload函数的参数是M对象，而不是字符串。通过重新加载模块，影响的是通过import M这种方式，并通过M.A进行访问的代码。那种通过from M import 引入的则不受影响。</p>
+
+<h3>循环引用</h3>
+
+<p>python允许循环引用，比如a.py中import b，而b.py中import a。</p>
+
+<p>已import a为例说明循环引用的加载逻辑</p>
+
+<p>循环引用的执行过程：</p>
+
+<p>import a语句会创建一个空模块对象，并赋值给sys.models[&lsquo;a&rsquo;] ,
+然后开始执行a模块语句，如果遇到import b，则开始加载模块b，同样创建模块对象，并赋值给sys.models[&lsquo;b&rsquo;].
+执行模块b的语句。这是a模块的语句执行是阻塞的，直到b执行完成。</p>
+
+<p>这样，执行模块b的body时，遇到import a，则由于之前已经通过赋值sys.models[&lsquo;a&rsquo;]有数据，因此直接返回这个未初始化完成的a模块对象。这样，有可能a中的属性还没有被初始化。</p>
+
+<h1>包</h1>
+
+<p>python中，一个目录下需要定义<code>__init__</code>.py文件，才能标记这个目录是个包。包的体就是<code>__init__.py</code>文件内容。</p>
+
+<p>导入包的时候，会首先执行<code>__init__.py</code>内容。</p>
+
+<h2>包的特殊属性</h2>
+
+<p>包P的<code>__file__</code>的值实际上是包P体的内容，也就是<code>P/__init__.py</code>的路径。</p>
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">import</span> <span class="nn">view</span>
+</span><span class='line'><span class="k">print</span> <span class="n">view</span><span class="o">.</span><span class="n">__file__</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>结果是</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">user</span><span class="o">/</span><span class="n">work</span><span class="o">/</span><span class="n">project</span><span class="o">/</span><span class="n">m</span><span class="o">-</span><span class="n">api</span><span class="o">/</span><span class="n">view</span><span class="o">/</span><span class="n">__init__</span><span class="o">.</span><span class="n">pyc</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以在<em>P/<strong>init</strong>.py</em>中设置<em><strong>all</strong></em>全局变量，用来控制其他模块执行<code>from P import *</code>语句时的行为。如果没有设置这个属性，则<code>from P import *</code>不会导入任何P的模块。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/01/20/man-bash/">Man Bash 解释</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-01-20T15:32:01+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h3>bash -c string 用法</h3>
+
+<p>如果指定-c，表示命令从string中读取，如果string后面带着参数，则将参数赋值给位置参数（posi-tional parameters），从$0开始。</p>
+
+<p>例子：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sh -c 'echo $0' a</span></code></pre></td></tr></table></div></figure>
+
+
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/03/22/statis-udp/">统计系统设计</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-22T15:32:01+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>需求</h1>
+
+<p>主要用来实时统计线上所依赖服务的运行情况。</p>
+
+<p>以分钟为最小统计维度，可以按照多个维度进行统计，比如一分钟实时状况，5分钟实时状况，10分钟实时状况。</p>
+
+<p>所统计的数据包括依赖服务的实时错误数、成功数。</p>
+
+<h1>设计思路</h1>
+
+<p>由于统计需求比较明确，并需要短时间内需要上线，因此暂时不能适用storm这种对机器资源需求量比较大的场合。</p>
+
+<p>为了保证后续可以顺利使用storm等分布式实时计算系统，其数据格式使用与storm容易处理的的nginx日志格式。</p>
+
+<p>数据传输协议采用UDP方式。</p>
+
+<h1>各子系统</h1>
+
+<p>分为三个部分：</p>
+
+<ul>
+<li>发送日志模块。采用嵌入到工程代码中的方式使用。</li>
+<li>数据接收系统。单独部署一个udp系统，负责接收数据，并把数据写入memcached。</li>
+<li>数据展示系统。负责将memcached的数据整理后写入数据库，并以图表方式展示。</li>
+</ul>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
       <h1 class="entry-title"><a href="/blog/2015/03/22/python-yield/">Yield（generator和coroutine）</a></h1>
     
     
@@ -100,6 +588,47 @@
   
     <footer>
       <a rel="full-article" href="/blog/2015/03/22/python-yield/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/03/22/python-tornado-source/">Tornado源代码研究笔记</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-22T15:32:01+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>主要记录研究tornado源代码的心得笔记。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2015/03/22/python-tornado-source/">Read on &rarr;</a>
     </footer>
   
 
@@ -436,290 +965,6 @@ prog1 &lt; infile | tee fifo1 | prog2</p>
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/25/pthread-cancel/">取消线程</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-25T20:56:04+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>主要描述POSIX线程的取消机制和更进一步的线程细节，包括线程和信号，线程栈等。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/25/pthread-cancel/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/17/pthread-control/">Pthread Control</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-17T21:19:03+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>线程属性</h1>
-
-<p>在使用pthread_create函数：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">int</span> <span class="nf">pthread_create</span><span class="p">(</span><span class="kt">pthread_t</span> <span class="o">*</span><span class="kr">thread</span><span class="p">,</span> <span class="k">const</span> <span class="kt">pthread_attr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">start</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="p">),</span> <span class="kt">void</span> <span class="o">*</span><span class="n">arg</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>创建线程时，第三个参数attr是线程属性。可以使用pthread_attr_t结构来修改线程默认属性。</p>
-
-<p>pthread_attr_t变量需要初始化，需要使用pthread_attr_init函数进行初始化。调用初始化函数后，pthread_attr_t结构所包含的内容就是操作系统实现支持的线程所有属性的默认值。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/17/pthread-control/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/14/per4-checpter6-decorator/">Python Decorator 深入理解</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-14T11:38:09+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>装饰器介绍</h1>
-
-<p>装饰器是一个函数，其主要目的是包装另一个函数或类，来透明的修改或者增强被包装对象的功能。语法上，装饰器用<em>@</em>表示，比如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="nd">@trace</span>
-</span><span class='line'><span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-</span><span class='line'>  <span class="k">return</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>上面装饰器，类似于这样的：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-</span><span class='line'>  <span class="k">return</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">square</span> <span class="o">=</span> <span class="n">trace</span><span class="p">(</span><span class="n">square</span><span class="p">)</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/14/per4-checpter6-decorator/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">Python 作用域规则</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-13T17:07:23+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>作用域规则</h1>
-
-<p>每当一个函数执行，都会创建一个局部命名空间（local namespace）。这个命名空间代表了一个局部环境，这个环境包含了凡是参数的名字、在函数内定义的局部变量等。当解析一个名字时，解析器会：</p>
-
-<ul>
-<li>首先检查局部环境变量</li>
-<li>如果在局部命名空间中找不到，然后再往上寻找全局命名空间（global namespace），全局命名空间是函数定义所在的模块。</li>
-<li>如果在全局命名空间不存在，解释器会查找内置的命名空间，如果还找不到，则NameError异常抛出</li>
-</ul>
-
-
-<p>python的命名空间的一个特点就是：在函数内处理全局变量。</p>
-
-<p>比如：</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/13/per4-checpter6-function-and-functional-programming/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">程序结构和控制</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-06T21:56:14+08:00" pubdate data-updated="true"></time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>程序结构和执行</h1>
-
-<p>python程序被组织为一个语句序列。所有的语言特性，包括变量赋值、函数定义、类定义和模块导入等，都是语句，都是与其他语句具有相同状态。</p>
-
-<p>因此所有语句都可以放置在程序的任何地方。</p>
-
-<p>比如：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-</span><span class='line'>      <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="nb">float</span><span class="p">):</span>
-</span><span class='line'>          <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Expected a float&quot;</span><span class="p">)</span>
-</span><span class='line'>      <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
-</span><span class='line'><span class="k">else</span><span class="p">:</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">square</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-</span><span class='line'>      <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">x</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>当加载文件时，python解释器顺序的执行每一条语句，知道不能执行为止。</p>
-
-<p>这种执行方式对于简单的作为主程序执行，或者经过import进行导入是一致的。</p>
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/09/06/per4-chapter5-program-structure-and-control-flow/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="2">&larr; Older</a>
@@ -735,7 +980,27 @@ prog1 &lt; infile | tee fifo1 | prog2</p>
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2016/03/02/python-function/">python 函数知识</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/02/26/python-model/">python 模块知识</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/01/20/man-bash/">man bash 解释</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/statis-udp/">统计系统设计</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/03/22/python-yield/">yield（generator和coroutine）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/python-tornado-source/">tornado源代码研究笔记</a>
       </li>
     
       <li class="post">
@@ -744,26 +1009,6 @@ prog1 &lt; infile | tee fifo1 | prog2</p>
     
       <li class="post">
         <a href="/blog/2014/11/19/shared-libraries/">Shared libraries简介</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/10/20/daemon/">daemon简介</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/28/pthread-further-details/">pthread 进一步细节</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/25/pthread-cancel/">取消线程</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/17/pthread-control/">pthread control</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/14/per4-checpter6-decorator/">python decorator 深入理解</a>
       </li>
     
   </ul>
@@ -779,7 +1024,7 @@ prog1 &lt; infile | tee fifo1 | prog2</p>
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2015 - enwu -
+  Copyright &copy; 2016 - enwu -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
   - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
   <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>

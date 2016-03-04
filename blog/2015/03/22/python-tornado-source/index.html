@@ -1,0 +1,381 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>tornado源代码研究笔记 - Baren Blog</title>
+  <meta name="author" content="enwu">
+
+  
+  <meta name="description" content="主要记录研究tornado源代码的心得笔记。 命令行参数解析 使用tornado，通常需要解析命令行参数，来指定运行行为，比如是否开启调试模式，端口号是多少，日志文件位置等等。 tornado的命令行使用方式一般是这样： 1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://baren.github.io/blog/2015/03/22/python-tornado-source/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Baren Blog" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Baren Blog</a></h1>
+  
+    <h2>A blogging for baren.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:baren.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Tornado源代码研究笔记</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-22T15:32:01+08:00" pubdate data-updated="true"></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>主要记录研究tornado源代码的心得笔记。</p>
+
+<!-- more -->
+
+
+<h1>命令行参数解析</h1>
+
+<p>使用tornado，通常需要解析命令行参数，来指定运行行为，比如是否开启调试模式，端口号是多少，日志文件位置等等。</p>
+
+<p>tornado的命令行使用方式一般是这样：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="kn">from</span> <span class="nn">tornado.options</span> <span class="kn">import</span> <span class="n">define</span><span class="p">,</span> <span class="n">options</span>
+</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;port&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">8888</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;run on the given port&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;mysql_host&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&quot;127.0.0.1:3306&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s">&quot;Main user DB&quot;</span><span class="p">)</span>
+</span><span class='line'><span class="n">define</span><span class="p">(</span><span class="s">&quot;memcache_hosts&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&quot;127.0.0.1:11011&quot;</span><span class="p">,</span> <span class="n">multiple</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+</span><span class='line'>       <span class="n">help</span><span class="o">=</span><span class="s">&quot;Main user memcache servers&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">connect</span><span class="p">():</span>
+</span><span class='line'>    <span class="n">db</span> <span class="o">=</span> <span class="n">database</span><span class="o">.</span><span class="n">Connection</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">mysql_host</span><span class="p">)</span>
+</span><span class='line'>    <span class="o">...</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># 后面会跟着下面语句，一般在启动函数内</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">tornado</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">parse_command_line</span><span class="p">()</span>  <span class="c"># 解析命令行传入参数</span>
+</span><span class='line'><span class="c"># or</span>
+</span><span class='line'><span class="n">tornado</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">parse_config_file</span><span class="p">(</span><span class="s">&quot;/etc/server.conf&quot;</span><span class="p">)</span>  <span class="c"># 解析文件传入参数</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>所有的定义的参数，不管是在文件内定义的，还是通过命令行传入的，都保存到全局变量options里面。</p>
+
+<p>甚至在模块内，也可以有自己的参数定义。其条件是比如在调用parse_command_line函数时，import这个模块。</p>
+
+<p>这样通过define函数定义的参数和通过命令行传入的参数，都会存在options变量下面。这样使用：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="n">http_server</span> <span class="o">=</span> <span class="n">tornado</span><span class="o">.</span><span class="n">httpserver</span><span class="o">.</span><span class="n">HTTPServer</span><span class="p">(</span><span class="n">application</span><span class="p">)</span>
+</span><span class='line'><span class="n">http_server</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>问题是，python自带了解析命令行参数的模块<em>getopt</em>，tornado为啥不用这个，又自己写了这样的解析模块呢？</p>
+
+<p>先了解下sys.argv和getopt模块。</p>
+
+<h2>sys.argv介绍</h2>
+
+<p>启动参数，会放在sys.argv下面，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="c"># argecho.py</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">sys</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">:</span>
+</span><span class='line'>    <span class="k">print</span> <span class="n">arg</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="err">$</span> <span class="n">python</span> <span class="n">argecho</span><span class="o">.</span><span class="n">py</span> <span class="n">abc</span> <span class="k">def</span>
+</span><span class='line'><span class="nf">argecho</span><span class="o">.</span><span class="n">py</span>
+</span><span class='line'><span class="n">abc</span>
+</span><span class='line'><span class="k">def</span>
+</span><span class='line'><span class="err">$ </span><span class="nf">python</span> <span class="n">argecho</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">help</span>
+</span><span class='line'><span class="n">argecho</span><span class="o">.</span><span class="n">py</span>
+</span><span class='line'><span class="o">--</span><span class="n">help</span>
+</span><span class='line'><span class="err">$</span> <span class="n">python</span> <span class="n">argecho</span><span class="o">.</span><span class="n">py</span> <span class="o">-</span><span class="n">m</span> <span class="n">kant</span><span class="o">.</span><span class="n">xml</span>
+</span><span class='line'><span class="n">argecho</span><span class="o">.</span><span class="n">py</span>
+</span><span class='line'><span class="o">-</span><span class="n">m</span>
+</span><span class='line'><span class="n">kant</span><span class="o">.</span><span class="n">xml</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>sya.argv仅仅已空格区分，然后依次记录启动，其中argv[0]是启动脚本名称。</p>
+
+<p>python提供了getopt来方便解析argv的参数。</p>
+
+<h2>getopt模块</h2>
+
+<p>getopt函数支持下面几种参数定义：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='python'><span class='line'><span class="o">-</span><span class="n">a</span>
+</span><span class='line'><span class="o">-</span><span class="n">bval</span>
+</span><span class='line'><span class="o">-</span><span class="n">b</span> <span class="n">val</span>
+</span><span class='line'><span class="o">--</span><span class="n">noarg</span>
+</span><span class='line'><span class="o">--</span><span class="n">witharg</span><span class="o">=</span><span class="n">val</span>
+</span><span class='line'><span class="o">--</span><span class="n">witharg</span> <span class="n">val</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>getopt有三个参数：</p>
+
+<ul>
+<li>第一个参数是需要解析的参数列表，一般是从argv[1]开始：sys.argv[1:]。</li>
+<li>第二个参数是短的选项定义，单个字符的。如果需要接收参数则后面跟着冒号“:”，比如：&#8217;ab:c:&lsquo;，表示-a不接收参数，-b和-c后面都要跟着参数。</li>
+<li>第三个参数提供长选项名字的列表。如果有参数，后面跟着“=”，比如：&#8217;noarg&#8217;, &lsquo;witharg=&rsquo;, &lsquo;witharg2=&rsquo;</li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">enwu</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-22T15:32:01+08:00" pubdate data-updated="true"></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/python/'>python</a>, <a class='category' href='/blog/categories/tornado/'>tornado</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://baren.github.io/blog/2015/03/22/python-tornado-source/" data-via="" data-counturl="http://baren.github.io/blog/2015/03/22/python-tornado-source/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/12/08/process-ipc/" title="Previous Post: Shared libraries简介">&laquo; Shared libraries简介</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/03/22/python-yield/" title="Next Post: yield（generator和coroutine）">yield（generator和coroutine） &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2016/03/02/python-function/">python 函数知识</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/02/26/python-model/">python 模块知识</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/01/20/man-bash/">man bash 解释</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/statis-udp/">统计系统设计</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/python-yield/">yield（generator和coroutine）</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/python-tornado-source/">tornado源代码研究笔记</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/12/08/process-ipc/">Shared libraries简介</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/11/19/shared-libraries/">Shared libraries简介</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2016 - enwu -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+  - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
+  <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

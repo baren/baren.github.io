@@ -3,7 +3,37 @@
   
   
   <url>
+    <loc>http://baren.github.io/blog/2016/03/02/python-function/</loc>
+    <lastmod>2016-03-02T19:32:01+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2016/02/26/python-model/</loc>
+    <lastmod>2016-02-26T19:32:01+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2016/01/20/man-bash/</loc>
+    <lastmod>2016-01-20T15:32:01+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2015/03/22/statis-udp/</loc>
+    <lastmod>2015-03-22T15:32:01+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
     <loc>http://baren.github.io/blog/2015/03/22/python-yield/</loc>
+    <lastmod>2015-03-22T15:32:01+08:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>http://baren.github.io/blog/2015/03/22/python-tornado-source/</loc>
     <lastmod>2015-03-22T15:32:01+08:00</lastmod>
     <priority>0.8</priority>
   </url>
@@ -173,14 +203,14 @@
   
   <url>
     <loc>http://baren.github.io/blog/archives/</loc>
-    <lastmod>2015-03-30T20:49:23+08:00</lastmod>
+    <lastmod>2016-03-04T16:11:12+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   
   <url>
     <loc>http://baren.github.io/</loc>
-    <lastmod>2015-03-30T20:49:23+08:00</lastmod>
+    <lastmod>2016-03-04T16:11:12+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
